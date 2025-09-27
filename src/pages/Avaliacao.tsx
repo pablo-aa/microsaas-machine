@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, CheckCircle } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import LikertScale from "@/components/LikertScale";
 
@@ -83,7 +83,12 @@ const Avaliacao = () => {
           </div>
           <div className="text-right">
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <span className="text-primary">⭕ {answeredQuestions} respondidas</span>
+              <div className="flex items-center space-x-2 text-primary">
+                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-3 h-3 text-white" />
+                </div>
+                <span>{answeredQuestions} respondidas</span>
+              </div>
               <span>{Math.round(progress)}% Completo</span>
             </div>
           </div>

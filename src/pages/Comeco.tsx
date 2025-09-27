@@ -1,15 +1,22 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, CheckCircle, ArrowRight, BarChart3, FileText, Target } from "lucide-react";
+import { Clock, CheckCircle, ArrowRight, BarChart3, FileText, Target, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 
 const Comeco = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleStartAssessment = () => {
-    const assessmentId = uuidv4();
-    navigate(`/avaliacao/${assessmentId}`);
+    setIsLoading(true);
+    
+    // Loading effect for 2 seconds
+    setTimeout(() => {
+      const assessmentId = uuidv4();
+      navigate(`/avaliacao/${assessmentId}`);
+    }, 2000);
   };
 
   return (
@@ -71,10 +78,18 @@ const Comeco = () => {
               {/* CTA Button */}
               <Button
                 onClick={handleStartAssessment}
+                disabled={isLoading}
                 size="lg"
-                className="bg-white hover:bg-white/90 text-primary text-xl font-bold px-12 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-white hover:bg-white/90 text-primary text-xl font-bold px-12 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-70"
               >
-                Descobrir Minha Carreira! →
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                    Preparando seu teste...
+                  </>
+                ) : (
+                  "Descobrir Minha Carreira! →"
+                )}
               </Button>
             </CardContent>
           </Card>
