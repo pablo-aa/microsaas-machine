@@ -14,6 +14,8 @@ const LikertScale = ({ onSelect, selectedValue }: LikertScaleProps) => {
     { value: 5, color: "bg-green-500", label: "Concordo Totalmente" }
   ];
 
+  const selectedOption = options.find(option => option.value === selectedValue);
+
   return (
     <div className="flex flex-col items-center space-y-6">
       {/* Labels */}
@@ -40,6 +42,15 @@ const LikertScale = ({ onSelect, selectedValue }: LikertScaleProps) => {
           />
         ))}
       </div>
+
+      {/* Selected Option Label */}
+      {selectedOption && (
+        <div className="text-center animate-fade-in-up">
+          <p className="text-lg font-semibold text-foreground">
+            {selectedOption.label}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

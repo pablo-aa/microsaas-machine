@@ -65,9 +65,9 @@ const Avaliacao = () => {
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">V</span>
+                <span className="text-white font-bold text-sm">QC</span>
               </div>
-              <span className="text-xl font-bold text-foreground">VocaTest</span>
+              <span className="text-xl font-bold text-foreground">Qual Carreira</span>
             </Link>
           </div>
         </div>
