@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Carrerium Design System - Professional career guidance platform */
 
 @layer base {
   :root {
@@ -17,17 +15,30 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Carrerium Purple Brand Colors */
+    --primary: 265 88% 65%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 265 88% 85%;
+    --primary-dark: 265 88% 45%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Brand Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(265 88% 65%), hsl(275 85% 60%));
+    --gradient-purple-to-blue: linear-gradient(135deg, hsl(265 88% 65%), hsl(240 75% 65%));
+    --gradient-hero: linear-gradient(135deg, hsl(265 88% 95%) 0%, hsl(275 85% 90%) 100%);
+    --gradient-stats: linear-gradient(135deg, hsl(265 88% 65%), hsl(240 75% 65%));
 
-    --muted: 210 40% 96.1%;
+    /* Success Colors */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+
+    --secondary: 265 20% 96%;
+    --secondary-foreground: 265 88% 25%;
+
+    --muted: 265 10% 95%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 265 88% 92%;
+    --accent-foreground: 265 88% 25%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -101,5 +112,72 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Carrerium Custom Styles */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .gradient-stats {
+    background: var(--gradient-stats);
+  }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animations */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(50px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.6s ease-out;
   }
 }
