@@ -14,6 +14,7 @@ interface ResultadosCompletosProps {
 
 const ResultadosCompletos = ({ userName, onDesbloquear }: ResultadosCompletosProps) => {
   const [showFullResults, setShowFullResults] = useState(false);
+  const [activeTab, setActiveTab] = useState<'riasec' | 'gardner' | 'gopc'>('riasec');
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleDesbloquearClick = () => {
@@ -28,6 +29,10 @@ const ResultadosCompletos = ({ userName, onDesbloquear }: ResultadosCompletosPro
     // TODO: Implement payment logic in future
     console.log('Purchase initiated for user:', userName);
     onDesbloquear();
+  };
+
+  const handleTabChange = (tab: 'riasec' | 'gardner' | 'gopc') => {
+    setActiveTab(tab);
   };
 
   return (
@@ -136,6 +141,8 @@ const ResultadosCompletos = ({ userName, onDesbloquear }: ResultadosCompletosPro
           <RiasecResults 
             isBlurred={true}
             onDesbloquear={handlePurchase}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
           />
 
           {/* Payment Section */}

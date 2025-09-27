@@ -1,0 +1,166 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+
+interface GardnerResultsProps {
+  isBlurred?: boolean;
+}
+
+// Gardner data - mock data based on your image
+const gardnerData = [
+  { name: "Interpessoal", value: 30, color: "#3B82F6" },
+  { name: "Intrapessoal", value: 35, color: "#10B981" },
+  { name: "Espacial", value: 25, color: "#F97316" },
+  { name: "Outros", value: 10, color: "#E5E7EB" }
+];
+
+// Top 3 intelligences
+const topIntelligences = [
+  { name: "Interpessoal", color: "#3B82F6", rank: 1 },
+  { name: "Intrapessoal", color: "#10B981", rank: 2 },
+  { name: "Espacial", color: "#F97316", rank: 3 }
+];
+
+const careerRecommendations = {
+  interpessoal: ["Psicólogo", "Professor", "Assistente Social", "Terapeuta", "Recursos Humanos"],
+  intrapessoal: ["Escritor", "Filósofo", "Pesquisador", "Consultor", "Empreendedor"],
+  espacial: ["Arquiteto", "Designer", "Piloto", "Cirurgião", "Engenheiro"]
+};
+
+const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
+  return (
+    <div className="space-y-8">
+      {/* Title */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          Seus resultados <span className="text-primary">GARDNER</span>
+        </h2>
+        <p className="text-lg text-muted-foreground">Inteligências Múltiplas</p>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+        {/* Left - Pie Chart */}
+        <div className="flex flex-col items-center">
+          <div className="w-80 h-80 mb-6">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={gardnerData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  dataKey="value"
+                  label={({ name }) => name}
+                  labelLine={false}
+                >
+                  {gardnerData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Right - Top Intelligences */}
+        <div>
+          <h3 className="text-lg font-semibold text-foreground mb-6">
+            Suas Inteligências Predominantes
+          </h3>
+          
+          <div className="space-y-4 mb-8">
+            {topIntelligences.map((intelligence, index) => (
+              <div 
+                key={intelligence.name}
+                className={`p-4 rounded-lg border-2 ${
+                  intelligence.name === 'Intrapessoal' 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div 
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
+                    style={{ backgroundColor: intelligence.color }}
+                  >
+                    {intelligence.rank}
+                  </div>
+                  <span className="font-medium text-foreground">
+                    {intelligence.name}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Detailed Section - Intrapessoal */}
+          <Card className={`${isBlurred ? 'relative overflow-hidden' : ''}`}>
+            <CardContent className="p-6">
+              <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                    1
+                  </div>
+                  <h4 className="text-lg font-bold text-foreground">Intrapessoal</h4>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="h-4 bg-muted rounded"></div>
+                  <div className="h-4 bg-muted rounded w-4/5"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                </div>
+              </div>
+              
+              {isBlurred && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
+                  <p className="text-muted-foreground text-sm">
+                    Descrição detalhada disponível após desbloqueio
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Career Recommendations */}
+      <div>
+        <h3 className="text-lg font-semibold text-foreground mb-6">
+          Carreiras Recomendadas
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Interpessoal */}
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <h4 className="font-semibold text-foreground">Interpessoal</h4>
+            </div>
+            
+            <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
+              {careerRecommendations.interpessoal.map((career, idx) => (
+                <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Intrapessoal */}
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <h4 className="font-semibold text-foreground">Intrapessoal</h4>
+            </div>
+            
+            <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
+              {careerRecommendations.intrapessoal.map((career, idx) => (
+                <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GardnerResults;
