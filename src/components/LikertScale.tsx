@@ -17,39 +17,41 @@ const LikertScale = ({ onSelect, selectedValue }: LikertScaleProps) => {
   const selectedOption = options.find(option => option.value === selectedValue);
 
   return (
-    <div className="flex flex-col items-center space-y-8">
+    <div className="flex flex-col items-center space-y-6 px-4">
       {/* Labels */}
-      <div className="flex justify-between w-full max-w-lg text-sm text-muted-foreground">
-        <span className="text-red-600 font-medium">Discordo<br />Totalmente</span>
-        <span className="text-green-600 font-medium">Concordo<br />Totalmente</span>
+      <div className="flex justify-between w-full max-w-sm sm:max-w-lg text-xs sm:text-sm text-muted-foreground">
+        <span className="text-red-600 font-medium text-center">Discordo<br />Totalmente</span>
+        <span className="text-green-600 font-medium text-center">Concordo<br />Totalmente</span>
       </div>
 
       {/* Scale */}
-      <div className="flex items-start justify-center space-x-8">
+      <div className="flex items-center justify-center space-x-3 sm:space-x-6 md:space-x-8 w-full max-w-sm sm:max-w-lg">
         {options.map((option) => (
-          <div key={option.value} className="flex flex-col items-center space-y-3">
+          <div key={option.value} className="flex flex-col items-center min-h-[80px]">
             <button
               onClick={() => onSelect(option.value)}
               className={`
-                w-12 h-12 rounded-full transition-all duration-200 hover:scale-110 shadow-lg
+                w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-200 hover:scale-105 shadow-lg
                 ${option.color}
                 ${selectedValue === option.value 
-                  ? 'ring-4 ring-primary ring-offset-2 scale-110' 
+                  ? 'ring-2 sm:ring-4 ring-primary ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110' 
                   : 'hover:shadow-xl'
                 }
               `}
               aria-label={option.label}
             />
             
-            {/* Selected Option Label */}
-            {selectedValue === option.value && (
-              <div className={`
-                px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 animate-scale-in
-                ${option.textColor} ${option.bgColor} border border-current/20
-              `}>
-                {option.label}
-              </div>
-            )}
+            {/* Selected Option Label - Fixed Height Container */}
+            <div className="h-12 flex items-start justify-center mt-2 px-1">
+              {selectedValue === option.value && (
+                <div className={`
+                  px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 animate-scale-in text-center
+                  ${option.textColor} ${option.bgColor} border border-current/20 leading-tight
+                `}>
+                  {option.label}
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

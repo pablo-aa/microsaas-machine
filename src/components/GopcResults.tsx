@@ -50,46 +50,89 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
           ))}
         </div>
 
-        {/* Right - Triangle Chart */}
+        {/* Right - Triangle Radar Chart */}
         <div className="flex flex-col items-center justify-center">
           <div className="relative w-80 h-80">
-            {/* Triangle SVG */}
-            <svg viewBox="0 0 200 200" className="w-full h-full">
-              {/* Triangle outline */}
+            {/* Triangle SVG Radar Chart */}
+            <svg viewBox="0 0 240 220" className="w-full h-full">
+              {/* Grid lines */}
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#F3F4F6" strokeWidth="0.5"/>
+                </pattern>
+              </defs>
+              
+              {/* Background triangle levels */}
               <polygon
-                points="100,20 40,160 160,160"
+                points="120,30 70,170 170,170"
+                fill="none"
+                stroke="#F3F4F6"
+                strokeWidth="1"
+              />
+              <polygon
+                points="120,50 80,150 160,150"
+                fill="none"
+                stroke="#F3F4F6"
+                strokeWidth="1"
+              />
+              <polygon
+                points="120,70 90,130 150,130"
+                fill="none"
+                stroke="#F3F4F6"
+                strokeWidth="1"
+              />
+              
+              {/* Main triangle outline */}
+              <polygon
+                points="120,30 70,170 170,170"
                 fill="none"
                 stroke="#E5E7EB"
                 strokeWidth="2"
               />
               
+              {/* Data triangle - sample scores */}
+              <polygon
+                points="120,60 85,140 155,140"
+                fill="#3B82F6"
+                fillOpacity="0.2"
+                stroke="#3B82F6"
+                strokeWidth="2"
+              />
+              
+              {/* Data points */}
+              <circle cx="120" cy="60" r="4" fill="#3B82F6" />
+              <circle cx="85" cy="140" r="4" fill="#F97316" />
+              <circle cx="155" cy="140" r="4" fill="#10B981" />
+              
+              {/* Axis lines */}
+              <line x1="120" y1="30" x2="120" y2="170" stroke="#E5E7EB" strokeWidth="1"/>
+              <line x1="120" y1="170" x2="70" y2="170" stroke="#E5E7EB" strokeWidth="1"/>
+              <line x1="120" y1="170" x2="170" y2="170" stroke="#E5E7EB" strokeWidth="1"/>
+              
               {/* Labels */}
-              <text x="100" y="15" textAnchor="middle" className="text-xs fill-gray-600">
+              <text x="120" y="20" textAnchor="middle" className="text-xs fill-blue-600 font-medium">
                 Autoconhecimento
               </text>
-              <text x="100" y="25" textAnchor="middle" className="text-xs fill-gray-600">
-                (AK)
+              <text x="120" y="15" textAnchor="middle" className="text-xs fill-blue-600">
+                (AK) - 85%
               </text>
               
-              <text x="25" y="170" textAnchor="middle" className="text-xs fill-gray-600">
-                Tomada
+              <text x="50" y="180" textAnchor="middle" className="text-xs fill-orange-600 font-medium">
+                Tomada de
               </text>
-              <text x="25" y="180" textAnchor="middle" className="text-xs fill-gray-600">
-                de Decisão
+              <text x="50" y="190" textAnchor="middle" className="text-xs fill-orange-600 font-medium">
+                Decisão
               </text>
-              <text x="25" y="190" textAnchor="middle" className="text-xs fill-gray-600">
-                (TD)
+              <text x="50" y="200" textAnchor="middle" className="text-xs fill-orange-600">
+                (TD) - 65%
               </text>
               
-              <text x="175" y="170" textAnchor="middle" className="text-xs fill-gray-600">
+              <text x="190" y="180" textAnchor="middle" className="text-xs fill-green-600 font-medium">
                 Planejamento
               </text>
-              <text x="175" y="180" textAnchor="middle" className="text-xs fill-gray-600">
-                (PC)
+              <text x="190" y="190" textAnchor="middle" className="text-xs fill-green-600">
+                (PC) - 75%
               </text>
-              
-              {/* Data point - can be positioned based on user's scores */}
-              <circle cx="100" cy="80" r="4" fill="#8B5CF6" />
             </svg>
           </div>
         </div>
