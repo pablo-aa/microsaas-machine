@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -6,12 +7,12 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           {/* Solution Name & Logo */}
-          <div className="flex items-center justify-center space-x-2 mb-4">
+          <Link to="/" className="flex items-center justify-center space-x-2 mb-4">
             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">C</span>
             </div>
             <span className="text-2xl font-bold text-foreground">Carrerium</span>
-          </div>
+          </Link>
 
           {/* Subtitle */}
           <p className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-2xl mx-auto">
@@ -19,11 +20,13 @@ const Footer = () => {
           </p>
 
           {/* CTA Button */}
-          <Button 
-            className="gradient-primary hover:opacity-90 transition-opacity mb-8 px-8 py-3 text-base font-semibold"
-          >
-            Começar Teste
-          </Button>
+          <Link to="/comeco">
+            <Button 
+              className="gradient-primary hover:opacity-90 transition-opacity mb-8 px-8 py-3 text-base font-semibold"
+            >
+              Começar Teste
+            </Button>
+          </Link>
 
           {/* Contact Email */}
           <div className="mb-8">

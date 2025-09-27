@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-illustration.png";
 
 const Hero = () => {
@@ -30,12 +31,14 @@ const Hero = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Button 
-                size="lg" 
-                className="gradient-primary hover:opacity-90 transition-opacity px-8 py-3 text-base font-semibold"
-              >
-                Fazer teste →
-              </Button>
+              <Link to="/comeco">
+                <Button 
+                  size="lg" 
+                  className="gradient-primary hover:opacity-90 transition-opacity px-8 py-3 text-base font-semibold w-full sm:w-auto"
+                >
+                  Fazer teste →
+                </Button>
+              </Link>
               <Button 
                 variant="outline" 
                 size="lg"
