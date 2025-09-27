@@ -9,9 +9,9 @@ const Footer = () => {
           {/* Solution Name & Logo */}
           <Link to="/" className="flex items-center justify-center space-x-2 mb-4">
             <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">C</span>
+              <span className="text-white font-bold text-lg">V</span>
             </div>
-            <span className="text-2xl font-bold text-foreground">Carrerium</span>
+            <span className="text-2xl font-bold text-foreground">VocaTest</span>
           </Link>
 
           {/* Subtitle */}
@@ -55,7 +55,7 @@ const Footer = () => {
           {/* Copyright */}
           <div className="border-t border-border/50 pt-8">
             <p className="text-sm text-muted-foreground">
-              © 2024 Carrerium. Todos os direitos reservados.
+              © 2024 VocaTest. Todos os direitos reservados.
             </p>
           </div>
         </div>
