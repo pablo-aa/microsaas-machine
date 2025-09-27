@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, CheckCircle } from "lucide-react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { ChevronLeft, CheckCircle, Loader2 } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import LikertScale from "@/components/LikertScale";
+import FormularioDados from "./FormularioDados";
+import ResultadosCompletos from "./ResultadosCompletos";
 
 // Sample questions for the assessment
 const questions = [
@@ -13,12 +15,15 @@ const questions = [
   "Me sinto confortável falando em público."
 ];
 
+type AssessmentStage = 'questions' | 'processing' | 'form' | 'results-loading' | 'results';
+
 const Avaliacao = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
+  const [stage, setStage] = useState<AssessmentStage>('questions');
+  const [userData, setUserData] = useState<{name: string; email: string; age: string} | null>(null);
 
   const totalQuestions = questions.length;
   const progress = ((currentQuestion + (selectedAnswer ? 1 : 0)) / totalQuestions) * 100;
@@ -39,8 +44,11 @@ const Avaliacao = () => {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(newAnswers[currentQuestion + 1]);
     } else {
-      // Assessment completed - for now just show restart option
-      alert("Teste concluído! Por enquanto, apenas a opção de recomeçar está disponível.");
+      // Assessment completed - show processing loading
+      setStage('processing');
+      setTimeout(() => {
+        setStage('form');
+      }, 2000); // 2 second loading
     }
   };
 
@@ -55,8 +63,72 @@ const Avaliacao = () => {
     setCurrentQuestion(0);
     setAnswers([]);
     setSelectedAnswer(undefined);
+    setStage('questions');
+    setUserData(null);
   };
 
+  const handleFormSubmit = (data: {name: string; email: string; age: string}) => {
+    setUserData(data);
+    setStage('results-loading');
+    
+    // Show loading then results
+    setTimeout(() => {
+      setStage('results');
+    }, 2000); // 2 second loading
+  };
+
+  const handleDesbloquear = () => {
+    // TODO: Implement unlock logic
+    console.log('Desbloquear resultados:', userData);
+  };
+
+  // Processing stage
+  if (stage === 'processing') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Calculando seus resultados...</h2>
+          <p className="text-muted-foreground">Analisando suas respostas com nossa IA avançada</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Form stage
+  if (stage === 'form') {
+    return (
+      <FormularioDados 
+        onSubmit={handleFormSubmit}
+        isLoading={false}
+      />
+    );
+  }
+
+  // Results loading stage
+  if (stage === 'results-loading') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Preparando seus resultados...</h2>
+          <p className="text-muted-foreground">Criando seu perfil vocacional personalizado</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Results stage
+  if (stage === 'results' && userData) {
+    return (
+      <ResultadosCompletos 
+        userName={userData.name}
+        onDesbloquear={handleDesbloquear}
+      />
+    );
+  }
+
+  // Questions stage - original assessment interface
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
