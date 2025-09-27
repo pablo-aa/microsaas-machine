@@ -26,15 +26,15 @@ const CookieConsent = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full mx-4 animate-scale-in shadow-2xl">
-        <CardContent className="p-8">
-          <div className="flex items-start justify-between mb-6">
+    <div className="fixed bottom-4 left-4 right-4 z-50 max-w-2xl mx-auto">
+      <Card className="animate-scale-in shadow-2xl border border-border/20">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="bg-primary/10 rounded-lg p-2">
-                <Shield className="h-6 w-6 text-primary" />
+                <Shield className="h-5 w-5 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">
+              <h3 className="text-lg font-bold text-foreground">
                 Sua privacidade é importante
               </h3>
             </div>
@@ -48,7 +48,7 @@ const CookieConsent = () => {
             </Button>
           </div>
 
-          <p className="text-muted-foreground mb-8 leading-relaxed">
+          <p className="text-muted-foreground mb-6 leading-relaxed">
             Utilizamos cookies para melhorar sua experiência, personalizar 
             conteúdo e analisar o tráfego do site.
           </p>
