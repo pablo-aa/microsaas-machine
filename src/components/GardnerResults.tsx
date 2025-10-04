@@ -127,13 +127,20 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
                 <h4 className="text-lg font-bold text-foreground">Intrapessoal</h4>
               </div>
               
-              <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-                <div className="space-y-3">
-                  <div className="h-4 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded w-4/5"></div>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
+              {isBlurred ? (
+                <div className="filter blur-sm select-none">
+                  <div className="space-y-3">
+                    <div className="h-4 bg-muted rounded"></div>
+                    <div className="h-4 bg-muted rounded w-4/5"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-foreground">
+                  Você demonstra forte inteligência intrapessoal: autoconhecimento, reflexão e clareza sobre seus valores,
+                  usando essas habilidades para tomar decisões alinhadas ao que importa para você.
+                </p>
+              )}
               
               {isBlurred && (
                 <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
@@ -161,11 +168,19 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
               <h4 className="font-semibold text-foreground">Intrapessoal</h4>
             </div>
             
-            <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
-              {careerRecommendations.intrapessoal.map((career, idx) => (
-                <div key={idx} className="h-6 bg-muted rounded w-full"></div>
-              ))}
-            </div>
+            {isBlurred ? (
+              <div className="space-y-2 filter blur-sm select-none">
+                {careerRecommendations.intrapessoal.map((career, idx) => (
+                  <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+                ))}
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {careerRecommendations.intrapessoal.map((career, idx) => (
+                  <li key={idx} className="text-foreground">{career}</li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Interpessoal */}
@@ -175,11 +190,19 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
               <h4 className="font-semibold text-foreground">Interpessoal</h4>
             </div>
             
-            <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
-              {careerRecommendations.interpessoal.map((career, idx) => (
-                <div key={idx} className="h-6 bg-muted rounded w-full"></div>
-              ))}
-            </div>
+            {isBlurred ? (
+              <div className="space-y-2 filter blur-sm select-none">
+                {careerRecommendations.interpessoal.map((career, idx) => (
+                  <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+                ))}
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {careerRecommendations.interpessoal.map((career, idx) => (
+                  <li key={idx} className="text-foreground">{career}</li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Espacial */}
@@ -189,11 +212,19 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
               <h4 className="font-semibold text-foreground">Espacial</h4>
             </div>
             
-            <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
-              {careerRecommendations.espacial.map((career, idx) => (
-                <div key={idx} className="h-6 bg-muted rounded w-full"></div>
-              ))}
-            </div>
+            {isBlurred ? (
+              <div className="space-y-2 filter blur-sm select-none">
+                {careerRecommendations.espacial.map((career, idx) => (
+                  <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+                ))}
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {careerRecommendations.espacial.map((career, idx) => (
+                  <li key={idx} className="text-foreground">{career}</li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

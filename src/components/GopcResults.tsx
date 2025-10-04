@@ -19,6 +19,12 @@ const gopcCompetencies = [
   { code: "TD", name: "Tomada de Decisão", color: "#F97316", bgColor: "#FFF7ED" }
 ];
 
+const competencyDescriptions: Record<string, string> = {
+  AK: 'Capacidade de reconhecer emoções, valores e limites, usando isso para evoluir pessoal e profissionalmente.',
+  PC: 'Planejar objetivos com etapas claras, prazos e priorização, mantendo foco e consistência.',
+  TD: 'Analisar cenários, pesar prós e contras e tomar decisões com responsabilidade.'
+};
+
 const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
   return (
     <div className="space-y-8">
@@ -115,18 +121,22 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
                 {competency.code}
               </div>
               
-              <div className="flex-1">
-                <h4 className="font-semibold text-foreground mb-2">
-                  {competency.name}
-                </h4>
-                <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-muted rounded"></div>
-                    <div className="h-4 bg-muted rounded w-4/5"></div>
-                    <div className="h-4 bg-muted rounded w-3/4"></div>
-                  </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-foreground mb-2">
+                    {competency.name}
+                  </h4>
+                  {isBlurred ? (
+                    <div className="filter blur-sm select-none">
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted rounded"></div>
+                        <div className="h-4 bg-muted rounded w-4/5"></div>
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">{competencyDescriptions[competency.code]}</p>
+                  )}
                 </div>
-              </div>
             </div>
           ))}
         </div>
@@ -158,12 +168,10 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
           ) : (
             <div>
               <h4 className="font-semibold text-foreground mb-3">Autoconhecimento</h4>
-              <div className="space-y-3">
-                <div className="h-4 bg-muted rounded"></div>
-                <div className="h-4 bg-muted rounded w-5/6"></div>
-                <div className="h-4 bg-muted rounded w-4/5"></div>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-              </div>
+              <p className="text-muted-foreground">
+                Seu ponto forte é o autoconhecimento: você reconhece suas habilidades, limites e motivações,
+                o que facilita escolhas de carreira mais assertivas e consistentes.
+              </p>
             </div>
           )}
         </CardContent>
