@@ -6,7 +6,7 @@ export const mercadoPagoConfig = {
     price: 12.90,
   },
   prod: {
-    publicKey: '', // Será configurado quando o site estiver em produção
+    publicKey: 'APP_USR-40aea4f7-a179-402a-a1b8-f3b4bfed380e',
     price: 12.90,
   }
 };
