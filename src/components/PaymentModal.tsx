@@ -8,9 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 // Get Supabase URL from environment
 const getSupabaseUrl = () => {
   const hostname = window.location.hostname;
-  const isProduction = hostname === 'carrerium.com' || 
-                       hostname === 'www.carrerium.com' ||
-                       hostname.endsWith('.lovable.app');
+  const isProduction = hostname === 'carrerium.com' || hostname === 'www.carrerium.com';
   return isProduction 
     ? 'https://iwovfvrmjaonzqlaavmi.supabase.co'
     : 'https://sqmkerddgvshfqwgwnyc.supabase.co';

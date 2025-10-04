@@ -4,9 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 const isProduction = () => {
   if (typeof window === 'undefined') return false;
   const hostname = window.location.hostname;
-  return hostname === 'carrerium.com' || 
-         hostname === 'www.carrerium.com' ||
-         hostname.endsWith('.lovable.app');
+  // Produção apenas quando o domínio final estiver ativo
+  return hostname === 'carrerium.com' || hostname === 'www.carrerium.com';
 };
 
 // Configurações por ambiente
