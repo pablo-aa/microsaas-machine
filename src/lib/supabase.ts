@@ -5,7 +5,7 @@ const isProduction = () => {
   if (typeof window === 'undefined') return false;
   const hostname = window.location.hostname;
   // Produção apenas quando o domínio final estiver ativo
-  return hostname === 'carrerium.com' || hostname === 'www.carrerium.com';
+  return hostname === 'qualcarreira.com' || hostname === 'www.qualcarreira.com';
 };
 
 // Configurações por ambiente

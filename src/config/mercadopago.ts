@@ -12,8 +12,8 @@ export const mercadoPagoConfig = {
 };
 
 export const getMercadoPagoConfig = () => {
-  const isProd = window.location.hostname === 'carrerium.com' || 
-                 window.location.hostname === 'www.carrerium.com';
+  const isProd = window.location.hostname === 'qualcarreira.com' || 
+                 window.location.hostname === 'www.qualcarreira.com';
   return isProd ? mercadoPagoConfig.prod : mercadoPagoConfig.dev;
 };
 
