@@ -31,11 +31,11 @@ const LikertScale = ({ onSelect, selectedValue }: LikertScaleProps) => {
             <button
               onClick={() => onSelect(option.value)}
               className={`
-                w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-200 hover:scale-105 shadow-lg
+                w-10 h-10 sm:w-12 sm:h-12 rounded-full transition-all duration-200 shadow-lg
                 ${option.color}
                 ${selectedValue === option.value 
-                  ? 'ring-2 sm:ring-4 ring-primary ring-offset-1 sm:ring-offset-2 scale-105 sm:scale-110' 
-                  : 'hover:shadow-xl'
+                  ? 'ring-2 sm:ring-4 ring-primary ring-offset-1 sm:ring-offset-2' 
+                  : 'hover:scale-105 hover:shadow-xl'
                 }
               `}
               aria-label={option.label}
