@@ -8,20 +8,19 @@ import LikertScale from "@/components/LikertScale";
 import FormularioDados from "./FormularioDados";
 import ResultadosCompletos from "./ResultadosCompletos";
 import { v4 as uuidv4 } from 'uuid';
-
-// Sample questions for the assessment
-const questions = [
-  "Prefiro atividades que envolvam ajudar pessoas.",
-  "Gosto de trabalhar com números e dados.",
-  "Me sinto confortável falando em público."
-];
+import { questions, TOTAL_QUESTIONS } from "@/data/questions";
 
 type AssessmentStage = 'questions' | 'processing' | 'form' | 'results-loading' | 'results';
+
+interface Answer {
+  question_id: number;
+  score: number;
+}
 
 const Avaliacao = () => {
   const { id } = useParams();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [answers, setAnswers] = useState<Answer[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
   const [stage, setStage] = useState<AssessmentStage>('questions');
   const [userData, setUserData] = useState<{name: string; email: string; age: string} | null>(null);
@@ -32,7 +31,7 @@ const Avaliacao = () => {
     setTestId(uuidv4());
   }, []);
 
-  const totalQuestions = questions.length;
+  const totalQuestions = TOTAL_QUESTIONS;
   const progress = ((currentQuestion + (selectedAnswer ? 1 : 0)) / totalQuestions) * 100;
   const answeredQuestions = answers.length;
 
@@ -44,12 +43,23 @@ const Avaliacao = () => {
     if (selectedAnswer === undefined) return;
 
     const newAnswers = [...answers];
-    newAnswers[currentQuestion] = selectedAnswer;
+    const currentQuestionData = questions[currentQuestion];
+    
+    // Update or add the answer for current question
+    const existingIndex = newAnswers.findIndex(a => a.question_id === currentQuestionData.id);
+    if (existingIndex >= 0) {
+      newAnswers[existingIndex] = { question_id: currentQuestionData.id, score: selectedAnswer };
+    } else {
+      newAnswers.push({ question_id: currentQuestionData.id, score: selectedAnswer });
+    }
     setAnswers(newAnswers);
 
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(newAnswers[currentQuestion + 1]);
+      // Check if next question already has an answer
+      const nextQuestionData = questions[currentQuestion + 1];
+      const nextAnswer = newAnswers.find(a => a.question_id === nextQuestionData.id);
+      setSelectedAnswer(nextAnswer?.score);
     } else {
       // Assessment completed - show processing loading
       setStage('processing');
@@ -62,7 +72,10 @@ const Avaliacao = () => {
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
-      setSelectedAnswer(answers[currentQuestion - 1]);
+      // Find answer for previous question
+      const prevQuestionData = questions[currentQuestion - 1];
+      const prevAnswer = answers.find(a => a.question_id === prevQuestionData.id);
+      setSelectedAnswer(prevAnswer?.score);
     }
   };
 
@@ -189,7 +202,7 @@ const Avaliacao = () => {
             {/* Question */}
             <div className="text-center mb-12">
               <p className="text-xl text-foreground font-medium leading-relaxed">
-                {questions[currentQuestion]}
+                {questions[currentQuestion].text}
               </p>
             </div>
 
