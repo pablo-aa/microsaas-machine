@@ -107,40 +107,36 @@ const checkPaymentStatus = async () => {
 
     console.log('Checking payment status:', paymentId);
 
-    // Chamada via GET com query string (compatível com a Edge Function atual)
-    const url = `${getSupabaseUrl()}/functions/v1/check-payment-status?payment_id=${encodeURIComponent(paymentId)}`;
-    const r = await fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store'
+    // Chamada padrão: supabase.functions.invoke (envia os headers automaticamente)
+    const { data, error } = await supabase.functions.invoke('check-payment-status', {
+      body: { payment_id: paymentId }
     });
 
-    const data = await r.json();
-    if (!r.ok) {
-      console.error('Error checking status:', data);
+    if (error) {
+      console.error('Error checking status:', error);
       return;
     }
 
-    console.log('Payment status:', data); // pode conter { id, status, status_detail, test_id }
+    console.log('Payment status:', data); // { id, status, status_detail?, test_id? }
 
-    if (data.status === 'approved') {
+    if (data?.status === 'approved') {
       setStatus('approved');
       toast({
         title: "Pagamento aprovado!",
         description: "Seus resultados completos estão sendo desbloqueados...",
       });
       await unlockResult();
-    } else if (data.status === 'rejected') {
+    } else if (data?.status === 'rejected') {
       setStatus('rejected');
       setError('Pagamento rejeitado. Tente novamente.');
     }
-    // Se quiser ver mais contexto, descomente a linha abaixo:
-    // console.log('Detalhe do status (se houver):', data.status_detail);
+    // Opcional: console.log('Detalhe do status:', data?.status_detail);
 
   } catch (err) {
     console.error('Error checking payment status:', err);
   }
 };
+  
   const unlockResult = async (skipPaymentCheck = false) => {
     try {
       console.log('Unlocking result:', { testId, paymentId, skipPaymentCheck });
