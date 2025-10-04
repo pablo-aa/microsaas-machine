@@ -23,9 +23,8 @@ serve(async (req) => {
       }
     );
 
-    // Get result_id from query params
-    const url = new URL(req.url);
-    const resultId = url.searchParams.get('result_id');
+    // Get result_id from request body
+    const { result_id: resultId } = await req.json();
 
     if (!resultId) {
       return new Response(
