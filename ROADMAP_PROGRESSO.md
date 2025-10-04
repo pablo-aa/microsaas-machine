@@ -64,16 +64,24 @@
 
 ---
 
-## 🔴 PROMPT 4: Integrar FormularioDados com Backend
-**Status**: 🔴 **PENDENTE**
+## ✅ PROMPT 4: Integrar FormularioDados com Backend
+**Status**: ✅ **CONCLUÍDO**
 
-### O que fazer:
-1. Modificar `FormularioDados.tsx`:
-   - Receber `answers` como prop
-   - No submit, chamar edge function `create-result`
-   - Exibir loading durante chamada
-   - Ao receber `result_id`, redirecionar para `/resultado/:result_id`
-   - Limpar localStorage após sucesso
+### O que foi feito:
+- ✅ Modificado `FormularioDados.tsx` para receber `answers` e `testId` como props
+- ✅ Implementada chamada à edge function `create-result` via `supabase.functions.invoke`
+- ✅ Adicionado loading state durante o submit
+- ✅ Implementado redirect para `/resultado/:result_id` após sucesso
+- ✅ Limpeza automática do localStorage após salvar
+- ✅ Toast de confirmação de sucesso
+- ✅ Tratamento de erros completo com feedback visual
+- ✅ Logging detalhado para debug
+- ✅ Modificado `Avaliacao.tsx` para passar props corretas
+
+### Resultado:
+- ✅ Fluxo completo: Avaliação → Formulário → Salvar no DB → Redirecionar
+- ✅ Dados persistidos no Supabase
+- ✅ localStorage limpo após conclusão
 
 ---
 
@@ -149,7 +157,7 @@ Fase 3A - Backend Core
 ├── ✅ PROMPT 1: Integrar 60 perguntas
 ├── ✅ PROMPT 2: LocalStorage
 ├── ✅ PROMPT 3: create-result
-├── 🔴 PROMPT 4: FormularioDados
+├── ✅ PROMPT 4: FormularioDados
 ├── 🔴 PROMPT 5: Rota /resultado/:id
 ├── 🔴 PROMPT 6: get-result
 ├── 🔴 PROMPT 7: unlock-result
@@ -163,4 +171,4 @@ Fase 3B - Email (Opcional)
 
 ## 🎯 Próximo Passo
 
-**Execute**: "Implementar PROMPT 4: Integrar FormularioDados com backend"
+**Execute**: "Implementar PROMPT 5 e 6: Criar rota /resultado/:id e edge function get-result"

@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Calendar, Loader2, Sparkles, Info } from "lucide-react";
 import { z } from "zod";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { assessmentStorage } from "@/lib/assessmentStorage";
 
 // Validation schema
 const formSchema = z.object({
@@ -18,12 +21,20 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-interface FormularioDadosProps {
-  onSubmit: (data: FormData) => void;
-  isLoading: boolean;
+interface Answer {
+  question_id: number;
+  score: number;
 }
 
-const FormularioDados = ({ onSubmit, isLoading }: FormularioDadosProps) => {
+interface FormularioDadosProps {
+  answers: Answer[];
+  testId: string;
+}
+
+const FormularioDados = ({ answers, testId }: FormularioDadosProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
@@ -31,14 +42,58 @@ const FormularioDados = ({ onSubmit, isLoading }: FormularioDadosProps) => {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
 
     try {
       const validatedData = formSchema.parse(formData);
-      onSubmit(validatedData);
+      setIsLoading(true);
+
+      console.log('Submitting to create-result:', {
+        name: validatedData.name,
+        email: validatedData.email,
+        age: parseInt(validatedData.age),
+        answersCount: answers.length
+      });
+
+      // Call edge function to create result
+      const { data, error } = await supabase.functions.invoke('create-result', {
+        body: {
+          name: validatedData.name,
+          email: validatedData.email,
+          age: parseInt(validatedData.age),
+          answers: answers
+        }
+      });
+
+      if (error) {
+        console.error('Error calling create-result:', error);
+        throw new Error(error.message || 'Erro ao criar resultado');
+      }
+
+      if (!data || !data.result_id) {
+        console.error('Invalid response from create-result:', data);
+        throw new Error('Resposta inválida do servidor');
+      }
+
+      console.log('Result created successfully:', data);
+
+      // Clear localStorage after successful save
+      assessmentStorage.clearProgress(testId);
+
+      // Redirect to results page
+      navigate(`/resultado/${data.result_id}`);
+
+      toast({
+        title: "Sucesso!",
+        description: "Seus resultados foram gerados com sucesso",
+      });
+
     } catch (error) {
+      console.error('Form submission error:', error);
+      setIsLoading(false);
+      
       if (error instanceof z.ZodError) {
         const newErrors: Partial<Record<keyof FormData, string>> = {};
         error.errors.forEach((err) => {
@@ -47,6 +102,12 @@ const FormularioDados = ({ onSubmit, isLoading }: FormularioDadosProps) => {
           }
         });
         setErrors(newErrors);
+      } else {
+        toast({
+          title: "Erro ao gerar resultados",
+          description: error instanceof Error ? error.message : "Tente novamente em instantes",
+          variant: "destructive"
+        });
       }
     }
   };

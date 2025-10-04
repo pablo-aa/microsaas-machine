@@ -142,14 +142,9 @@ const Avaliacao = () => {
     });
   };
 
-  const handleFormSubmit = (data: {name: string; email: string; age: string}) => {
-    setUserData(data);
-    setStage('results-loading');
-    
-    // Show loading then results
-    setTimeout(() => {
-      setStage('results');
-    }, 2000); // 2 second loading
+  const handleFormSubmit = async (data: {name: string; email: string; age: string}) => {
+    // This is now handled directly in FormularioDados
+    console.log('Form submitted (legacy handler):', data);
   };
 
   const handleDesbloquear = () => {
@@ -174,8 +169,8 @@ const Avaliacao = () => {
   if (stage === 'form') {
     return (
       <FormularioDados 
-        onSubmit={handleFormSubmit}
-        isLoading={false}
+        answers={answers}
+        testId={testId}
       />
     );
   }
