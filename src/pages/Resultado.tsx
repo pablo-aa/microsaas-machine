@@ -1,16 +1,15 @@
-import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, Copy, CheckCircle, Lock } from "lucide-react";
+import { Loader2, AlertCircle, Copy, CheckCircle, Lock, BookOpen, Star, Lightbulb, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import RiasecResults from "@/components/RiasecResults";
-import GardnerResults from "@/components/GardnerResults";
-import GopcResults from "@/components/GopcResults";
 import PaymentSection from "@/components/PaymentSection";
 import ResultsFooter from "@/components/ResultsFooter";
+import { PaymentModal } from "@/components/PaymentModal";
 
 interface ResultData {
   id: string;
@@ -31,12 +30,15 @@ type LoadingState = 'loading' | 'success' | 'error' | 'expired' | 'not-found';
 
 const Resultado = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { toast } = useToast();
   
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [result, setResult] = useState<ResultData | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [showFullResults, setShowFullResults] = useState(false);
+  const [activeTab, setActiveTab] = useState<'riasec' | 'gardner' | 'gopc'>('riasec');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const resultUrl = `${window.location.origin}/resultado/${id}`;
 
@@ -96,9 +98,23 @@ const Resultado = () => {
     setTimeout(() => setLinkCopied(false), 3000);
   };
 
-  const handleDesbloquear = () => {
-    // This will be handled by PaymentSection
-    console.log('Initiating payment for result:', id);
+  const handleDesbloquearClick = () => {
+    setShowFullResults(true);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const handlePurchase = () => {
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    fetchResult(); // Refresh to get unlocked status
+  };
+
+  const handleTabChange = (tab: 'riasec' | 'gardner' | 'gopc') => {
+    setActiveTab(tab);
   };
 
   // Loading state
@@ -179,112 +195,171 @@ const Resultado = () => {
     );
   }
 
-  // Success state - show results
+  // Success state - show results with original UI/UX
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="w-full bg-background/95 backdrop-blur-sm border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">QC</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">Qual Carreira</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Save Link Alert - ALWAYS VISIBLE */}
-        <Alert className="mb-8 bg-blue-50 border-blue-200">
-          <AlertCircle className="h-5 w-5 text-blue-600" />
-          <AlertDescription className="ml-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <p className="font-semibold text-blue-900 mb-1">
-                  💾 Salve este link para consultar seus resultados a qualquer momento!
-                </p>
-                <code className="text-xs bg-white/50 px-2 py-1 rounded break-all">
-                  {resultUrl}
-                </code>
-              </div>
-              <Button
-                onClick={handleCopyLink}
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-              >
-                {linkCopied ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Copiado!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copiar link
-                  </>
-                )}
-              </Button>
+    <div className="min-h-screen">
+      {/* Hero Section - Original Design */}
+      <section className="min-h-screen gradient-primary relative">
+        {/* Header */}
+        <header className="w-full bg-white/10 backdrop-blur-sm border-b border-white/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <Link to="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">QC</span>
+                </div>
+                <span className="text-xl font-bold text-white">Qual Carreira</span>
+              </Link>
             </div>
-          </AlertDescription>
-        </Alert>
+          </div>
+        </header>
 
-        {/* Welcome Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            Olá, <span className="text-gradient">{result.name}</span>! 👋
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Aqui estão seus resultados do teste vocacional
-          </p>
-        </div>
-
-        {/* Results Content */}
-        <div className={result.is_unlocked ? '' : 'relative'}>
-          {/* Blur overlay if locked */}
-          {!result.is_unlocked && (
-            <div className="absolute inset-0 z-10 backdrop-blur-sm bg-background/30 flex items-center justify-center">
-              <Card className="max-w-md mx-4">
-                <CardContent className="p-8 text-center">
-                  <Lock className="h-16 w-16 text-primary mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold mb-2">Resultados Bloqueados</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Desbloqueie seus resultados completos por apenas <strong>R$ 12,90</strong>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center text-white">
+          {/* Save Link Alert */}
+          <Alert className="mb-8 bg-white/10 border-white/20 backdrop-blur-sm">
+            <AlertCircle className="h-5 w-5 text-white" />
+            <AlertDescription className="ml-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-left">
+                  <p className="font-semibold text-white mb-1">
+                    💾 Salve este link para consultar seus resultados!
                   </p>
-                  <PaymentSection onPurchase={handleDesbloquear} />
-                </CardContent>
-              </Card>
+                  <code className="text-xs bg-white/10 px-2 py-1 rounded break-all text-white">
+                    {resultUrl}
+                  </code>
+                </div>
+                <Button
+                  onClick={handleCopyLink}
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 bg-white/10 text-white border-white/20 hover:bg-white/20"
+                >
+                  {linkCopied ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar link
+                    </>
+                  )}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+
+          {/* Badge */}
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
+            Resultados Completos
+          </div>
+
+          {/* User Name */}
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in-up">
+            {result.name.toLowerCase()}
+          </h1>
+
+          {/* Title */}
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            esse é o seu Perfil Vocacional
+          </h2>
+
+          {/* Subtitle */}
+          <p className="text-xl text-white/90 mb-16 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            Baseado nas suas respostas, identificamos suas principais 
+            aptidões e áreas de interesse.
+          </p>
+
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+            <Card className="bg-white/10 border-white/20 backdrop-blur-sm animate-scale-in" style={{ animationDelay: '0.3s' }}>
+              <CardContent className="p-8 text-center">
+                <div className="bg-white/20 rounded-full p-4 w-fit mx-auto mb-4">
+                  <BookOpen className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Perfil Detalhado</h3>
+                <p className="text-white/80 text-sm">
+                  Análise completa das suas aptidões e interesses
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-white/20 backdrop-blur-sm animate-scale-in" style={{ animationDelay: '0.4s' }}>
+              <CardContent className="p-8 text-center">
+                <div className="bg-white/20 rounded-full p-4 w-fit mx-auto mb-4">
+                  <Star className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Áreas Recomendadas</h3>
+                <p className="text-white/80 text-sm">
+                  Carreiras alinhadas com seu perfil vocacional
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/10 border-white/20 backdrop-blur-sm animate-scale-in" style={{ animationDelay: '0.5s' }}>
+              <CardContent className="p-8 text-center">
+                <div className="bg-white/20 rounded-full p-4 w-fit mx-auto mb-4">
+                  <Lightbulb className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Descubra Seu Potencial</h3>
+                <p className="text-white/80 text-sm">
+                  Explore seu perfil e saiba exatamente onde focar
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* CTA Button */}
+          <Button
+            onClick={handleDesbloquearClick}
+            size="lg"
+            className="bg-white hover:bg-white/90 text-primary text-lg font-bold px-12 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce-in mb-8"
+            style={{ animationDelay: '0.6s' }}
+          >
+            <Lock className="mr-2 h-5 w-5" />
+            {result.is_unlocked ? 'Ver Resultados' : 'Desbloquear Resultados'}
+          </Button>
+
+          {/* Scroll Indicator */}
+          {showFullResults && (
+            <div className="animate-bounce">
+              <ChevronDown className="h-8 w-8 text-white/70 mx-auto" />
             </div>
           )}
+        </main>
+      </section>
 
-          {/* Results Sections */}
-          <div className="space-y-8">
-            <RiasecResults 
-              isBlurred={!result.is_unlocked}
-              onDesbloquear={handleDesbloquear}
-            />
-            <GardnerResults 
-              isBlurred={!result.is_unlocked}
-            />
-            <GopcResults 
-              isBlurred={!result.is_unlocked}
-            />
-          </div>
+      {/* Results Sections - Only show after unlock */}
+      {showFullResults && (
+        <div ref={resultsRef}>
+          {/* RIASEC Results Section */}
+          <RiasecResults 
+            isBlurred={!result.is_unlocked}
+            onDesbloquear={handlePurchase}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+
+          {/* Payment Section (if locked) */}
+          {!result.is_unlocked && (
+            <PaymentSection onPurchase={handlePurchase} />
+          )}
+
+          {/* Footer */}
+          <ResultsFooter />
         </div>
+      )}
 
-        {/* Payment Section (if locked) */}
-        {!result.is_unlocked && (
-          <div className="mt-12">
-            <PaymentSection onPurchase={handleDesbloquear} />
-          </div>
-        )}
-
-        {/* Footer */}
-        <ResultsFooter />
-      </main>
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        testId={id || ''}
+        userEmail={result.email}
+        userName={result.name}
+      />
     </div>
   );
 };
