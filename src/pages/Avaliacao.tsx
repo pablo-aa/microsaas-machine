@@ -9,6 +9,8 @@ import FormularioDados from "./FormularioDados";
 import ResultadosCompletos from "./ResultadosCompletos";
 import { v4 as uuidv4 } from 'uuid';
 import { questions, TOTAL_QUESTIONS } from "@/data/questions";
+import { assessmentStorage } from "@/lib/assessmentStorage";
+import { useToast } from "@/hooks/use-toast";
 
 type AssessmentStage = 'questions' | 'processing' | 'form' | 'results-loading' | 'results';
 
@@ -19,6 +21,7 @@ interface Answer {
 
 const Avaliacao = () => {
   const { id } = useParams();
+  const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
@@ -26,10 +29,28 @@ const Avaliacao = () => {
   const [userData, setUserData] = useState<{name: string; email: string; age: string} | null>(null);
   const [testId, setTestId] = useState<string>('');
 
-  // Generate unique test ID when component mounts
+  // Generate unique test ID and load saved progress when component mounts
   useEffect(() => {
-    setTestId(uuidv4());
-  }, []);
+    const newTestId = id || uuidv4();
+    setTestId(newTestId);
+    
+    // Try to load saved progress
+    const savedProgress = assessmentStorage.loadProgress(newTestId);
+    if (savedProgress) {
+      setAnswers(savedProgress.answers);
+      setCurrentQuestion(savedProgress.currentQuestion);
+      
+      // Set selected answer for current question
+      const currentQuestionData = questions[savedProgress.currentQuestion];
+      const currentAnswer = savedProgress.answers.find(a => a.question_id === currentQuestionData?.id);
+      setSelectedAnswer(currentAnswer?.score);
+      
+      toast({
+        title: "Progresso recuperado",
+        description: `Continuando da questão ${savedProgress.currentQuestion + 1}/${TOTAL_QUESTIONS}`,
+      });
+    }
+  }, [id]);
 
   const totalQuestions = TOTAL_QUESTIONS;
   const progress = ((currentQuestion + (selectedAnswer ? 1 : 0)) / totalQuestions) * 100;
@@ -55,13 +76,19 @@ const Avaliacao = () => {
     setAnswers(newAnswers);
 
     if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      const nextQuestionIndex = currentQuestion + 1;
+      setCurrentQuestion(nextQuestionIndex);
+      
+      // Save progress to localStorage
+      assessmentStorage.saveProgress(testId, newAnswers, nextQuestionIndex);
+      
       // Check if next question already has an answer
-      const nextQuestionData = questions[currentQuestion + 1];
+      const nextQuestionData = questions[nextQuestionIndex];
       const nextAnswer = newAnswers.find(a => a.question_id === nextQuestionData.id);
       setSelectedAnswer(nextAnswer?.score);
     } else {
-      // Assessment completed - show processing loading
+      // Assessment completed - clear progress and show processing loading
+      assessmentStorage.clearProgress(testId);
       setStage('processing');
       setTimeout(() => {
         setStage('form');
@@ -80,11 +107,28 @@ const Avaliacao = () => {
   };
 
   const handleRestart = () => {
+    assessmentStorage.clearProgress(testId);
     setCurrentQuestion(0);
     setAnswers([]);
     setSelectedAnswer(undefined);
     setStage('questions');
     setUserData(null);
+  };
+
+  const handleAutoFill = () => {
+    const randomAnswers: Answer[] = questions.map(q => ({
+      question_id: q.id,
+      score: Math.floor(Math.random() * 5) + 1 // Random score between 1-5
+    }));
+    
+    setAnswers(randomAnswers);
+    setCurrentQuestion(totalQuestions - 1);
+    setSelectedAnswer(randomAnswers[totalQuestions - 1].score);
+    
+    toast({
+      title: "Respostas preenchidas",
+      description: "Todas as 60 questões foram respondidas aleatoriamente para teste",
+    });
   };
 
   const handleFormSubmit = (data: {name: string; email: string; age: string}) => {
@@ -230,6 +274,18 @@ const Avaliacao = () => {
             <span className="text-sm text-muted-foreground">
               {currentQuestion + 1} de {totalQuestions}
             </span>
+
+            {/* DEV ONLY: Auto-fill button */}
+            {import.meta.env.DEV && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleAutoFill}
+                className="ml-4"
+              >
+                🎲 Preencher Aleatoriamente
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
