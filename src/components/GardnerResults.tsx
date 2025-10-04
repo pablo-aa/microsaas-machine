@@ -1,29 +1,40 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface GardnerResultsProps {
   isBlurred?: boolean;
 }
 
-// Gardner data - mock data based on your image
+// Gardner data - only top 3
 const gardnerData = [
-  { name: "Interpessoal", value: 30, color: "#3B82F6" },
-  { name: "Intrapessoal", value: 35, color: "#10B981" },
-  { name: "Espacial", value: 25, color: "#F97316" },
-  { name: "Outros", value: 10, color: "#E5E7EB" }
+  { name: "Intrapessoal", value: 35, color: "#10B981", percentage: "39%" },
+  { name: "Interpessoal", value: 30, color: "#3B82F6", percentage: "33%" },
+  { name: "Espacial", value: 25, color: "#F97316", percentage: "28%" }
 ];
 
 // Top 3 intelligences
 const topIntelligences = [
-  { name: "Interpessoal", color: "#3B82F6", rank: 1 },
-  { name: "Intrapessoal", color: "#10B981", rank: 2 },
+  { name: "Intrapessoal", color: "#10B981", rank: 1 },
+  { name: "Interpessoal", color: "#3B82F6", rank: 2 },
   { name: "Espacial", color: "#F97316", rank: 3 }
 ];
 
 const careerRecommendations = {
-  interpessoal: ["Psicólogo", "Professor", "Assistente Social", "Terapeuta", "Recursos Humanos"],
   intrapessoal: ["Escritor", "Filósofo", "Pesquisador", "Consultor", "Empreendedor"],
+  interpessoal: ["Psicólogo", "Professor", "Assistente Social", "Terapeuta", "Recursos Humanos"],
   espacial: ["Arquiteto", "Designer", "Piloto", "Cirurgião", "Engenheiro"]
+};
+
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-2 rounded shadow-lg border">
+        <p className="font-semibold">{payload[0].name}</p>
+        <p className="text-sm">{payload[0].payload.percentage}</p>
+      </div>
+    );
+  }
+  return null;
 };
 
 const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
@@ -50,15 +61,28 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
                   cy="50%"
                   outerRadius={120}
                   dataKey="value"
-                  label={({ name }) => name}
-                  labelLine={false}
+                  label={false}
                 >
                   {gardnerData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          
+          {/* Legend */}
+          <div className="flex flex-col gap-2 text-sm">
+            {gardnerData.map((item) => (
+              <div key={item.name} className="flex items-center space-x-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{backgroundColor: item.color}}
+                />
+                <span className="text-foreground">{item.name}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -96,14 +120,14 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           {/* Detailed Section - Intrapessoal */}
           <Card className={`${isBlurred ? 'relative overflow-hidden' : ''}`}>
             <CardContent className="p-6">
-              <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                    1
-                  </div>
-                  <h4 className="text-lg font-bold text-foreground">Intrapessoal</h4>
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                  1
                 </div>
-                
+                <h4 className="text-lg font-bold text-foreground">Intrapessoal</h4>
+              </div>
+              
+              <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
                 <div className="space-y-3">
                   <div className="h-4 bg-muted rounded"></div>
                   <div className="h-4 bg-muted rounded w-4/5"></div>
@@ -129,7 +153,21 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           Carreiras Recomendadas
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Intrapessoal */}
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <h4 className="font-semibold text-foreground">Intrapessoal</h4>
+            </div>
+            
+            <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
+              {careerRecommendations.intrapessoal.map((career, idx) => (
+                <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+              ))}
+            </div>
+          </div>
+
           {/* Interpessoal */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
@@ -144,15 +182,15 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
             </div>
           </div>
 
-          {/* Intrapessoal */}
+          {/* Espacial */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <h4 className="font-semibold text-foreground">Intrapessoal</h4>
+              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <h4 className="font-semibold text-foreground">Espacial</h4>
             </div>
             
             <div className={`space-y-2 ${isBlurred ? 'filter blur-sm' : ''}`}>
-              {careerRecommendations.intrapessoal.map((career, idx) => (
+              {careerRecommendations.espacial.map((career, idx) => (
                 <div key={idx} className="h-6 bg-muted rounded w-full"></div>
               ))}
             </div>

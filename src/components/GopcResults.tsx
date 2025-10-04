@@ -1,8 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 
 interface GopcResultsProps {
   isBlurred?: boolean;
 }
+
+// Radar chart data
+const radarData = [
+  { competency: "Autoconhecimento", value: 85, fullMark: 100 },
+  { competency: "Planejamento", value: 75, fullMark: 100 },
+  { competency: "Tomada de Decisão", value: 65, fullMark: 100 }
+];
 
 // GOPC competencies
 const gopcCompetencies = [
@@ -50,90 +58,39 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
           ))}
         </div>
 
-        {/* Right - Triangle Radar Chart */}
+        {/* Right - Professional Radar Chart */}
         <div className="flex flex-col items-center justify-center">
-          <div className="relative w-80 h-80">
-            {/* Triangle SVG Radar Chart */}
-            <svg viewBox="0 0 240 220" className="w-full h-full">
-              {/* Grid lines */}
-              <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#F3F4F6" strokeWidth="0.5"/>
-                </pattern>
-              </defs>
-              
-              {/* Background triangle levels */}
-              <polygon
-                points="120,30 70,170 170,170"
-                fill="none"
-                stroke="#F3F4F6"
-                strokeWidth="1"
-              />
-              <polygon
-                points="120,50 80,150 160,150"
-                fill="none"
-                stroke="#F3F4F6"
-                strokeWidth="1"
-              />
-              <polygon
-                points="120,70 90,130 150,130"
-                fill="none"
-                stroke="#F3F4F6"
-                strokeWidth="1"
-              />
-              
-              {/* Main triangle outline */}
-              <polygon
-                points="120,30 70,170 170,170"
-                fill="none"
-                stroke="#E5E7EB"
-                strokeWidth="2"
-              />
-              
-              {/* Data triangle - sample scores */}
-              <polygon
-                points="120,60 85,140 155,140"
-                fill="#3B82F6"
-                fillOpacity="0.2"
-                stroke="#3B82F6"
-                strokeWidth="2"
-              />
-              
-              {/* Data points */}
-              <circle cx="120" cy="60" r="4" fill="#3B82F6" />
-              <circle cx="85" cy="140" r="4" fill="#F97316" />
-              <circle cx="155" cy="140" r="4" fill="#10B981" />
-              
-              {/* Axis lines */}
-              <line x1="120" y1="30" x2="120" y2="170" stroke="#E5E7EB" strokeWidth="1"/>
-              <line x1="120" y1="170" x2="70" y2="170" stroke="#E5E7EB" strokeWidth="1"/>
-              <line x1="120" y1="170" x2="170" y2="170" stroke="#E5E7EB" strokeWidth="1"/>
-              
-              {/* Labels */}
-              <text x="120" y="20" textAnchor="middle" className="text-xs fill-blue-600 font-medium">
-                Autoconhecimento
-              </text>
-              <text x="120" y="15" textAnchor="middle" className="text-xs fill-blue-600">
-                (AK) - 85%
-              </text>
-              
-              <text x="50" y="180" textAnchor="middle" className="text-xs fill-orange-600 font-medium">
-                Tomada de
-              </text>
-              <text x="50" y="190" textAnchor="middle" className="text-xs fill-orange-600 font-medium">
-                Decisão
-              </text>
-              <text x="50" y="200" textAnchor="middle" className="text-xs fill-orange-600">
-                (TD) - 65%
-              </text>
-              
-              <text x="190" y="180" textAnchor="middle" className="text-xs fill-green-600 font-medium">
-                Planejamento
-              </text>
-              <text x="190" y="190" textAnchor="middle" className="text-xs fill-green-600">
-                (PC) - 75%
-              </text>
-            </svg>
+          <div className="w-full h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={radarData}>
+                <PolarGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <PolarAngleAxis 
+                  dataKey="competency" 
+                  tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                />
+                <PolarRadiusAxis 
+                  angle={90} 
+                  domain={[0, 100]}
+                  tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                />
+                <Radar 
+                  name="GOPC" 
+                  dataKey="value" 
+                  stroke="#3B82F6" 
+                  fill="#3B82F6" 
+                  fillOpacity={0.4}
+                  strokeWidth={2}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value}%`, 'Pontuação']}
+                  contentStyle={{ 
+                    backgroundColor: 'white',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px'
+                  }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -158,14 +115,16 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
                 {competency.code}
               </div>
               
-              <div className={`flex-1 ${isBlurred ? 'filter blur-sm' : ''}`}>
+              <div className="flex-1">
                 <h4 className="font-semibold text-foreground mb-2">
-                  {competency.name}: 
+                  {competency.name}
                 </h4>
-                <div className="space-y-2">
-                  <div className="h-4 bg-muted rounded"></div>
-                  <div className="h-4 bg-muted rounded w-4/5"></div>
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded"></div>
+                    <div className="h-4 bg-muted rounded w-4/5"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -176,11 +135,11 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
       {/* Strong Point Section */}
       <Card className={`${isBlurred ? 'relative overflow-hidden' : ''}`}>
         <CardContent className="p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
+            Seu Ponto Forte: Autoconhecimento
+          </h3>
+          
           <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Seu Ponto Forte: Autoconhecimento
-            </h3>
-            
             <div className="space-y-3">
               <div className="h-4 bg-muted rounded"></div>
               <div className="h-4 bg-muted rounded w-5/6"></div>

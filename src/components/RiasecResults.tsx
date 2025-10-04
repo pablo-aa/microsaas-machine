@@ -87,7 +87,7 @@ const RiasecResults = ({
                   {item.name} ({item.code})
                 </span>
               </div>
-              <div className="text-muted-foreground">
+              <div className={`text-muted-foreground ${isBlurred ? 'filter blur-sm' : ''}`}>
                 {item.value} pontos
               </div>
             </div>
@@ -99,53 +99,55 @@ const RiasecResults = ({
       <div className="mb-8">
         <h3 className="text-xl font-bold text-foreground mb-6">Detalhamento das Aptidões</h3>
         
-        {/* Category Headers */}
+        {/* Category Headers - Clickable */}
         <div className="flex space-x-2 mb-6">
           {riasecData.map((item) => (
-            <div 
+            <button 
               key={item.code}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                item.code === 'R' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                item.code === 'R' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
               {item.name}
-            </div>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Detailed Card - Blurred */}
+      {/* Detailed Card - Blurred only on sensitive content */}
       <Card className={`relative ${isBlurred ? 'overflow-hidden' : ''}`}>
         <CardContent className="p-8">
-          <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-            <div className="flex items-start space-x-4 mb-6">
-              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">R</span>
-              </div>
-              <div>
-                <h4 className="text-xl font-bold text-foreground mb-2">Realista</h4>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h5 className="font-semibold text-foreground mb-2">Descrição</h5>
+          <div className="flex items-start space-x-4 mb-6">
+            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">R</span>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xl font-bold text-foreground mb-2">Realista</h4>
+              
+              <div className="space-y-4">
+                <div>
+                  <h5 className="font-semibold text-foreground mb-2">Descrição</h5>
+                  <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
                     <div className="h-4 bg-muted rounded mb-2"></div>
                     <div className="h-4 bg-muted rounded w-3/4"></div>
                   </div>
-                  
-                  <div>
-                    <h5 className="font-semibold text-foreground mb-2">Características Principais</h5>
+                </div>
+                
+                <div>
+                  <h5 className="font-semibold text-foreground mb-2">Características Principais</h5>
+                  <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
                     <div className="h-4 bg-muted rounded mb-2"></div>
                     <div className="h-4 bg-muted rounded mb-2"></div>
                     <div className="h-4 bg-muted rounded w-2/3"></div>
                   </div>
-                  
-                  <div>
-                    <h5 className="font-semibold text-foreground mb-2">Carreiras Recomendadas</h5>
-                    <div className="flex space-x-2 mb-2">
-                      <div className="h-8 bg-muted rounded px-4 w-24"></div>
-                      <div className="h-8 bg-muted rounded px-4 w-32"></div>
-                      <div className="h-8 bg-muted rounded px-4 w-28"></div>
-                    </div>
+                </div>
+                
+                <div>
+                  <h5 className="font-semibold text-foreground mb-2">Carreiras Recomendadas</h5>
+                  <div className={`flex flex-wrap gap-2 ${isBlurred ? 'filter blur-sm select-none' : ''}`}>
+                    <div className="h-8 bg-muted rounded px-4 w-24"></div>
+                    <div className="h-8 bg-muted rounded px-4 w-32"></div>
+                    <div className="h-8 bg-muted rounded px-4 w-28"></div>
                   </div>
                 </div>
               </div>

@@ -215,41 +215,6 @@ const Resultado = () => {
         </header>
 
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center text-white">
-          {/* Save Link Alert */}
-          <Alert className="mb-8 bg-white/10 border-white/20 backdrop-blur-sm">
-            <AlertCircle className="h-5 w-5 text-white" />
-            <AlertDescription className="ml-2">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="text-left">
-                  <p className="font-semibold text-white mb-1">
-                    💾 Salve este link para consultar seus resultados!
-                  </p>
-                  <code className="text-xs bg-white/10 px-2 py-1 rounded break-all text-white">
-                    {resultUrl}
-                  </code>
-                </div>
-                <Button
-                  onClick={handleCopyLink}
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 bg-white/10 text-white border-white/20 hover:bg-white/20"
-                >
-                  {linkCopied ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copiar link
-                    </>
-                  )}
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-
           {/* Badge */}
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
             Resultados Completos
