@@ -75,8 +75,19 @@ serve(async (req) => {
     }
 
     // 3. Verify payment status by calling check-payment-status function
-    // Special case: DEV bypass
+    // Special case: DEV bypass (only allowed in development environment)
     if (paymentId === 'DEV_BYPASS') {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const isDev = supabaseUrl.includes('sqmkerddgvshfqwgwnyc'); // DEV project
+      
+      if (!isDev) {
+        console.error('[unlock-result] DEV_BYPASS not allowed in production');
+        return new Response(
+          JSON.stringify({ error: 'Invalid payment_id' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       console.log(`[unlock-result] DEV BYPASS MODE - Skipping payment verification`);
     } else {
       console.log(`[unlock-result] Checking payment status for payment_id: ${paymentId}`);
