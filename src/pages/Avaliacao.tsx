@@ -121,9 +121,13 @@ const Avaliacao = () => {
       score: Math.floor(Math.random() * 5) + 1 // Random score between 1-5
     }));
     
+    const lastQuestionIndex = totalQuestions - 1;
     setAnswers(randomAnswers);
-    setCurrentQuestion(totalQuestions - 1);
-    setSelectedAnswer(randomAnswers[totalQuestions - 1].score);
+    setCurrentQuestion(lastQuestionIndex);
+    setSelectedAnswer(randomAnswers[lastQuestionIndex].score);
+    
+    // Save to localStorage
+    assessmentStorage.saveProgress(testId, randomAnswers, lastQuestionIndex);
     
     toast({
       title: "Respostas preenchidas",
