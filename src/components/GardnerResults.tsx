@@ -58,10 +58,10 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
         {/* Left - Pie Chart */}
         <div className="flex flex-col items-center">
-          <div className="w-80 h-80 mb-6">
+          <div className="w-full max-w-xs sm:max-w-sm h-64 sm:h-80 mb-6">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -84,9 +84,9 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           {/* Legend */}
           <div className="flex flex-col gap-2 text-sm">
             {gardnerData.map((item) => (
-              <div key={item.name} className="flex items-center space-x-2">
+              <div key={item.name} className="flex items-center justify-center sm:justify-start space-x-2">
                 <div 
-                  className="w-3 h-3 rounded-full" 
+                  className="w-3 h-3 rounded-full flex-shrink-0" 
                   style={{backgroundColor: item.color}}
                 />
                 <span className="text-foreground">{item.name}</span>
@@ -178,11 +178,11 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           Carreiras Recomendadas
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {/* Intrapessoal */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
               <h4 className="font-semibold text-foreground">Intrapessoal</h4>
             </div>
             
@@ -204,7 +204,7 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           {/* Interpessoal */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
               <h4 className="font-semibold text-foreground">Interpessoal</h4>
             </div>
             
@@ -226,7 +226,7 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           {/* Espacial */}
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
               <h4 className="font-semibold text-foreground">Espacial</h4>
             </div>
             

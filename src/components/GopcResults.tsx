@@ -37,7 +37,7 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
         {/* Left - Competency Cards with Scores */}
         <div className="space-y-4">
           {gopcCompetencies.map((competency, index) => {
@@ -90,7 +90,7 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
 
         {/* Right - Professional Radar Chart */}
         <div className="flex flex-col items-center justify-center">
-          <div className="w-full h-96">
+          <div className="w-full h-64 sm:h-80 lg:h-96">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
                 <PolarGrid strokeDasharray="3 3" stroke="#E5E7EB" />
@@ -136,19 +136,36 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
         </p>
 
         <div className="space-y-6">
-          {gopcCompetencies.map((competency) => (
-            <div key={competency.code} className="flex items-start space-x-4">
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-                style={{ backgroundColor: competency.color }}
-              >
-                {competency.code}
-              </div>
-              
+          {gopcCompetencies.map((competency) => {
+            const scoreData = radarData.find(d => d.competency === competency.name);
+            const score = scoreData?.value || 0;
+            
+            return (
+              <div key={competency.code} className="flex items-start space-x-4">
+                <div 
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+                  style={{ backgroundColor: competency.color }}
+                >
+                  {competency.code}
+                </div>
+                
                 <div className="flex-1">
-                  <h4 className="font-semibold text-foreground mb-2">
-                    {competency.name}
-                  </h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-foreground">
+                      {competency.name}
+                    </h4>
+                    {isBlurred ? (
+                      <div className="filter blur-sm select-none">
+                        <div className="text-xl font-bold" style={{ color: competency.color }}>
+                          {score}%
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xl font-bold" style={{ color: competency.color }}>
+                        {score}%
+                      </div>
+                    )}
+                  </div>
                   {isBlurred ? (
                     <div className="filter blur-sm select-none">
                       <div className="space-y-2">
@@ -161,8 +178,9 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
                     <p className="text-muted-foreground">{competencyDescriptions[competency.code]}</p>
                   )}
                 </div>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 
