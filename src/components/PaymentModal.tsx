@@ -70,6 +70,8 @@ export const PaymentModal = ({
           test_id: testId,
           email: userEmail,
           name: userName,
+          // Explicit environment flag for accurate pricing on Edge Functions
+          isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
         },
       });
 

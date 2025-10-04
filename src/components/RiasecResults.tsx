@@ -264,8 +264,8 @@ const RiasecResults = ({
     <section className="bg-background py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
-          <div className="flex flex-wrap gap-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8 min-w-0">
+          <div className="flex flex-wrap gap-1 min-w-0">
             <Button 
               variant={activeTab === 'riasec' ? 'default' : 'outline'}
               onClick={() => onTabChange?.('riasec')}
@@ -291,9 +291,9 @@ const RiasecResults = ({
           
           <Button 
             onClick={onDesbloquear}
-            className="gradient-primary hover:opacity-90 w-full sm:w-auto"
+            className="gradient-primary hover:opacity-90 w-full sm:w-auto max-w-full"
           >
-            Desbloquear Resultados
+            <span className="truncate">Desbloquear Resultados</span>
           </Button>
         </div>
 

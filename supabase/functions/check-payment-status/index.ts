@@ -15,7 +15,20 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const payment_id = url.searchParams.get('payment_id');
+    let payment_id = url.searchParams.get('payment_id');
+
+    // Also support JSON body payload (store for later)
+    let body: any = null;
+    if (req.method !== 'GET') {
+      try {
+        body = await req.json();
+        if (!payment_id) {
+          payment_id = body?.payment_id || body?.id || null;
+        }
+      } catch (_) {
+        // ignore JSON parse errors
+      }
+    }
 
     if (!payment_id) {
       throw new Error('payment_id is required');

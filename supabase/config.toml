@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.unlock-result]
 verify_jwt = false
+
+[functions.process-payment-webhook]
+verify_jwt = false

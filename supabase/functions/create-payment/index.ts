@@ -30,9 +30,20 @@ serve(async (req) => {
     
     console.log('Access token found:', accessToken.substring(0, 10) + '...');
 
-    // Detect amount based on origin (prod vs dev)
-    const origin = req.headers.get('origin') || '';
-    const isProd = origin.includes('qualcarreira.com');
+    // Detect amount by explicit body flag or headers (prod vs dev)
+    let isProd = false;
+    try {
+      const body = await req.clone().json();
+      if (typeof body?.isProd === 'boolean') {
+        isProd = body.isProd;
+      }
+    } catch (_) {
+      // ignore, fallback to headers below
+    }
+    if (!isProd) {
+      const origin = req.headers.get('origin') || req.headers.get('referer') || '';
+      isProd = origin.includes('qualcarreira.com');
+    }
     const transactionAmount = isProd ? 1.00 : 12.90;
 
     // Criar pagamento PIX no Mercado Pago
