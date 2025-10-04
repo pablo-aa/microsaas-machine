@@ -12,8 +12,7 @@
 - `create-result`
 
 ### 🔴 Faltam deployar em DEV:
-- `get-result` (PROMPT 6) **← DEPLOY ESTE AGORA**
-- `unlock-result` (PROMPT 7)
+- `unlock-result` (PROMPT 7) **← DEPLOY ESTE AGORA**
 
 ### 🟣 Para fazer no FINAL (PRODUÇÃO):
 - [ ] Deploy de TODAS as edge functions em PROD
@@ -142,16 +141,24 @@
 
 ---
 
-## 🔴 PROMPT 7: Criar Edge Function `unlock-result`
-**Status**: 🔴 **PENDENTE**
+## ✅ PROMPT 7: Criar Edge Function `unlock-result`
+**Status**: ✅ **CONCLUÍDO**
 
-### O que fazer:
-1. Criar `supabase/functions/unlock-result/index.ts`
-2. Implementar:
-   - Receber `result_id` e `payment_id`
-   - Verificar status do pagamento (via `check-payment-status`)
-   - Se aprovado: atualizar `is_unlocked = true` em `test_results`
-   - Retornar status de sucesso
+### O que foi feito:
+- ✅ Criado `supabase/functions/unlock-result/index.ts`
+- ✅ Implementada validação de `result_id` e `payment_id`
+- ✅ Verificação se resultado existe no banco
+- ✅ Check se resultado já está desbloqueado (evita duplicação)
+- ✅ Chamada interna à `check-payment-status` para verificar pagamento
+- ✅ Atualização de `is_unlocked = true` e `unlocked_at` quando aprovado
+- ✅ Adicionado `verify_jwt = false` no `config.toml`
+- ✅ Tratamento completo de erros (404, 400, 500)
+- ✅ Logging detalhado para debug
+
+### Resultado:
+- ✅ Edge function pronta para ser deployada
+- ✅ Valida pagamento antes de desbloquear
+- ✅ Atualiza status no banco automaticamente
 
 ---
 
@@ -189,7 +196,7 @@ Fase 3A - Backend Core
 ├── ✅ PROMPT 4: FormularioDados
 ├── ✅ PROMPT 5: Rota /resultado/:id
 ├── ✅ PROMPT 6: get-result
-├── 🔴 PROMPT 7: unlock-result
+├── ✅ PROMPT 7: unlock-result
 └── 🔴 PROMPT 8: Pagamento completo
 
 Fase 3B - Email (Opcional)
@@ -198,6 +205,6 @@ Fase 3B - Email (Opcional)
 
 ---
 
-## 🎯 Próximo Passo (depois de deployar get-result)
+## 🎯 Próximo Passo
 
-**Execute**: "Implementar PROMPT 7: Criar edge function unlock-result"
+**Execute**: "Implementar PROMPT 8: Integrar fluxo de pagamento completo no PaymentModal"
