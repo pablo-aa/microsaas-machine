@@ -91,6 +91,10 @@ const Resultado = () => {
         unlocked_at: data.unlocked_at
       });
 
+      if (data.is_unlocked) {
+        setShowFullResults(true);
+      }
+
     } catch (error) {
       console.error('Error fetching result:', error);
       setLoadingState('error');

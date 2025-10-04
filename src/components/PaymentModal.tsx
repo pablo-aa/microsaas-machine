@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Check, Copy, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { getMercadoPagoConfig } from '@/config/mercadopago';
 
-// Get Supabase URL from environment
+// Get Supabase URL from environment (kept for potential direct calls if needed)
 const getSupabaseUrl = () => {
   const hostname = window.location.hostname;
-  const isProduction = hostname === 'carrerium.com' || hostname === 'www.carrerium.com';
+  const isProduction = hostname === 'qualcarreira.com' || hostname === 'www.qualcarreira.com';
   return isProduction 
     ? 'https://iwovfvrmjaonzqlaavmi.supabase.co'
     : 'https://sqmkerddgvshfqwgwnyc.supabase.co';
@@ -39,8 +40,7 @@ export const PaymentModal = ({
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected' | 'error'>('pending');
   const [error, setError] = useState('');
   const { toast } = useToast();
-
-  // Criar pagamento
+  const price = getMercadoPagoConfig().price;
   useEffect(() => {
     if (isOpen && !paymentId) {
       createPayment();
@@ -103,23 +103,15 @@ export const PaymentModal = ({
     try {
       console.log('Checking payment status:', paymentId);
 
-      const supabaseUrl = getSupabaseUrl();
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/check-payment-status?payment_id=${paymentId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('check-payment-status', {
+        body: { payment_id: paymentId }
+      });
 
-      if (!response.ok) {
-        console.error('Error checking status:', response.status);
+      if (error) {
+        console.error('Error checking status:', error);
         return;
       }
 
-      const data = await response.json();
       console.log('Payment status:', data);
 
       if (data.status === 'approved') {
@@ -128,8 +120,6 @@ export const PaymentModal = ({
           title: "Pagamento aprovado!",
           description: "Seus resultados completos estão sendo desbloqueados...",
         });
-        
-        // Unlock the result
         await unlockResult();
       } else if (data.status === 'rejected') {
         setStatus('rejected');
@@ -278,7 +268,9 @@ export const PaymentModal = ({
               </div>
 
               <div className="text-center">
-                <p className="text-2xl font-bold text-primary">R$ 12,90</p>
+                <p className="text-2xl font-bold text-primary">
+                  {price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Aguardando pagamento...
                 </p>
