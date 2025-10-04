@@ -1,5 +1,5 @@
 -- =====================================================
--- CARRERIUM - Initial Database Schema
+-- QUALCARREIRA - Initial Database Schema
 -- Execute este SQL no SQL Editor do Supabase (DEV e PROD)
 -- =====================================================
 
