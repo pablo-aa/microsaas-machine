@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, CheckCircle, Loader2 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import LikertScale from "@/components/LikertScale";
 import FormularioDados from "./FormularioDados";
 import ResultadosCompletos from "./ResultadosCompletos";
@@ -21,6 +21,7 @@ interface Answer {
 
 const Avaliacao = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
@@ -31,11 +32,17 @@ const Avaliacao = () => {
 
   // Generate unique test ID and load saved progress when component mounts
   useEffect(() => {
-    const newTestId = id || uuidv4();
-    setTestId(newTestId);
+    if (!id) {
+      // No ID in URL, generate new one and navigate to it
+      const newTestId = uuidv4();
+      navigate(`/avaliacao/${newTestId}`, { replace: true });
+      return;
+    }
+    
+    setTestId(id);
     
     // Try to load saved progress
-    const savedProgress = assessmentStorage.loadProgress(newTestId);
+    const savedProgress = assessmentStorage.loadProgress(id);
     if (savedProgress) {
       setAnswers(savedProgress.answers);
       setCurrentQuestion(savedProgress.currentQuestion);
@@ -50,7 +57,7 @@ const Avaliacao = () => {
         description: `Continuando da questão ${savedProgress.currentQuestion + 1}/${TOTAL_QUESTIONS}`,
       });
     }
-  }, [id]);
+  }, [id, navigate]);
 
   const totalQuestions = TOTAL_QUESTIONS;
   const progress = ((currentQuestion + (selectedAnswer ? 1 : 0)) / totalQuestions) * 100;
