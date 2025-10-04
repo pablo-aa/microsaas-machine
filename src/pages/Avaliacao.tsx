@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, CheckCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import LikertScale from "@/components/LikertScale";
 import FormularioDados from "./FormularioDados";
@@ -11,6 +11,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { questions, TOTAL_QUESTIONS } from "@/data/questions";
 import { assessmentStorage } from "@/lib/assessmentStorage";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { profiles, generateProfileAnswers, type ProfileType } from "@/lib/testProfiles";
 
 type AssessmentStage = 'questions' | 'processing' | 'form' | 'results-loading' | 'results';
 
@@ -139,6 +148,30 @@ const Avaliacao = () => {
     toast({
       title: "Respostas preenchidas",
       description: "Todas as 60 questões foram respondidas aleatoriamente para teste",
+    });
+  };
+
+  const handleProfileTest = (profileType: ProfileType) => {
+    // Generate answers based on selected profile
+    const profileAnswers = generateProfileAnswers(profileType);
+    const profileAnswersArray: Answer[] = questions.map(q => ({
+      question_id: q.id,
+      score: profileAnswers[q.id]
+    }));
+    
+    const lastQuestionIndex = totalQuestions - 1;
+    setAnswers(profileAnswersArray);
+    setCurrentQuestion(lastQuestionIndex);
+    setSelectedAnswer(profileAnswersArray[lastQuestionIndex].score);
+    
+    // Save to localStorage
+    assessmentStorage.saveProgress(testId, profileAnswersArray, lastQuestionIndex);
+    
+    const profile = profiles[profileType];
+    toast({
+      title: `Perfil ${profile.name} aplicado`,
+      description: profile.description,
+      duration: 4000,
     });
   };
 
@@ -283,14 +316,39 @@ const Avaliacao = () => {
 
             {/* DEV ONLY: Auto-fill button */}
             {!window.location.hostname.includes('qualcarreira.com') && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleAutoFill}
-                className="ml-4"
-              >
-                🎲 Preencher Aleatoriamente
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="ml-4 flex items-center gap-2"
+                  >
+                    🎯 Perfis de Teste
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-80">
+                  <DropdownMenuLabel>Selecione um perfil</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {(Object.entries(profiles) as [ProfileType, typeof profiles[ProfileType]][]).map(([key, profile]) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={() => handleProfileTest(key)}
+                      className="cursor-pointer flex flex-col items-start py-3"
+                    >
+                      <span className="font-semibold">{profile.name}</span>
+                      <span className="text-xs text-muted-foreground">{profile.description}</span>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleAutoFill}
+                    className="cursor-pointer"
+                  >
+                    🎲 Aleatório (não recomendado)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 

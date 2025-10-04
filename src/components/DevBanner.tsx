@@ -1,6 +1,15 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { profiles, generateProfileAnswers, type ProfileType } from "@/lib/testProfiles";
 
 export const DevBanner = () => {
   const navigate = useNavigate();
@@ -10,8 +19,19 @@ export const DevBanner = () => {
   
   if (!isDev) return null;
 
+  const handleProfileTest = (profileType: ProfileType) => {
+    // Generate answers based on selected profile
+    const profileAnswers = generateProfileAnswers(profileType);
+    
+    // Store in sessionStorage
+    sessionStorage.setItem('testAnswers', JSON.stringify(profileAnswers));
+    
+    // Navigate to form page
+    navigate('/formulario-dados');
+  };
+
   const handleRandomTest = () => {
-    // Generate random answers for all 60 questions
+    // Generate completely random answers for all 60 questions
     const randomAnswers: Record<number, number> = {};
     for (let i = 1; i <= 60; i++) {
       randomAnswers[i] = Math.floor(Math.random() * 5) + 1; // 1 to 5
@@ -33,14 +53,41 @@ export const DevBanner = () => {
       <AlertTriangle className="w-4 h-4" />
       
       {isOnAssessmentPage && (
-        <Button
-          onClick={handleRandomTest}
-          size="sm"
-          variant="secondary"
-          className="ml-4 absolute right-4"
-        >
-          🎲 Responder Aleatoriamente
-        </Button>
+        <div className="absolute right-4 flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="flex items-center gap-2"
+              >
+                🎯 Perfis de Teste
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Selecione um perfil</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {(Object.entries(profiles) as [ProfileType, typeof profiles[ProfileType]][]).map(([key, profile]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => handleProfileTest(key)}
+                  className="cursor-pointer flex flex-col items-start py-3"
+                >
+                  <span className="font-semibold">{profile.name}</span>
+                  <span className="text-xs text-muted-foreground">{profile.description}</span>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleRandomTest}
+                className="cursor-pointer"
+              >
+                🎲 Aleatório (não recomendado)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )}
     </div>
   );
