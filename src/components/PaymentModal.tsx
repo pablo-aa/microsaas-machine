@@ -128,16 +128,70 @@ export const PaymentModal = ({
           title: "Pagamento aprovado!",
           description: "Seus resultados completos estão sendo desbloqueados...",
         });
-        setTimeout(() => {
-          onSuccess();
-          onClose();
-        }, 2000);
+        
+        // Unlock the result
+        await unlockResult();
       } else if (data.status === 'rejected') {
         setStatus('rejected');
         setError('Pagamento rejeitado. Tente novamente.');
       }
     } catch (err) {
       console.error('Error checking payment status:', err);
+    }
+  };
+
+  const unlockResult = async () => {
+    try {
+      console.log('Unlocking result:', { testId, paymentId });
+
+      const { data, error } = await supabase.functions.invoke('unlock-result', {
+        body: {
+          result_id: testId,
+          payment_id: paymentId,
+        },
+      });
+
+      if (error) {
+        console.error('Error unlocking result:', error);
+        toast({
+          title: "Erro ao desbloquear",
+          description: "Pagamento aprovado, mas houve erro ao desbloquear. Contate o suporte.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data.error) {
+        console.error('Unlock error:', data.error);
+        toast({
+          title: "Erro ao desbloquear",
+          description: data.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Result unlocked successfully:', data);
+      
+      toast({
+        title: "Resultado desbloqueado!",
+        description: "Recarregando seus resultados completos...",
+      });
+
+      // Wait 2 seconds then refresh the page to show unlocked content
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+        window.location.reload();
+      }, 2000);
+
+    } catch (err: any) {
+      console.error('Error in unlockResult:', err);
+      toast({
+        title: "Erro ao desbloquear",
+        description: "Pagamento aprovado, mas houve erro ao desbloquear. Contate o suporte.",
+        variant: "destructive"
+      });
     }
   };
 
