@@ -80,15 +80,15 @@ const Comeco = () => {
                 onClick={handleStartAssessment}
                 disabled={isLoading}
                 size="lg"
-                className="bg-white hover:bg-white/90 text-primary text-xl font-bold px-12 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-70"
+                className="bg-white hover:bg-white/90 text-primary text-base sm:text-xl font-bold px-6 sm:px-12 py-3 sm:py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-70 w-full sm:w-auto max-w-full"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                    Preparando seu teste...
+                    <Loader2 className="mr-2 h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                    <span className="truncate">Preparando seu teste...</span>
                   </>
                 ) : (
-                  "Descobrir Minha Carreira! →"
+                  <span className="truncate">Descobrir Minha Carreira! →</span>
                 )}
               </Button>
             </CardContent>

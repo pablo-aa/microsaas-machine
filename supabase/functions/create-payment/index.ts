@@ -24,8 +24,11 @@ serve(async (req) => {
 
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
     if (!accessToken) {
-      throw new Error('MERCADOPAGO_ACCESS_TOKEN not configured');
+      console.error('MERCADOPAGO_ACCESS_TOKEN is not configured in environment variables');
+      throw new Error('Payment service not configured. Please contact support.');
     }
+    
+    console.log('Access token found:', accessToken.substring(0, 10) + '...');
 
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {
@@ -54,10 +57,22 @@ serve(async (req) => {
     const mpData = await mpResponse.json();
     
     console.log('Mercado Pago response status:', mpResponse.status);
+    console.log('Mercado Pago response data:', JSON.stringify(mpData).substring(0, 200));
     
     if (!mpResponse.ok) {
-      console.error('Mercado Pago error:', mpData);
-      throw new Error(`Mercado Pago error: ${JSON.stringify(mpData)}`);
+      console.error('Mercado Pago error response:', JSON.stringify(mpData, null, 2));
+      
+      // Mensagens de erro mais amigáveis
+      let errorMessage = 'Erro ao criar pagamento. ';
+      if (mpData.message) {
+        errorMessage += mpData.message;
+      } else if (mpData.cause && mpData.cause.length > 0) {
+        errorMessage += mpData.cause[0].description || 'Erro desconhecido';
+      } else {
+        errorMessage += 'Por favor, tente novamente ou contate o suporte.';
+      }
+      
+      throw new Error(errorMessage);
     }
 
     console.log('Payment created successfully:', mpData.id);

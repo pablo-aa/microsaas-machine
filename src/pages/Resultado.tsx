@@ -231,61 +231,61 @@ const Resultado = () => {
           </div>
         </header>
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center text-white">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 text-center text-white">
           {/* Badge */}
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-8">
+          <div className="inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/20 text-white text-xs sm:text-sm font-medium mb-6 sm:mb-8">
             Resultados Completos
           </div>
 
           {/* User Name */}
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in-up">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 animate-fade-in-up break-words px-2">
             {result.name.toLowerCase()}
           </h1>
 
           {/* Title */}
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6 animate-fade-in-up px-2" style={{ animationDelay: '0.1s' }}>
             esse é o seu Perfil Vocacional
           </h2>
 
           {/* Subtitle */}
-          <p className="text-xl text-white/90 mb-16 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <p className="text-base sm:text-lg lg:text-xl text-white/90 mb-8 sm:mb-12 lg:mb-16 max-w-2xl mx-auto animate-fade-in-up px-4" style={{ animationDelay: '0.2s' }}>
             Baseado nas suas respostas, identificamos suas principais 
             aptidões e áreas de interesse.
           </p>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12 lg:mb-16 px-2">
             <Card className="bg-white/10 border-white/20 backdrop-blur-sm animate-scale-in" style={{ animationDelay: '0.3s' }}>
-              <CardContent className="p-8 text-center">
-                <div className="bg-white/20 rounded-full p-4 w-fit mx-auto mb-4">
-                  <BookOpen className="h-8 w-8 text-white" />
+              <CardContent className="p-4 sm:p-6 lg:p-8 text-center">
+                <div className="bg-white/20 rounded-full p-3 sm:p-4 w-fit mx-auto mb-3 sm:mb-4">
+                  <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Perfil Detalhado</h3>
-                <p className="text-white/80 text-sm">
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3">Perfil Detalhado</h3>
+                <p className="text-white/80 text-xs sm:text-sm">
                   Análise completa das suas aptidões e interesses
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-white/10 border-white/20 backdrop-blur-sm animate-scale-in" style={{ animationDelay: '0.4s' }}>
-              <CardContent className="p-8 text-center">
-                <div className="bg-white/20 rounded-full p-4 w-fit mx-auto mb-4">
-                  <Star className="h-8 w-8 text-white" />
+              <CardContent className="p-4 sm:p-6 lg:p-8 text-center">
+                <div className="bg-white/20 rounded-full p-3 sm:p-4 w-fit mx-auto mb-3 sm:mb-4">
+                  <Star className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Áreas Recomendadas</h3>
-                <p className="text-white/80 text-sm">
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3">Áreas Recomendadas</h3>
+                <p className="text-white/80 text-xs sm:text-sm">
                   Carreiras alinhadas com seu perfil vocacional
                 </p>
               </CardContent>
             </Card>
 
             <Card className="bg-white/10 border-white/20 backdrop-blur-sm animate-scale-in" style={{ animationDelay: '0.5s' }}>
-              <CardContent className="p-8 text-center">
-                <div className="bg-white/20 rounded-full p-4 w-fit mx-auto mb-4">
-                  <Lightbulb className="h-8 w-8 text-white" />
+              <CardContent className="p-4 sm:p-6 lg:p-8 text-center">
+                <div className="bg-white/20 rounded-full p-3 sm:p-4 w-fit mx-auto mb-3 sm:mb-4">
+                  <Lightbulb className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Descubra Seu Potencial</h3>
-                <p className="text-white/80 text-sm">
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white mb-2 sm:mb-3">Descubra Seu Potencial</h3>
+                <p className="text-white/80 text-xs sm:text-sm">
                   Explore seu perfil e saiba exatamente onde focar
                 </p>
               </CardContent>
@@ -296,11 +296,11 @@ const Resultado = () => {
           <Button
             onClick={handleDesbloquearClick}
             size="lg"
-            className="bg-white hover:bg-white/90 text-primary text-lg font-bold px-12 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce-in mb-8"
+            className="bg-white hover:bg-white/90 text-primary text-base sm:text-lg font-bold px-6 sm:px-10 lg:px-12 py-3 sm:py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce-in mb-6 sm:mb-8 w-full sm:w-auto max-w-full mx-4 sm:mx-0"
             style={{ animationDelay: '0.6s' }}
           >
-            <Lock className="mr-2 h-5 w-5" />
-            {result.is_unlocked ? 'Ver Resultados' : 'Desbloquear Resultados'}
+            <Lock className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">{result.is_unlocked ? 'Ver Resultados' : 'Desbloquear Resultados'}</span>
           </Button>
 
           {/* Scroll Indicator */}
