@@ -212,21 +212,12 @@ const Avaliacao = () => {
 
           <div className="flex items-center space-x-4">
             {currentQuestion === totalQuestions - 1 && answers.length === totalQuestions - 1 && selectedAnswer ? (
-              <>
-                <Button
-                  onClick={handleRestart}
-                  variant="outline"
-                  className="px-6"
-                >
-                  Recomeçar
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  className="gradient-primary hover:opacity-90 px-8"
-                >
-                  Finalizar
-                </Button>
-              </>
+              <Button
+                onClick={handleNext}
+                className="gradient-primary hover:opacity-90 px-8"
+              >
+                Finalizar
+              </Button>
             ) : (
               <Button
                 onClick={handleNext}

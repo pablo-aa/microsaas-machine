@@ -25,9 +25,9 @@ const LikertScale = ({ onSelect, selectedValue }: LikertScaleProps) => {
       </div>
 
       {/* Scale */}
-      <div className="flex items-center justify-center space-x-3 sm:space-x-6 md:space-x-8 w-full max-w-sm sm:max-w-lg">
+      <div className="flex items-center justify-center gap-2 sm:gap-4 w-full max-w-sm sm:max-w-lg">
         {options.map((option) => (
-          <div key={option.value} className="flex flex-col items-center min-h-[80px]">
+          <div key={option.value} className="flex flex-col items-center min-w-[60px] sm:min-w-[80px]">
             <button
               onClick={() => onSelect(option.value)}
               className={`
@@ -42,11 +42,11 @@ const LikertScale = ({ onSelect, selectedValue }: LikertScaleProps) => {
             />
             
             {/* Selected Option Label - Fixed Height Container */}
-            <div className="h-12 flex items-start justify-center mt-2 px-1">
+            <div className="min-h-[48px] flex items-start justify-center mt-2 w-full">
               {selectedValue === option.value && (
                 <div className={`
-                  px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 animate-scale-in text-center
-                  ${option.textColor} ${option.bgColor} border border-current/20 leading-tight
+                  px-1.5 py-1 rounded-full text-[10px] sm:text-xs font-medium transition-all duration-200 animate-scale-in text-center
+                  ${option.textColor} ${option.bgColor} border border-current/20 leading-tight max-w-full
                 `}>
                   {option.label}
                 </div>

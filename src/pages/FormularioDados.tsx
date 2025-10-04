@@ -91,6 +91,19 @@ const FormularioDados = ({ onSubmit, isLoading }: FormularioDadosProps) => {
           </p>
         </div>
 
+        {/* Info Alert */}
+        <Card className="bg-blue-50 border-blue-200 mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-start space-x-3">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-blue-800">
+                <strong>Isso não é um cadastro!</strong> Apenas utilizamos esses dados 
+                para personalizar os seus resultados!
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Main Form Card */}
         <Card className="shadow-lg mb-8">
           <CardContent className="p-8">
@@ -182,19 +195,6 @@ const FormularioDados = ({ onSubmit, isLoading }: FormularioDadosProps) => {
             <p className="text-xs text-muted-foreground text-center mt-6 leading-relaxed">
               Seus dados estão seguros e serão utilizados apenas para gerar seu perfil profissional.
             </p>
-          </CardContent>
-        </Card>
-
-        {/* Info Card */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-blue-800">
-                <strong>Isso não é um cadastro!</strong> Apenas utilizamos esses dados 
-                para personalizar os seus resultados!
-              </p>
-            </div>
           </CardContent>
         </Card>
       </main>
