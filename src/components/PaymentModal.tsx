@@ -182,7 +182,8 @@ export const PaymentModal = ({
       setTimeout(() => {
         onSuccess();
         onClose();
-        window.location.reload();
+        // Force reload to ensure fresh data
+        window.location.href = window.location.href;
       }, 2000);
 
     } catch (err: any) {

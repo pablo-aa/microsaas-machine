@@ -55,8 +55,12 @@ const Resultado = () => {
     try {
       setLoadingState('loading');
 
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      console.log('Fetching result with timestamp:', timestamp);
+
       const { data, error } = await supabase.functions.invoke('get-result', {
-        body: { result_id: id }
+        body: { result_id: id, _t: timestamp }
       });
 
       if (error) {
@@ -79,6 +83,13 @@ const Resultado = () => {
 
       setResult(data);
       setLoadingState('success');
+      
+      console.log('Result fetched:', {
+        id: data.id,
+        name: data.name,
+        is_unlocked: data.is_unlocked,
+        unlocked_at: data.unlocked_at
+      });
 
     } catch (error) {
       console.error('Error fetching result:', error);
@@ -110,6 +121,8 @@ const Resultado = () => {
   };
 
   const handlePaymentSuccess = () => {
+    console.log('Payment success, refetching result...');
+    setShowPaymentModal(false);
     fetchResult(); // Refresh to get unlocked status
   };
 
