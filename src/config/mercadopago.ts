@@ -2,12 +2,11 @@
 
 export const mercadoPagoConfig = {
   dev: {
-    publicKey: '', // Você vai adicionar a chave pública de teste
-    // Preço em modo sandbox
+    publicKey: 'TEST-c01b60bb-9b82-4427-965f-32333af1dd20',
     price: 12.90,
   },
   prod: {
-    publicKey: '', // Você vai adicionar a chave pública de produção
+    publicKey: '', // Será configurado quando o site estiver em produção
     price: 12.90,
   }
 };

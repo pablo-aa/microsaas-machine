@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,6 +7,7 @@ import { Link, useParams } from "react-router-dom";
 import LikertScale from "@/components/LikertScale";
 import FormularioDados from "./FormularioDados";
 import ResultadosCompletos from "./ResultadosCompletos";
+import { v4 as uuidv4 } from 'uuid';
 
 // Sample questions for the assessment
 const questions = [
@@ -24,6 +25,12 @@ const Avaliacao = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
   const [stage, setStage] = useState<AssessmentStage>('questions');
   const [userData, setUserData] = useState<{name: string; email: string; age: string} | null>(null);
+  const [testId, setTestId] = useState<string>('');
+
+  // Generate unique test ID when component mounts
+  useEffect(() => {
+    setTestId(uuidv4());
+  }, []);
 
   const totalQuestions = questions.length;
   const progress = ((currentQuestion + (selectedAnswer ? 1 : 0)) / totalQuestions) * 100;
@@ -123,6 +130,8 @@ const Avaliacao = () => {
     return (
       <ResultadosCompletos 
         userName={userData.name}
+        userEmail={userData.email}
+        testId={testId}
         onDesbloquear={handleDesbloquear}
       />
     );

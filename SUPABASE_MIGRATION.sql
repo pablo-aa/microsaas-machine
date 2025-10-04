@@ -77,35 +77,36 @@ create index idx_test_results_created on public.test_results(created_at);
 create table public.payments (
   id uuid primary key default uuid_generate_v4(),
   
-  -- Mercado Pago data
-  mp_payment_id text unique,
-  mp_preference_id text,
-  mp_merchant_order_id text,
+  -- Test reference (can be a session or result ID)
+  test_id uuid not null,
   
-  -- Link to test result
-  test_result_id uuid references public.test_results(id) on delete cascade,
+  -- User info
+  user_email text not null,
+  
+  -- Mercado Pago data
+  payment_id text unique not null, -- MP payment ID
+  payment_method text default 'pix',
   
   -- Payment details
   amount decimal(10,2) not null default 12.90,
-  status payment_status not null default 'pending',
-  
-  -- User info
-  payer_email text,
-  payer_name text,
+  status text not null default 'pending', -- pending, approved, rejected, cancelled
   
   -- Timestamps
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
-  approved_at timestamp with time zone,
   
   -- Raw webhook data
-  webhook_data jsonb
+  webhook_data jsonb,
+  
+  -- Metadata
+  metadata jsonb default '{}'::jsonb
 );
 
 -- Indexes
-create index idx_payments_mp_payment on public.payments(mp_payment_id);
-create index idx_payments_test_result on public.payments(test_result_id);
+create index idx_payments_payment_id on public.payments(payment_id);
+create index idx_payments_test_id on public.payments(test_id);
 create index idx_payments_status on public.payments(status);
+create index idx_payments_email on public.payments(user_email);
 create index idx_payments_created on public.payments(created_at);
 
 -- =====================================================

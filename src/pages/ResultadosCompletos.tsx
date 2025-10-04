@@ -6,15 +6,19 @@ import { BookOpen, Star, Lightbulb, Lock, ChevronDown } from "lucide-react";
 import RiasecResults from "@/components/RiasecResults";
 import PaymentSection from "@/components/PaymentSection";
 import ResultsFooter from "@/components/ResultsFooter";
+import { PaymentModal } from "@/components/PaymentModal";
 
 interface ResultadosCompletosProps {
   userName: string;
+  userEmail: string;
+  testId: string;
   onDesbloquear: () => void;
 }
 
-const ResultadosCompletos = ({ userName, onDesbloquear }: ResultadosCompletosProps) => {
+const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: ResultadosCompletosProps) => {
   const [showFullResults, setShowFullResults] = useState(false);
   const [activeTab, setActiveTab] = useState<'riasec' | 'gardner' | 'gopc'>('riasec');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleDesbloquearClick = () => {
@@ -26,8 +30,10 @@ const ResultadosCompletos = ({ userName, onDesbloquear }: ResultadosCompletosPro
   };
 
   const handlePurchase = () => {
-    // TODO: Implement payment logic in future
-    console.log('Purchase initiated for user:', userName);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
     onDesbloquear();
   };
 
@@ -152,6 +158,16 @@ const ResultadosCompletos = ({ userName, onDesbloquear }: ResultadosCompletosPro
           <ResultsFooter />
         </div>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        testId={testId}
+        userEmail={userEmail}
+        userName={userName}
+      />
     </div>
   );
 };
