@@ -140,14 +140,14 @@ export const PaymentModal = ({
     }
   };
 
-  const unlockResult = async () => {
+  const unlockResult = async (skipPaymentCheck = false) => {
     try {
-      console.log('Unlocking result:', { testId, paymentId });
+      console.log('Unlocking result:', { testId, paymentId, skipPaymentCheck });
 
       const { data, error } = await supabase.functions.invoke('unlock-result', {
         body: {
           result_id: testId,
-          payment_id: paymentId,
+          payment_id: skipPaymentCheck ? 'DEV_BYPASS' : paymentId,
         },
       });
 
@@ -210,6 +210,17 @@ export const PaymentModal = ({
       onClose();
     }
   };
+
+  const handleDevBypass = async () => {
+    setStatus('approved');
+    toast({
+      title: "🎭 Simulando pagamento aprovado",
+      description: "Desbloqueando resultado (modo DEV)...",
+    });
+    await unlockResult(true);
+  };
+
+  const isDev = !window.location.hostname.includes('qualcarreira.com');
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -286,6 +297,17 @@ export const PaymentModal = ({
                 <Loader2 className="h-3 w-3 animate-spin" />
                 <span>Verificando pagamento automaticamente...</span>
               </div>
+
+              {isDev && (
+                <Button 
+                  onClick={handleDevBypass} 
+                  variant="destructive" 
+                  className="w-full mt-4"
+                  size="sm"
+                >
+                  🎭 Simular Pagamento Aprovado (DEV)
+                </Button>
+              )}
             </>
           )}
         </div>

@@ -75,35 +75,40 @@ serve(async (req) => {
     }
 
     // 3. Verify payment status by calling check-payment-status function
-    console.log(`[unlock-result] Checking payment status for payment_id: ${paymentId}`);
-    
-    const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
-      'check-payment-status',
-      {
-        body: { payment_id: paymentId }
+    // Special case: DEV bypass
+    if (paymentId === 'DEV_BYPASS') {
+      console.log(`[unlock-result] DEV BYPASS MODE - Skipping payment verification`);
+    } else {
+      console.log(`[unlock-result] Checking payment status for payment_id: ${paymentId}`);
+      
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+        'check-payment-status',
+        {
+          body: { payment_id: paymentId }
+        }
+      );
+
+      if (paymentError) {
+        console.error('[unlock-result] Error checking payment status:', paymentError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to verify payment status' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-    );
 
-    if (paymentError) {
-      console.error('[unlock-result] Error checking payment status:', paymentError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to verify payment status' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      console.log(`[unlock-result] Payment status response:`, paymentData);
 
-    console.log(`[unlock-result] Payment status response:`, paymentData);
-
-    // 4. Check if payment is approved
-    if (paymentData.status !== 'approved') {
-      console.log('[unlock-result] Payment not approved:', paymentData.status);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Payment not approved',
-          payment_status: paymentData.status
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // 4. Check if payment is approved
+      if (paymentData.status !== 'approved') {
+        console.log('[unlock-result] Payment not approved:', paymentData.status);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Payment not approved',
+            payment_status: paymentData.status
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // 5. Update test_results to unlock
