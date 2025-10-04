@@ -38,30 +38,54 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
-        {/* Left - Competency Cards */}
+        {/* Left - Competency Cards with Scores */}
         <div className="space-y-4">
-          {gopcCompetencies.map((competency) => (
-            <Card 
-              key={competency.code}
-              className="border-2"
-              style={{ 
-                borderColor: competency.color,
-                backgroundColor: competency.bgColor 
-              }}
-            >
-              <CardContent className="p-6 text-center">
-                <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-4"
-                  style={{ backgroundColor: competency.color }}
-                >
-                  {competency.code}
-                </div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  {competency.name}
-                </h3>
-              </CardContent>
-            </Card>
-          ))}
+          {gopcCompetencies.map((competency, index) => {
+            const scoreData = radarData.find(d => d.competency === competency.name);
+            const score = scoreData?.value || 0;
+            const isStrongest = index === 0; // Autoconhecimento é o ponto forte
+            
+            return (
+              <Card 
+                key={competency.code}
+                className={`border-2 ${isStrongest ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
+                style={{ 
+                  borderColor: competency.color,
+                  backgroundColor: competency.bgColor 
+                }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div 
+                        className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl"
+                        style={{ backgroundColor: competency.color }}
+                      >
+                        {competency.code}
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {competency.name}
+                        </h3>
+                        {isStrongest && !isBlurred && (
+                          <span className="text-xs font-medium text-primary">
+                            ⭐ Seu Ponto Forte
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {!isBlurred && (
+                      <div className="text-right">
+                        <div className="text-3xl font-bold" style={{ color: competency.color }}>
+                          {score}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Right - Professional Radar Chart */}
@@ -142,12 +166,22 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
         </div>
       </div>
 
-      {/* Strong Point Section */}
-      <Card className={`${isBlurred ? 'relative overflow-hidden' : ''}`}>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">
-            Seu Ponto Forte
-          </h3>
+      {/* Strong Point Section - Highlighted */}
+      <Card className={`border-2 border-primary bg-primary/5 ${isBlurred ? 'relative overflow-hidden' : ''}`}>
+        <CardContent className="p-8">
+          <div className="flex items-start space-x-4 mb-4">
+            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+              ⭐
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                Seu Ponto Forte
+              </h3>
+              {!isBlurred && (
+                <h4 className="text-xl font-semibold text-primary mb-3">Autoconhecimento (85%)</h4>
+              )}
+            </div>
+          </div>
           
           {isBlurred ? (
             <>
@@ -166,11 +200,11 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
               </div>
             </>
           ) : (
-            <div>
-              <h4 className="font-semibold text-foreground mb-3">Autoconhecimento</h4>
-              <p className="text-muted-foreground">
-                Seu ponto forte é o autoconhecimento: você reconhece suas habilidades, limites e motivações,
-                o que facilita escolhas de carreira mais assertivas e consistentes.
+            <div className="bg-white rounded-lg p-6">
+              <p className="text-foreground text-lg leading-relaxed">
+                Seu ponto forte é o <span className="font-bold text-primary">autoconhecimento</span>: você reconhece suas habilidades, limites e motivações,
+                o que facilita escolhas de carreira mais assertivas e consistentes. Esta competência é fundamental para
+                o planejamento de carreira, pois permite que você tome decisões alinhadas aos seus valores e objetivos pessoais.
               </p>
             </div>
           )}

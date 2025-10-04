@@ -282,7 +282,7 @@ const Avaliacao = () => {
             </span>
 
             {/* DEV ONLY: Auto-fill button */}
-            {import.meta.env.DEV && (
+            {!window.location.hostname.includes('qualcarreira.com') && (
               <Button
                 variant="secondary"
                 size="sm"

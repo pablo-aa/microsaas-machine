@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface GardnerResultsProps {
   isBlurred?: boolean;
 }
+
+const intelligenceDescriptions: Record<string, string> = {
+  Intrapessoal: "Você demonstra forte inteligência intrapessoal: autoconhecimento, reflexão e clareza sobre seus valores, usando essas habilidades para tomar decisões alinhadas ao que importa para você.",
+  Interpessoal: "Sua inteligência interpessoal se destaca: você compreende bem as emoções e motivações das outras pessoas, facilitando o trabalho em equipe e a construção de relacionamentos significativos.",
+  Espacial: "Você possui forte inteligência espacial: capacidade de visualizar, manipular e criar representações mentais do espaço, útil para design, arquitetura e navegação."
+};
 
 // Gardner data - only top 3
 const gardnerData = [
@@ -38,6 +45,8 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
+  const [selectedIntelligence, setSelectedIntelligence] = useState<string>("Intrapessoal");
+
   return (
     <div className="space-y-8">
       {/* Title */}
@@ -94,13 +103,18 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
           
           <div className="space-y-4 mb-8">
             {topIntelligences.map((intelligence, index) => (
-              <div 
+              <button
                 key={intelligence.name}
-                className={`p-4 rounded-lg border-2 ${
-                  intelligence.name === 'Intrapessoal' 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-gray-200 bg-gray-50'
+                onClick={() => setSelectedIntelligence(intelligence.name)}
+                className={`w-full p-4 rounded-lg border-2 transition-all cursor-pointer hover:shadow-md ${
+                  selectedIntelligence === intelligence.name
+                    ? 'shadow-lg'
+                    : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                 }`}
+                style={{
+                  borderColor: selectedIntelligence === intelligence.name ? intelligence.color : undefined,
+                  backgroundColor: selectedIntelligence === intelligence.name ? `${intelligence.color}15` : undefined
+                }}
               >
                 <div className="flex items-center space-x-3">
                   <div 
@@ -113,18 +127,23 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
                     {intelligence.name}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
-          {/* Detailed Section - Intrapessoal */}
+          {/* Detailed Section - Dynamic based on selection */}
           <Card className={`${isBlurred ? 'relative overflow-hidden' : ''}`}>
             <CardContent className="p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
-                  1
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
+                  style={{ 
+                    backgroundColor: topIntelligences.find(i => i.name === selectedIntelligence)?.color 
+                  }}
+                >
+                  {topIntelligences.find(i => i.name === selectedIntelligence)?.rank}
                 </div>
-                <h4 className="text-lg font-bold text-foreground">Intrapessoal</h4>
+                <h4 className="text-lg font-bold text-foreground">{selectedIntelligence}</h4>
               </div>
               
               {isBlurred ? (
@@ -136,9 +155,8 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
                   </div>
                 </div>
               ) : (
-                <p className="text-foreground">
-                  Você demonstra forte inteligência intrapessoal: autoconhecimento, reflexão e clareza sobre seus valores,
-                  usando essas habilidades para tomar decisões alinhadas ao que importa para você.
+                <p className="text-foreground leading-relaxed">
+                  {intelligenceDescriptions[selectedIntelligence]}
                 </p>
               )}
               
