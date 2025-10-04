@@ -136,23 +136,34 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
       <Card className={`${isBlurred ? 'relative overflow-hidden' : ''}`}>
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">
-            Seu Ponto Forte: Autoconhecimento
+            Seu Ponto Forte
           </h3>
           
-          <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-            <div className="space-y-3">
-              <div className="h-4 bg-muted rounded"></div>
-              <div className="h-4 bg-muted rounded w-5/6"></div>
-              <div className="h-4 bg-muted rounded w-4/5"></div>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-            </div>
-          </div>
-          
-          {isBlurred && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px]">
-              <p className="text-muted-foreground text-sm">
-                Análise detalhada disponível após desbloqueio
-              </p>
+          {isBlurred ? (
+            <>
+              <div className="filter blur-sm select-none">
+                <div className="space-y-3">
+                  <div className="h-4 bg-muted rounded"></div>
+                  <div className="h-4 bg-muted rounded w-5/6"></div>
+                  <div className="h-4 bg-muted rounded w-4/5"></div>
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-[2px] pointer-events-none">
+                <p className="text-muted-foreground text-sm">
+                  Análise detalhada disponível após desbloqueio
+                </p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <h4 className="font-semibold text-foreground mb-3">Autoconhecimento</h4>
+              <div className="space-y-3">
+                <div className="h-4 bg-muted rounded"></div>
+                <div className="h-4 bg-muted rounded w-5/6"></div>
+                <div className="h-4 bg-muted rounded w-4/5"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </div>
             </div>
           )}
         </CardContent>

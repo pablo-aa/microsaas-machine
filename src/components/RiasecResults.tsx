@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -21,12 +22,55 @@ const riasecData = [
   { name: "Convencional", value: 15, color: "#EAB308", code: "C" }
 ];
 
+// Details for each RIASEC category
+const riasecDetails: Record<string, {
+  description: string;
+  characteristics: string[];
+  careers: string[];
+}> = {
+  R: {
+    description: "Pessoas realistas preferem trabalhar com objetos, ferramentas e máquinas.",
+    characteristics: ["Prático", "Mecânico", "Objetivo"],
+    careers: ["Engenheiro", "Mecânico", "Eletricista"]
+  },
+  I: {
+    description: "Pessoas investigativas gostam de observar, aprender, investigar e resolver problemas.",
+    characteristics: ["Analítico", "Intelectual", "Curioso"],
+    careers: ["Cientista", "Médico", "Pesquisador"]
+  },
+  A: {
+    description: "Pessoas artísticas apreciam trabalhar com formas, designs e padrões.",
+    characteristics: ["Criativo", "Expressivo", "Original"],
+    careers: ["Designer", "Artista", "Músico"]
+  },
+  S: {
+    description: "Pessoas sociais preferem trabalhar com e ajudar outras pessoas.",
+    characteristics: ["Empático", "Cooperativo", "Prestativo"],
+    careers: ["Professor", "Enfermeiro", "Psicólogo"]
+  },
+  E: {
+    description: "Pessoas empreendedoras gostam de liderar, gerenciar e influenciar outros.",
+    characteristics: ["Persuasivo", "Ambicioso", "Líder"],
+    careers: ["Gerente", "Empresário", "Vendedor"]
+  },
+  C: {
+    description: "Pessoas convencionais preferem trabalhar com dados, registros e rotinas.",
+    characteristics: ["Organizado", "Detalhista", "Metódico"],
+    careers: ["Contador", "Administrador", "Analista"]
+  }
+};
+
 const RiasecResults = ({ 
   isBlurred = true, 
   onDesbloquear, 
   activeTab = 'riasec', 
   onTabChange 
 }: RiasecResultsProps) => {
+  const [selectedCategory, setSelectedCategory] = useState<string>("R");
+  
+  const selectedData = riasecData.find(item => item.code === selectedCategory);
+  const selectedDetails = riasecDetails[selectedCategory];
+  
   const renderRiasecContent = () => (
     <div className="space-y-8">
       {/* Results Title */}
@@ -104,9 +148,13 @@ const RiasecResults = ({
           {riasecData.map((item) => (
             <button 
               key={item.code}
+              onClick={() => setSelectedCategory(item.code)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                item.code === 'R' ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                item.code === selectedCategory 
+                  ? 'text-white' 
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
+              style={item.code === selectedCategory ? { backgroundColor: item.color } : {}}
             >
               {item.name}
             </button>
@@ -118,37 +166,65 @@ const RiasecResults = ({
       <Card className={`relative ${isBlurred ? 'overflow-hidden' : ''}`}>
         <CardContent className="p-8">
           <div className="flex items-start space-x-4 mb-6">
-            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">R</span>
+            <div 
+              className="w-12 h-12 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: selectedData?.color }}
+            >
+              <span className="text-white font-bold text-lg">{selectedCategory}</span>
             </div>
             <div className="flex-1">
-              <h4 className="text-xl font-bold text-foreground mb-2">Realista</h4>
+              <h4 className="text-xl font-bold text-foreground mb-2">{selectedData?.name}</h4>
               
               <div className="space-y-4">
                 <div>
                   <h5 className="font-semibold text-foreground mb-2">Descrição</h5>
-                  <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-3/4"></div>
-                  </div>
+                  {isBlurred ? (
+                    <div className="filter blur-sm select-none">
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                    </div>
+                  ) : (
+                    <p className="text-foreground">{selectedDetails?.description}</p>
+                  )}
                 </div>
                 
                 <div>
                   <h5 className="font-semibold text-foreground mb-2">Características Principais</h5>
-                  <div className={isBlurred ? 'filter blur-sm select-none' : ''}>
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-2/3"></div>
-                  </div>
+                  {isBlurred ? (
+                    <div className="filter blur-sm select-none">
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-4 bg-muted rounded mb-2"></div>
+                      <div className="h-4 bg-muted rounded w-2/3"></div>
+                    </div>
+                  ) : (
+                    <ul className="list-disc list-inside space-y-1">
+                      {selectedDetails?.characteristics.map((char, idx) => (
+                        <li key={idx} className="text-foreground">{char}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 
                 <div>
                   <h5 className="font-semibold text-foreground mb-2">Carreiras Recomendadas</h5>
-                  <div className={`flex flex-wrap gap-2 ${isBlurred ? 'filter blur-sm select-none' : ''}`}>
-                    <div className="h-8 bg-muted rounded px-4 w-24"></div>
-                    <div className="h-8 bg-muted rounded px-4 w-32"></div>
-                    <div className="h-8 bg-muted rounded px-4 w-28"></div>
-                  </div>
+                  {isBlurred ? (
+                    <div className="flex flex-wrap gap-2 filter blur-sm select-none">
+                      <div className="h-8 bg-muted rounded px-4 w-24"></div>
+                      <div className="h-8 bg-muted rounded px-4 w-32"></div>
+                      <div className="h-8 bg-muted rounded px-4 w-28"></div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDetails?.careers.map((career, idx) => (
+                        <span 
+                          key={idx} 
+                          className="px-4 py-2 bg-muted rounded-lg text-sm text-foreground"
+                        >
+                          {career}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
