@@ -160,7 +160,7 @@ const RiasecResults = ({
         <h3 className="text-xl font-bold text-foreground mb-6">Detalhamento das Aptidões</h3>
         
         {/* Category Headers - Clickable */}
-        <div className="flex space-x-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           {riasecData.map((item) => (
             <button 
               key={item.code}
@@ -264,26 +264,26 @@ const RiasecResults = ({
     <section className="bg-background py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header with Tabs */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex space-x-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
+          <div className="flex flex-wrap gap-1">
             <Button 
               variant={activeTab === 'riasec' ? 'default' : 'outline'}
               onClick={() => onTabChange?.('riasec')}
-              className={activeTab === 'riasec' ? 'bg-primary text-white px-6' : 'text-muted-foreground'}
+              className={activeTab === 'riasec' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground'}
             >
               RIASEC
             </Button>
             <Button 
               variant={activeTab === 'gardner' ? 'default' : 'outline'}
               onClick={() => onTabChange?.('gardner')}
-              className={activeTab === 'gardner' ? 'bg-primary text-white px-6' : 'text-muted-foreground'}
+              className={activeTab === 'gardner' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground'}
             >
               Gardner
             </Button>
             <Button 
               variant={activeTab === 'gopc' ? 'default' : 'outline'}
               onClick={() => onTabChange?.('gopc')}
-              className={activeTab === 'gopc' ? 'bg-primary text-white px-6' : 'text-muted-foreground'}
+              className={activeTab === 'gopc' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground'}
             >
               GOPC
             </Button>
@@ -291,7 +291,7 @@ const RiasecResults = ({
           
           <Button 
             onClick={onDesbloquear}
-            className="gradient-primary hover:opacity-90"
+            className="gradient-primary hover:opacity-90 w-full sm:w-auto"
           >
             Desbloquear Resultados
           </Button>

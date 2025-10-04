@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Check, Crown, Mail } from "lucide-react";
-
+import { getMercadoPagoConfig } from "@/config/mercadopago";
 interface PaymentSectionProps {
   onPurchase: () => void;
 }
 
 const PaymentSection = ({ onPurchase }: PaymentSectionProps) => {
+  const price = getMercadoPagoConfig().price;
   return (
     <section className="bg-muted/30 py-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -45,7 +46,7 @@ const PaymentSection = ({ onPurchase }: PaymentSectionProps) => {
 
             {/* Price */}
             <div className="mb-6">
-              <span className="text-4xl font-bold text-foreground">R$12,90</span>
+              <span className="text-4xl font-bold text-foreground">{price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
               <span className="text-muted-foreground ml-2">pagamento único</span>
             </div>
 

@@ -30,9 +30,14 @@ serve(async (req) => {
     
     console.log('Access token found:', accessToken.substring(0, 10) + '...');
 
+    // Detect amount based on origin (prod vs dev)
+    const origin = req.headers.get('origin') || '';
+    const isProd = origin.includes('qualcarreira.com');
+    const transactionAmount = isProd ? 1.00 : 12.90;
+
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {
-      transaction_amount: 12.90,
+      transaction_amount: transactionAmount,
       description: 'Carrerium - Análise Completa de Perfil Vocacional',
       payment_method_id: 'pix',
       payer: {
@@ -89,7 +94,7 @@ serve(async (req) => {
         test_id,
         user_email: email,
         payment_id: mpData.id.toString(),
-        amount: 12.90,
+        amount: transactionAmount,
         status: mpData.status,
         payment_method: 'pix',
       });
