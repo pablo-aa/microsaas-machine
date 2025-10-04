@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.create-result]
 verify_jwt = false
+
+[functions.get-result]
+verify_jwt = false

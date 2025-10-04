@@ -12,7 +12,7 @@
 - `create-result`
 
 ### 🔴 Faltam deployar em DEV:
-- `get-result` (PROMPT 6)
+- `get-result` (PROMPT 6) **← DEPLOY ESTE AGORA**
 - `unlock-result` (PROMPT 7)
 
 ### 🟣 Para fazer no FINAL (PRODUÇÃO):
@@ -103,31 +103,42 @@
 
 ---
 
-## 🔴 PROMPT 5: Criar Rota `/resultado/:id`
-**Status**: 🔴 **PENDENTE**
+## ✅ PROMPT 5: Criar Rota `/resultado/:id`
+**Status**: ✅ **CONCLUÍDO**
 
-### O que fazer:
-1. Criar `src/pages/Resultado.tsx`
-2. Implementar:
-   - Buscar dados via edge function `get-result`
-   - Mostrar **sempre** a mensagem "Salve este link"
-   - Mostrar resultados com blur se `is_unlocked = false`
-   - Botão de desbloquear (PaymentSection)
+### O que foi feito:
+- ✅ Criada página `src/pages/Resultado.tsx`
+- ✅ Adicionada rota `/resultado/:id` no `App.tsx`
+- ✅ Implementados 5 estados: loading, success, error, expired, not-found
+- ✅ **Mensagem "Salve o Link" sempre visível** (Alert no topo com botão de copiar)
+- ✅ Blur condicional nos resultados se `is_unlocked = false`
+- ✅ Integração com componentes existentes (RiasecResults, GardnerResults, GopcResults)
+- ✅ Botão de desbloquear via PaymentSection
+- ✅ UI completa com estados de loading e erro
 
-3. Adicionar rota no router
+### Resultado:
+- ✅ Página funcional que busca e exibe resultados
+- ✅ Link sempre visível para o usuário salvar
+- ✅ Resultados com blur se não desbloqueados
 
 ---
 
-## 🔴 PROMPT 6: Criar Edge Function `get-result`
-**Status**: 🔴 **PENDENTE**
+## ✅ PROMPT 6: Criar Edge Function `get-result`
+**Status**: ✅ **CONCLUÍDO**
 
-### O que fazer:
-1. Criar `supabase/functions/get-result/index.ts`
-2. Implementar:
-   - Receber `result_id` como query param
-   - Buscar dados de `test_results` e `test_responses`
-   - Verificar se resultado não expirou
-   - Retornar dados completos + status de unlock
+### O que foi feito:
+- ✅ Criado `supabase/functions/get-result/index.ts`
+- ✅ Busca resultado por `result_id` (query param)
+- ✅ Valida se resultado existe
+- ✅ Verifica se resultado não expirou (30 dias)
+- ✅ Retorna todos os dados necessários (scores, user info, unlock status)
+- ✅ Adicionado `verify_jwt = false` no `config.toml`
+- ✅ Tratamento de erros completo (404, 410 expired, 500)
+- ✅ Logging detalhado
+
+### Resultado:
+- ✅ Edge function pronta para ser deployada
+- ✅ Página `/resultado/:id` funcional
 
 ---
 
@@ -176,8 +187,8 @@ Fase 3A - Backend Core
 ├── ✅ PROMPT 2: LocalStorage
 ├── ✅ PROMPT 3: create-result
 ├── ✅ PROMPT 4: FormularioDados
-├── 🔴 PROMPT 5: Rota /resultado/:id
-├── 🔴 PROMPT 6: get-result
+├── ✅ PROMPT 5: Rota /resultado/:id
+├── ✅ PROMPT 6: get-result
 ├── 🔴 PROMPT 7: unlock-result
 └── 🔴 PROMPT 8: Pagamento completo
 
@@ -187,8 +198,6 @@ Fase 3B - Email (Opcional)
 
 ---
 
-## 🎯 Próximo Passo
+## 🎯 Próximo Passo (depois de deployar get-result)
 
-**Execute**: "Implementar PROMPT 5 e 6: Criar rota /resultado/:id e edge function get-result"
-
-**Depois você precisa deployar manualmente**: `get-result` no Supabase DEV
+**Execute**: "Implementar PROMPT 7: Criar edge function unlock-result"
