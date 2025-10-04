@@ -8,6 +8,7 @@ import Comeco from "./pages/Comeco";
 import Avaliacao from "./pages/Avaliacao";
 import Resultado from "./pages/Resultado";
 import NotFound from "./pages/NotFound";
+import { DevBanner } from "./components/DevBanner";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <DevBanner />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/comeco" element={<Comeco />} />

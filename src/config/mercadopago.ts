@@ -7,7 +7,7 @@ export const mercadoPagoConfig = {
   },
   prod: {
     publicKey: 'APP_USR-40aea4f7-a179-402a-a1b8-f3b4bfed380e',
-    price: 12.90,
+    price: 1.00, // Temporário para testes
   }
 };
 
