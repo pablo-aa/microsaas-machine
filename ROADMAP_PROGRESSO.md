@@ -1,6 +1,24 @@
 # 🗺️ Roadmap de Implementação - Qual Carreira
 
-## Status Geral: 🟡 Fase 3A em Andamento (20% completo)
+## Status Geral: 🟡 Fase 3A em Andamento (50% completo)
+
+---
+
+## 🚀 LEMBRETE IMPORTANTE: DEPLOY DE FUNÇÕES
+
+### ✅ Já deployadas em DEV:
+- `check-payment-status`
+- `create-payment`
+- `create-result`
+
+### 🔴 Faltam deployar em DEV:
+- `get-result` (PROMPT 6)
+- `unlock-result` (PROMPT 7)
+
+### 🟣 Para fazer no FINAL (PRODUÇÃO):
+- [ ] Deploy de TODAS as edge functions em PROD
+- [ ] Configurar chaves Mercado Pago PROD
+- [ ] Testar fluxo completo em produção
 
 ---
 
@@ -172,3 +190,5 @@ Fase 3B - Email (Opcional)
 ## 🎯 Próximo Passo
 
 **Execute**: "Implementar PROMPT 5 e 6: Criar rota /resultado/:id e edge function get-result"
+
+**Depois você precisa deployar manualmente**: `get-result` no Supabase DEV
