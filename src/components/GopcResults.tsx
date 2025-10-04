@@ -2,15 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 
 interface GopcResultsProps {
+  gopcScores: Record<string, number>;
   isBlurred?: boolean;
 }
-
-// Radar chart data
-const radarData = [
-  { competency: "Autoconhecimento", value: 85, fullMark: 100 },
-  { competency: "Planejamento", value: 75, fullMark: 100 },
-  { competency: "Tomada de Decisão", value: 65, fullMark: 100 }
-];
 
 // GOPC competencies
 const gopcCompetencies = [
@@ -25,7 +19,25 @@ const competencyDescriptions: Record<string, string> = {
   TD: 'Analisar cenários, pesar prós e contras e tomar decisões com responsabilidade.'
 };
 
-const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
+const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
+  // Calculate percentages (max score per competency is around 100)
+  const maxScore = Math.max(gopcScores.AK || 0, gopcScores.PC || 0, gopcScores.TD || 0);
+  
+  const calculatePercentage = (score: number) => {
+    return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  };
+
+  // Radar chart data from actual scores
+  const radarData = [
+    { competency: "Autoconhecimento", value: calculatePercentage(gopcScores.AK || 0), fullMark: 100 },
+    { competency: "Planejamento", value: calculatePercentage(gopcScores.PC || 0), fullMark: 100 },
+    { competency: "Tomada de Decisão", value: calculatePercentage(gopcScores.TD || 0), fullMark: 100 }
+  ];
+  
+  // Sort to find strongest competency
+  const sortedCompetencies = [...radarData].sort((a, b) => b.value - a.value);
+  const strongestCompetency = sortedCompetencies[0];
+
   return (
     <div className="space-y-8">
       {/* Title */}
@@ -196,7 +208,7 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
                 Seu Ponto Forte
               </h3>
               {!isBlurred && (
-                <h4 className="text-xl font-semibold text-primary mb-3">Autoconhecimento (85%)</h4>
+                <h4 className="text-xl font-semibold text-primary mb-3">{strongestCompetency.competency} ({strongestCompetency.value}%)</h4>
               )}
             </div>
           </div>
@@ -220,9 +232,8 @@ const GopcResults = ({ isBlurred = true }: GopcResultsProps) => {
           ) : (
             <div className="bg-white rounded-lg p-6">
               <p className="text-foreground text-lg leading-relaxed">
-                Seu ponto forte é o <span className="font-bold text-primary">autoconhecimento</span>: você reconhece suas habilidades, limites e motivações,
-                o que facilita escolhas de carreira mais assertivas e consistentes. Esta competência é fundamental para
-                o planejamento de carreira, pois permite que você tome decisões alinhadas aos seus valores e objetivos pessoais.
+                Seu ponto forte é o <span className="font-bold text-primary">{strongestCompetency.competency.toLowerCase()}</span>: {competencyDescriptions[gopcCompetencies.find(c => c.name === strongestCompetency.competency)?.code || 'AK']}
+                {' '}Esta competência é fundamental para o planejamento de carreira, pois permite que você tome decisões alinhadas aos seus valores e objetivos pessoais.
               </p>
             </div>
           )}

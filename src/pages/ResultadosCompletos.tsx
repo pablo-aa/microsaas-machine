@@ -145,6 +145,7 @@ const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: Res
         <div ref={resultsRef}>
           {/* RIASEC Results Section */}
           <RiasecResults 
+            riasecScores={{ R: 18, I: 15, A: 22, S: 16, E: 14, C: 15 }}
             isBlurred={true}
             onDesbloquear={handlePurchase}
             activeTab={activeTab}

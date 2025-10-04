@@ -3,33 +3,60 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 interface GardnerResultsProps {
+  gardnerScores: Record<string, number>;
   isBlurred?: boolean;
 }
 
 const intelligenceDescriptions: Record<string, string> = {
   Intrapessoal: "Você demonstra forte inteligência intrapessoal: autoconhecimento, reflexão e clareza sobre seus valores, usando essas habilidades para tomar decisões alinhadas ao que importa para você.",
   Interpessoal: "Sua inteligência interpessoal se destaca: você compreende bem as emoções e motivações das outras pessoas, facilitando o trabalho em equipe e a construção de relacionamentos significativos.",
-  Espacial: "Você possui forte inteligência espacial: capacidade de visualizar, manipular e criar representações mentais do espaço, útil para design, arquitetura e navegação."
+  Espacial: "Você possui forte inteligência espacial: capacidade de visualizar, manipular e criar representações mentais do espaço, útil para design, arquitetura e navegação.",
+  "Lógico-Matemática": "Sua inteligência lógico-matemática é notável: facilidade com raciocínio abstrato, análise de padrões e resolução de problemas complexos.",
+  Linguística: "Você demonstra forte inteligência linguística: habilidade com palavras, comunicação eficaz e expressão de ideias de forma clara.",
+  Musical: "Sua inteligência musical se destaca: sensibilidade a sons, ritmos e melodias, com capacidade de criar ou interpretar música.",
+  "Corporal-Cinestésica": "Você possui inteligência corporal-cinestésica desenvolvida: controle preciso dos movimentos corporais e habilidades físicas.",
+  Naturalista: "Sua inteligência naturalista é evidente: conexão com a natureza, compreensão de ecossistemas e interesse pelo meio ambiente.",
+  Existencial: "Você demonstra inteligência existencial: reflexão profunda sobre questões fundamentais da existência e propósito de vida."
 };
 
-// Gardner data - only top 3
-const gardnerData = [
-  { name: "Intrapessoal", value: 35, color: "#10B981", percentage: "39%" },
-  { name: "Interpessoal", value: 30, color: "#3B82F6", percentage: "33%" },
-  { name: "Espacial", value: 25, color: "#F97316", percentage: "28%" }
-];
+const GardnerResults = ({ gardnerScores, isBlurred = true }: GardnerResultsProps) => {
+  // Sort Gardner scores and get top 3
+  const sortedGardner = Object.entries(gardnerScores)
+    .filter(([, value]) => value > 0) // Only include non-zero scores
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+  
+  // Calculate total for percentages
+  const total = sortedGardner.reduce((sum, [, value]) => sum + value, 0);
+  
+  // Generate colors for top 3
+  const colors = ["#10B981", "#3B82F6", "#F97316"];
+  
+  const gardnerData = sortedGardner.map(([name, value], index) => ({
+    name,
+    value,
+    color: colors[index],
+    percentage: `${Math.round((value / total) * 100)}%`
+  }));
 
-// Top 3 intelligences
-const topIntelligences = [
-  { name: "Intrapessoal", color: "#10B981", rank: 1 },
-  { name: "Interpessoal", color: "#3B82F6", rank: 2 },
-  { name: "Espacial", color: "#F97316", rank: 3 }
-];
+  const topIntelligences = sortedGardner.map(([name, value], index) => ({
+    name,
+    color: colors[index],
+    rank: index + 1
+  }));
+
+  const [selectedIntelligence, setSelectedIntelligence] = useState<string>(topIntelligences[0]?.name || "");
 
 const careerRecommendations = {
   intrapessoal: ["Escritor", "Filósofo", "Pesquisador", "Consultor", "Empreendedor"],
   interpessoal: ["Psicólogo", "Professor", "Assistente Social", "Terapeuta", "Recursos Humanos"],
-  espacial: ["Arquiteto", "Designer", "Piloto", "Cirurgião", "Engenheiro"]
+  espacial: ["Arquiteto", "Designer", "Piloto", "Cirurgião", "Engenheiro"],
+  "lógico-matemática": ["Cientista", "Engenheiro", "Matemático", "Analista", "Programador"],
+  linguística: ["Escritor", "Jornalista", "Tradutor", "Professor de Idiomas", "Advogado"],
+  musical: ["Músico", "Compositor", "Professor de Música", "Produtor Musical", "Maestro"],
+  "corporal-cinestésica": ["Atleta", "Dançarino", "Cirurgião", "Fisioterapeuta", "Artesão"],
+  naturalista: ["Biólogo", "Veterinário", "Agrônomo", "Geólogo", "Ambientalista"],
+  existencial: ["Filósofo", "Teólogo", "Psicólogo", "Conselheiro", "Pesquisador"]
 };
 
 const CustomTooltip = ({ active, payload }: any) => {
@@ -44,8 +71,10 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
-  const [selectedIntelligence, setSelectedIntelligence] = useState<string>("Intrapessoal");
+
+  if (gardnerData.length === 0) {
+    return <div className="text-center text-muted-foreground py-8">Dados insuficientes para análise Gardner</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -179,71 +208,36 @@ const GardnerResults = ({ isBlurred = true }: GardnerResultsProps) => {
         </h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {/* Intrapessoal */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-              <h4 className="font-semibold text-foreground">Intrapessoal</h4>
-            </div>
+          {topIntelligences.map((intelligence) => {
+            const careerKey = intelligence.name.toLowerCase().replace(' ', '-') as keyof typeof careerRecommendations;
+            const careers = careerRecommendations[careerKey] || [];
             
-            {isBlurred ? (
-              <div className="space-y-2 filter blur-sm select-none">
-                {careerRecommendations.intrapessoal.map((career, idx) => (
-                  <div key={idx} className="h-6 bg-muted rounded w-full"></div>
-                ))}
+            return (
+              <div key={intelligence.name}>
+                <div className="flex items-center space-x-2 mb-4">
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: intelligence.color }}
+                  ></div>
+                  <h4 className="font-semibold text-foreground">{intelligence.name}</h4>
+                </div>
+                
+                {isBlurred ? (
+                  <div className="space-y-2 filter blur-sm select-none">
+                    {careers.slice(0, 5).map((_, idx) => (
+                      <div key={idx} className="h-6 bg-muted rounded w-full"></div>
+                    ))}
+                  </div>
+                ) : (
+                  <ul className="space-y-2">
+                    {careers.map((career, idx) => (
+                      <li key={idx} className="text-foreground">{career}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            ) : (
-              <ul className="space-y-2">
-                {careerRecommendations.intrapessoal.map((career, idx) => (
-                  <li key={idx} className="text-foreground">{career}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Interpessoal */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-              <h4 className="font-semibold text-foreground">Interpessoal</h4>
-            </div>
-            
-            {isBlurred ? (
-              <div className="space-y-2 filter blur-sm select-none">
-                {careerRecommendations.interpessoal.map((career, idx) => (
-                  <div key={idx} className="h-6 bg-muted rounded w-full"></div>
-                ))}
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {careerRecommendations.interpessoal.map((career, idx) => (
-                  <li key={idx} className="text-foreground">{career}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Espacial */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
-              <h4 className="font-semibold text-foreground">Espacial</h4>
-            </div>
-            
-            {isBlurred ? (
-              <div className="space-y-2 filter blur-sm select-none">
-                {careerRecommendations.espacial.map((career, idx) => (
-                  <div key={idx} className="h-6 bg-muted rounded w-full"></div>
-                ))}
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {careerRecommendations.espacial.map((career, idx) => (
-                  <li key={idx} className="text-foreground">{career}</li>
-                ))}
-              </ul>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -6,6 +6,9 @@ import GardnerResults from "./GardnerResults";
 import GopcResults from "./GopcResults";
 
 interface RiasecResultsProps {
+  riasecScores: Record<string, number>;
+  gardnerScores?: Record<string, number>;
+  gopcScores?: Record<string, number>;
   isBlurred?: boolean;
   onDesbloquear: () => void;
   activeTab?: 'riasec' | 'gardner' | 'gopc';
@@ -61,12 +64,25 @@ const riasecDetails: Record<string, {
 };
 
 const RiasecResults = ({ 
+  riasecScores,
+  gardnerScores = {},
+  gopcScores = {},
   isBlurred = true, 
   onDesbloquear, 
   activeTab = 'riasec', 
   onTabChange 
 }: RiasecResultsProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("R");
+  
+  // Generate riasecData from actual scores
+  const riasecData = [
+    { name: "Realista", value: riasecScores.R || 0, color: "#10B981", code: "R" },
+    { name: "Investigativo", value: riasecScores.I || 0, color: "#3B82F6", code: "I" },
+    { name: "Artístico", value: riasecScores.A || 0, color: "#EC4899", code: "A" },
+    { name: "Social", value: riasecScores.S || 0, color: "#F97316", code: "S" },
+    { name: "Empreendedor", value: riasecScores.E || 0, color: "#8B5CF6", code: "E" },
+    { name: "Convencional", value: riasecScores.C || 0, color: "#EAB308", code: "C" }
+  ];
   
   const selectedData = riasecData.find(item => item.code === selectedCategory);
   const selectedDetails = riasecDetails[selectedCategory];
@@ -283,8 +299,8 @@ const RiasecResults = ({
 
         {/* Tab Content */}
         {activeTab === 'riasec' && renderRiasecContent()}
-        {activeTab === 'gardner' && <GardnerResults isBlurred={isBlurred} />}
-        {activeTab === 'gopc' && <GopcResults isBlurred={isBlurred} />}
+        {activeTab === 'gardner' && <GardnerResults gardnerScores={gardnerScores} isBlurred={isBlurred} />}
+        {activeTab === 'gopc' && <GopcResults gopcScores={gopcScores} isBlurred={isBlurred} />}
 
         {/* Disclaimer */}
         <p className="text-xs text-muted-foreground mt-8 leading-relaxed">

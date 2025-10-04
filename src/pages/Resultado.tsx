@@ -317,6 +317,9 @@ const Resultado = () => {
         <div ref={resultsRef}>
           {/* RIASEC Results Section */}
           <RiasecResults 
+            riasecScores={result.riasec_scores}
+            gardnerScores={result.gardner_scores}
+            gopcScores={result.gopc_scores}
             isBlurred={!result.is_unlocked}
             onDesbloquear={handlePurchase}
             activeTab={activeTab}
