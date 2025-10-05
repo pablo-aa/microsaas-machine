@@ -13,28 +13,35 @@ const gopcCompetencies = [
   { code: "TD", name: "Tomada de Decisão", color: "#F97316", bgColor: "#FFF7ED" }
 ];
 
+// Nº de itens por eixo (a partir da sua classificação do questionário)
+// AK = 37, PC = 8, TD = 15
+const GOPC_ITEM_COUNT: Record<string, number> = { AK: 37, PC: 8, TD: 15 };
+const LIKERT_MAX = 5;           // escala 1–5
+const RADAR_MAX = 100;          // manter em percentuais
+
 const competencyDescriptions: Record<string, string> = {
-  AK: 'Capacidade de reconhecer emoções, valores e limites, usando isso para evoluir pessoal e profissionalmente.',
-  PC: 'Planejar objetivos com etapas claras, prazos e priorização, mantendo foco e consistência.',
-  TD: 'Analisar cenários, pesar prós e contras e tomar decisões com responsabilidade.'
+  AK: "Capacidade de reconhecer emoções, valores e limites, usando isso para evoluir pessoal e profissionalmente.",
+  PC: "Planejar objetivos com etapas claras, prazos e priorização, mantendo foco e consistência.",
+  TD: "Analisar cenários, pesar prós e contras e tomar decisões com responsabilidade."
 };
 
 const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
-  // Calculate percentages (max score per competency is around 100)
-  const maxScore = Math.max(gopcScores.AK || 0, gopcScores.PC || 0, gopcScores.TD || 0);
-  
-  const calculatePercentage = (score: number) => {
-    return maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  // Normaliza por eixo: score / (itens*5) → 0–100%
+  const normalizePercent = (axisCode: "AK" | "PC" | "TD", raw: number) => {
+    const denom = (GOPC_ITEM_COUNT[axisCode] ?? 0) * LIKERT_MAX;
+    if (!denom || !raw) return 0;
+    const ratio = Math.max(0, Math.min(1, raw / denom));
+    return Math.round(ratio * RADAR_MAX);
   };
 
-  // Radar chart data from actual scores
+  // Radar chart data (percentual normalizado por eixo)
   const radarData = [
-    { competency: "Autoconhecimento", value: calculatePercentage(gopcScores.AK || 0), fullMark: 100 },
-    { competency: "Planejamento", value: calculatePercentage(gopcScores.PC || 0), fullMark: 100 },
-    { competency: "Tomada de Decisão", value: calculatePercentage(gopcScores.TD || 0), fullMark: 100 }
+    { competency: "Autoconhecimento", value: normalizePercent("AK", gopcScores.AK || 0), fullMark: RADAR_MAX },
+    { competency: "Planejamento", value: normalizePercent("PC", gopcScores.PC || 0), fullMark: RADAR_MAX },
+    { competency: "Tomada de Decisão", value: normalizePercent("TD", gopcScores.TD || 0), fullMark: RADAR_MAX }
   ];
-  
-  // Sort to find strongest competency
+
+  // Ponto forte (maior valor após normalização)
   const sortedCompetencies = [...radarData].sort((a, b) => b.value - a.value);
   const strongestCompetency = sortedCompetencies[0];
 
@@ -52,24 +59,24 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-12">
         {/* Left - Competency Cards with Scores */}
         <div className="space-y-4">
-          {gopcCompetencies.map((competency, index) => {
+          {gopcCompetencies.map((competency) => {
             const scoreData = radarData.find(d => d.competency === competency.name);
             const score = scoreData?.value || 0;
-            const isStrongest = index === 0; // Autoconhecimento é o ponto forte
-            
+            const isStrongest = strongestCompetency?.competency === competency.name;
+
             return (
-              <Card 
+              <Card
                 key={competency.code}
-                className={`border-2 ${isStrongest ? 'shadow-lg ring-2 ring-primary/20' : ''}`}
-                style={{ 
+                className={`border-2 ${isStrongest ? "shadow-lg ring-2 ring-primary/20" : ""}`}
+                style={{
                   borderColor: competency.color,
-                  backgroundColor: competency.bgColor 
+                  backgroundColor: competency.bgColor
                 }}
               >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div 
+                      <div
                         className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-xl"
                         style={{ backgroundColor: competency.color }}
                       >
@@ -106,29 +113,29 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
                 <PolarGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <PolarAngleAxis 
-                  dataKey="competency" 
-                  tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                <PolarAngleAxis
+                  dataKey="competency"
+                  tick={{ fill: "#6B7280", fontSize: 12, fontWeight: 500 }}
                 />
-                <PolarRadiusAxis 
-                  angle={90} 
-                  domain={[0, 100]}
-                  tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, RADAR_MAX]}
+                  tick={{ fill: "#9CA3AF", fontSize: 10 }}
                 />
-                <Radar 
-                  name="GOPC" 
-                  dataKey="value" 
-                  stroke="#3B82F6" 
-                  fill="#3B82F6" 
+                <Radar
+                  name="GOPC"
+                  dataKey="value"
+                  stroke="#3B82F6"
+                  fill="#3B82F6"
                   fillOpacity={0.4}
                   strokeWidth={2}
                 />
-                <Tooltip 
-                  formatter={(value: number) => [`${value}%`, 'Pontuação']}
-                  contentStyle={{ 
-                    backgroundColor: 'white',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '8px'
+                <Tooltip
+                  formatter={(value: number) => [`${value}%`, "Pontuação"]}
+                  contentStyle={{
+                    backgroundColor: "white",
+                    border: "1px solid #E5E7EB",
+                    borderRadius: "8px"
                   }}
                 />
               </RadarChart>
@@ -142,7 +149,7 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
         <h3 className="text-xl font-semibold text-foreground mb-4">
           O que significa GOPC?
         </h3>
-        
+
         <p className="text-muted-foreground mb-6">
           GOPC é um modelo que avalia três competências essenciais para o desenvolvimento de carreira:
         </p>
@@ -151,16 +158,16 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
           {gopcCompetencies.map((competency) => {
             const scoreData = radarData.find(d => d.competency === competency.name);
             const score = scoreData?.value || 0;
-            
+
             return (
               <div key={competency.code} className="flex items-start space-x-4">
-                <div 
+                <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
                   style={{ backgroundColor: competency.color }}
                 >
                   {competency.code}
                 </div>
-                
+
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-semibold text-foreground">
@@ -187,7 +194,9 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">{competencyDescriptions[competency.code]}</p>
+                    <p className="text-muted-foreground">
+                      {competencyDescriptions[competency.code]}
+                    </p>
                   )}
                 </div>
               </div>
@@ -197,7 +206,7 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
       </div>
 
       {/* Strong Point Section - Highlighted */}
-      <Card className={`border-2 border-primary bg-primary/5 ${isBlurred ? 'relative overflow-hidden' : ''}`}>
+      <Card className={`border-2 border-primary bg-primary/5 ${isBlurred ? "relative overflow-hidden" : ""}`}>
         <CardContent className="p-8">
           <div className="flex items-start space-x-4 mb-4">
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
@@ -207,12 +216,14 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
               <h3 className="text-2xl font-bold text-foreground mb-2">
                 Seu Ponto Forte
               </h3>
-              {!isBlurred && (
-                <h4 className="text-xl font-semibold text-primary mb-3">{strongestCompetency.competency} ({strongestCompetency.value}%)</h4>
+              {!isBlurred && strongestCompetency && (
+                <h4 className="text-xl font-semibold text-primary mb-3">
+                  {strongestCompetency.competency} ({strongestCompetency.value}%)
+                </h4>
               )}
             </div>
           </div>
-          
+
           {isBlurred ? (
             <>
               <div className="filter blur-sm select-none">
@@ -232,8 +243,18 @@ const GopcResults = ({ gopcScores, isBlurred = true }: GopcResultsProps) => {
           ) : (
             <div className="bg-white rounded-lg p-6">
               <p className="text-foreground text-lg leading-relaxed">
-                Seu ponto forte é o <span className="font-bold text-primary">{strongestCompetency.competency.toLowerCase()}</span>: {competencyDescriptions[gopcCompetencies.find(c => c.name === strongestCompetency.competency)?.code || 'AK']}
-                {' '}Esta competência é fundamental para o planejamento de carreira, pois permite que você tome decisões alinhadas aos seus valores e objetivos pessoais.
+                Seu ponto forte é o{" "}
+                <span className="font-bold text-primary">
+                  {strongestCompetency?.competency.toLowerCase()}
+                </span>
+                :{" "}
+                {
+                  competencyDescriptions[
+                    gopcCompetencies.find((c) => c.name === strongestCompetency?.competency)?.code || "AK"
+                  ]
+                }{" "}
+                Esta competência é fundamental para o planejamento de carreira, pois permite que você tome decisões
+                alinhadas aos seus valores e objetivos pessoais.
               </p>
             </div>
           )}
