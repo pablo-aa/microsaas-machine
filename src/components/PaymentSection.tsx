@@ -85,10 +85,10 @@ const PaymentSection = ({ onPurchase }: PaymentSectionProps) => {
             <div className="flex items-center justify-center space-x-2 mt-2">
               <Mail className="w-4 h-4 text-primary" />
               <a 
-                href="mailto:carrerium.suporte@gmail.com" 
+                href="mailto:suporte@qualcarreira.com" 
                 className="text-primary text-sm font-medium hover:underline"
               >
-                carrerium.suporte@gmail.com
+                suporte@qualcarreira.com
               </a>
             </div>
           </CardContent>

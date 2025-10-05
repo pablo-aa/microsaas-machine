@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Carrerium Design System - Professional career guidance platform */
+/* QualCarreira Design System - Professional career guidance platform */
 
 @layer base {
   :root {
@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Carrerium Purple Brand Colors */
+    /* QualCarreira Purple Brand Colors */
     --primary: 265 88% 65%;
     --primary-foreground: 0 0% 100%;
     --primary-light: 265 88% 85%;
@@ -115,7 +115,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* Carrerium Custom Styles */
+  /* QualCarreira Custom Styles */
   .gradient-primary {
     background: var(--gradient-primary);
   }

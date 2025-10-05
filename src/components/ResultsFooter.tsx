@@ -27,10 +27,10 @@ const ResultsFooter = () => {
             <div className="flex items-center space-x-2 md:justify-end">
               <Mail className="w-5 h-5 text-primary" />
               <a 
-                href="mailto:carrerium.suporte@gmail.com" 
+                href="mailto:suporte@qualcarreira.com" 
                 className="text-slate-300 hover:text-white transition-colors"
               >
-                carrerium.suporte@gmail.com
+                suporte@qualcarreira.com
               </a>
             </div>
           </div>
@@ -44,15 +44,15 @@ const ResultsFooter = () => {
             </p>
             
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">
+              <Link to="/termos-de-uso" className="text-slate-400 hover:text-white transition-colors text-sm">
                 Termos de Uso
-              </a>
-              <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/politica-de-privacidade" className="text-slate-400 hover:text-white transition-colors text-sm">
                 Política de Privacidade
-              </a>
-              <a href="#" className="text-slate-400 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/faq" className="text-slate-400 hover:text-white transition-colors text-sm">
                 FAQ
-              </a>
+              </Link>
             </div>
           </div>
         </div>

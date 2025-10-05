@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import Comeco from "./pages/Comeco";
 import Avaliacao from "./pages/Avaliacao";
 import Resultado from "./pages/Resultado";
+import TermosDeUso from "./pages/TermosDeUso";
+import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
+import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import { DevBanner } from "./components/DevBanner";
 
@@ -24,6 +27,9 @@ const App = () => (
           <Route path="/comeco" element={<Comeco />} />
           <Route path="/avaliacao/:id" element={<Avaliacao />} />
           <Route path="/resultado/:id" element={<Resultado />} />
+          <Route path="/termos-de-uso" element={<TermosDeUso />} />
+          <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
+          <Route path="/faq" element={<FAQ />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

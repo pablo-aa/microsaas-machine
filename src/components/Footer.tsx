@@ -32,24 +32,24 @@ const Footer = () => {
           <div className="mb-8">
             <p className="text-sm text-muted-foreground mb-2">Entre em contato:</p>
             <a 
-              href="mailto:contato@gmail.com" 
+              href="mailto:suporte@qualcarreira.com" 
               className="text-primary hover:text-primary-dark transition-colors font-medium"
             >
-              contato@gmail.com
+              suporte@qualcarreira.com
             </a>
           </div>
 
           {/* Legal Links */}
           <div className="flex flex-wrap justify-center gap-6 mb-8">
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Termos de uso
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-              Políticas de Privacidade
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+            <Link to="/termos-de-uso" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              Termos de Uso
+            </Link>
+            <Link to="/politica-de-privacidade" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
+              Política de Privacidade
+            </Link>
+            <Link to="/faq" className="text-muted-foreground hover:text-foreground transition-colors text-sm">
               FAQ
-            </a>
+            </Link>
           </div>
 
           {/* Copyright */}
