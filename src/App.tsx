@@ -7,11 +7,13 @@ import Index from "./pages/Index";
 import Comeco from "./pages/Comeco";
 import Avaliacao from "./pages/Avaliacao";
 import Resultado from "./pages/Resultado";
+import ComoFunciona from "./pages/ComoFunciona";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
 import { DevBanner } from "./components/DevBanner";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -21,12 +23,14 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <DevBanner />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/comeco" element={<Comeco />} />
           <Route path="/avaliacao/:id" element={<Avaliacao />} />
           <Route path="/resultado/:id" element={<Resultado />} />
+          <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/termos-de-uso" element={<TermosDeUso />} />
           <Route path="/politica-de-privacidade" element={<PoliticaDePrivacidade />} />
           <Route path="/faq" element={<FAQ />} />

@@ -39,13 +39,15 @@ const Hero = () => {
                   Fazer teste →
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="border-primary text-primary hover:bg-primary/5 px-8 py-3 text-base font-semibold"
-              >
-                Saiba Mais
-              </Button>
+              <Link to="/como-funciona">
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  className="border-primary text-primary hover:bg-primary/5 px-8 py-3 text-base font-semibold w-full sm:w-auto"
+                >
+                  Saiba Mais
+                </Button>
+              </Link>
             </div>
 
             {/* Features List */}

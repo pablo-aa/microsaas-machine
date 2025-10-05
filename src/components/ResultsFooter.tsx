@@ -43,7 +43,10 @@ const ResultsFooter = () => {
               © 2025 Qual Carreira. Todos os direitos reservados.
             </p>
             
-            <div className="flex space-x-6 mt-4 md:mt-0">
+            <div className="flex flex-wrap gap-4 md:gap-6 mt-4 md:mt-0 justify-center md:justify-end">
+              <Link to="/como-funciona" className="text-slate-400 hover:text-white transition-colors text-sm">
+                Como Funciona
+              </Link>
               <Link to="/termos-de-uso" className="text-slate-400 hover:text-white transition-colors text-sm">
                 Termos de Uso
               </Link>

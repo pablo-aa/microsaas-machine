@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import ResultsFooter from "@/components/ResultsFooter";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
@@ -118,7 +118,7 @@ const TermosDeUso = () => {
           </div>
         </article>
 
-        <Footer />
+        <ResultsFooter />
       </main>
     </>
   );
