@@ -232,6 +232,10 @@ const checkPaymentStatus = async () => {
 
   const handleDevBypass = async () => {
     setStatus('approved');
+    
+    // Track purchase event for dev testing
+    trackPurchase(testId, paymentId || 'DEV_PAYMENT_ID', userEmail);
+    
     toast({
       title: "🎭 Simulando pagamento aprovado",
       description: "Desbloqueando resultado (modo DEV)...",
