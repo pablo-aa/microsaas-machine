@@ -296,11 +296,13 @@ const Resultado = () => {
           <Button
             onClick={handleDesbloquearClick}
             size="lg"
-            className="bg-white hover:bg-white/90 text-primary text-base sm:text-lg font-bold px-6 sm:px-10 lg:px-12 py-3 sm:py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce-in mb-6 sm:mb-8 w-full sm:w-auto max-w-full mx-4 sm:mx-0"
+            className="bg-white hover:bg-white/90 text-primary text-base sm:text-lg font-bold px-6 sm:px-10 lg:px-12 py-3 sm:py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 animate-bounce-in mb-6 sm:mb-8 w-full sm:w-auto max-w-full mx-0 gap-2 min-w-0"
             style={{ animationDelay: '0.6s' }}
           >
-            <Lock className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="truncate">{result.is_unlocked ? 'Ver Resultados' : 'Desbloquear Resultados'}</span>
+            <Lock className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+            <span className="truncate max-w-full">
+              {result.is_unlocked ? 'Ver Resultados' : 'Desbloquear Resultados'}
+            </span>
           </Button>
 
           {/* Scroll Indicator */}
