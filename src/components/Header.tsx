@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { trackCTAClick } from "@/lib/analytics";
 
 const Header = () => {
   return (
@@ -17,7 +18,7 @@ const Header = () => {
           </Link>
 
           {/* CTA Button */}
-          <Link to="/comeco">
+          <Link to="/comeco" onClick={() => trackCTAClick('header', 'start_test')}>
             <Button 
               variant="default" 
               className="gradient-primary hover:opacity-90 transition-opacity px-6 py-2 font-medium"

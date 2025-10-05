@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,12 @@ import { z } from "zod";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { assessmentStorage } from "@/lib/assessmentStorage";
+import { 
+  trackFormViewed, 
+  trackFormFieldInteraction, 
+  trackFormSubmitted, 
+  trackFormError 
+} from "@/lib/analytics";
 
 // Validation schema
 const formSchema = z.object({
@@ -42,6 +48,11 @@ const FormularioDados = ({ answers, testId }: FormularioDadosProps) => {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
+  // Track form viewed
+  useEffect(() => {
+    trackFormViewed(testId);
+  }, [testId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -49,6 +60,9 @@ const FormularioDados = ({ answers, testId }: FormularioDadosProps) => {
     try {
       const validatedData = formSchema.parse(formData);
       setIsLoading(true);
+
+      // Track form submitted
+      trackFormSubmitted(testId, validatedData.age);
 
       console.log('Submitting to create-result:', {
         name: validatedData.name,

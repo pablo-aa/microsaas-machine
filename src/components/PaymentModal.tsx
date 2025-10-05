@@ -5,6 +5,13 @@ import { Loader2, Check, Copy, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getMercadoPagoConfig } from '@/config/mercadopago';
+import { 
+  trackBeginCheckout, 
+  trackAddPaymentInfo, 
+  trackPurchase, 
+  trackPixCodeCopied, 
+  trackPaymentError 
+} from '@/lib/analytics';
 
 // Get Supabase URL from environment (kept for potential direct calls if needed)
 const getSupabaseUrl = () => {
@@ -41,8 +48,11 @@ export const PaymentModal = ({
   const [error, setError] = useState('');
   const { toast } = useToast();
   const price = getMercadoPagoConfig().price;
+  
+  // Track begin_checkout when modal opens
   useEffect(() => {
     if (isOpen && !paymentId) {
+      trackBeginCheckout(testId);
       createPayment();
     }
   }, [isOpen]);
@@ -93,11 +103,16 @@ export const PaymentModal = ({
       setTicketUrl(data.ticket_url);
       setStatus(data.status || 'pending');
       setLoading(false);
+      
+      // Track payment info added (QR Code generated)
+      trackAddPaymentInfo(testId, data.payment_id);
     } catch (err: any) {
       console.error('Error in createPayment:', err);
-      setError(err.message || 'Erro ao criar pagamento. Tente novamente.');
+      const errorMessage = err.message || 'Erro ao criar pagamento. Tente novamente.';
+      setError(errorMessage);
       setStatus('error');
       setLoading(false);
+      trackPaymentError(errorMessage, testId);
     }
   };
 
@@ -121,6 +136,10 @@ const checkPaymentStatus = async () => {
 
     if (data?.status === 'approved') {
       setStatus('approved');
+      
+      // Track purchase event
+      trackPurchase(testId, paymentId, userEmail);
+      
       toast({
         title: "Pagamento aprovado!",
         description: "Seus resultados completos estão sendo desbloqueados...",
@@ -129,6 +148,7 @@ const checkPaymentStatus = async () => {
     } else if (data?.status === 'rejected') {
       setStatus('rejected');
       setError('Pagamento rejeitado. Tente novamente.');
+      trackPaymentError('Pagamento rejeitado', testId);
     }
     // Opcional: console.log('Detalhe do status:', data?.status_detail);
 
@@ -196,6 +216,7 @@ const checkPaymentStatus = async () => {
   const copyPixCode = () => {
     if (qrCode) {
       navigator.clipboard.writeText(qrCode);
+      trackPixCodeCopied(testId, paymentId);
       toast({
         title: "Código copiado!",
         description: "Cole no seu app de pagamentos para pagar.",

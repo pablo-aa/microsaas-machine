@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -7,6 +7,13 @@ import RiasecResults from "@/components/RiasecResults";
 import PaymentSection from "@/components/PaymentSection";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
+import { usePageView } from "@/hooks/useGTM";
+import { 
+  trackPartialResultViewed, 
+  trackViewItem, 
+  trackUnlockButtonClicked, 
+  trackFullResultViewed 
+} from "@/lib/analytics";
 
 interface ResultadosCompletosProps {
   userName: string;
@@ -21,7 +28,16 @@ const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: Res
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
+  usePageView();
+
+  // Track partial result viewed and view_item on mount
+  useEffect(() => {
+    trackPartialResultViewed(testId);
+    trackViewItem(testId);
+  }, [testId]);
+
   const handleDesbloquearClick = () => {
+    trackUnlockButtonClicked(testId);
     setShowFullResults(true);
     // Scroll to results section after state update
     setTimeout(() => {
@@ -34,6 +50,7 @@ const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: Res
   };
 
   const handlePaymentSuccess = () => {
+    trackFullResultViewed(testId);
     onDesbloquear();
   };
 

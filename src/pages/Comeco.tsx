@@ -4,17 +4,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckCircle, ArrowRight, BarChart3, FileText, Target, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
+import { usePageView } from "@/hooks/useGTM";
+import { trackTestStarted } from "@/lib/analytics";
 
 const Comeco = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  
+  usePageView();
 
   const handleStartAssessment = () => {
     setIsLoading(true);
+    const assessmentId = uuidv4();
+    
+    // Track test started
+    trackTestStarted(assessmentId);
     
     // Loading effect for 2 seconds
     setTimeout(() => {
-      const assessmentId = uuidv4();
       navigate(`/avaliacao/${assessmentId}`);
     }, 2000);
   };

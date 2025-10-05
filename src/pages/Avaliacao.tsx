@@ -20,6 +20,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { profiles, generateProfileAnswers, type ProfileType } from "@/lib/testProfiles";
+import { usePageView, useTestAbandonment } from "@/hooks/useGTM";
+import { 
+  trackQuestionAnswered, 
+  trackTestNavigationBack, 
+  trackTestResumed, 
+  trackTestCompleted 
+} from "@/lib/analytics";
 
 type AssessmentStage = 'questions' | 'processing' | 'form' | 'results-loading' | 'results';
 
@@ -38,6 +45,16 @@ const Avaliacao = () => {
   const [stage, setStage] = useState<AssessmentStage>('questions');
   const [userData, setUserData] = useState<{name: string; email: string; age: string} | null>(null);
   const [testId, setTestId] = useState<string>('');
+
+  // GTM Tracking
+  usePageView();
+  useTestAbandonment(
+    stage === 'questions',
+    testId,
+    currentQuestion,
+    answers.length,
+    TOTAL_QUESTIONS
+  );
 
   // Generate unique test ID and load saved progress when component mounts
   useEffect(() => {
@@ -60,6 +77,9 @@ const Avaliacao = () => {
       const currentQuestionData = questions[savedProgress.currentQuestion];
       const currentAnswer = savedProgress.answers.find(a => a.question_id === currentQuestionData?.id);
       setSelectedAnswer(currentAnswer?.score);
+      
+      // Track test resumed
+      trackTestResumed(id, savedProgress.currentQuestion + 1, savedProgress.answers.length);
       
       toast({
         title: "Progresso recuperado",
@@ -91,6 +111,9 @@ const Avaliacao = () => {
     }
     setAnswers(newAnswers);
 
+    // Track question answered
+    trackQuestionAnswered(testId, currentQuestion + 1, TOTAL_QUESTIONS, newAnswers.length);
+
     if (currentQuestion < totalQuestions - 1) {
       const nextQuestionIndex = currentQuestion + 1;
       setCurrentQuestion(nextQuestionIndex);
@@ -103,7 +126,8 @@ const Avaliacao = () => {
       const nextAnswer = newAnswers.find(a => a.question_id === nextQuestionData.id);
       setSelectedAnswer(nextAnswer?.score);
     } else {
-      // Assessment completed - clear progress and show processing loading
+      // Assessment completed - track and clear progress
+      trackTestCompleted(testId, TOTAL_QUESTIONS);
       assessmentStorage.clearProgress(testId);
       setStage('processing');
       setTimeout(() => {
@@ -114,6 +138,9 @@ const Avaliacao = () => {
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
+      // Track navigation back
+      trackTestNavigationBack(testId, currentQuestion);
+      
       setCurrentQuestion(currentQuestion - 1);
       // Find answer for previous question
       const prevQuestionData = questions[currentQuestion - 1];

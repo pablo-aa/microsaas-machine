@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-illustration.png";
+import { trackCTAClick } from "@/lib/analytics";
 
 const Hero = () => {
   return (
@@ -31,7 +32,7 @@ const Hero = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              <Link to="/comeco">
+              <Link to="/comeco" onClick={() => trackCTAClick('hero', 'start_test')}>
                 <Button 
                   size="lg" 
                   className="gradient-primary hover:opacity-90 transition-opacity px-8 py-3 text-base font-semibold w-full sm:w-auto"
@@ -39,7 +40,7 @@ const Hero = () => {
                   Fazer teste →
                 </Button>
               </Link>
-              <Link to="/como-funciona">
+              <Link to="/como-funciona" onClick={() => trackCTAClick('hero', 'learn_more')}>
                 <Button 
                   variant="outline" 
                   size="lg"

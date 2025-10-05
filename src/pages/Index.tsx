@@ -4,8 +4,12 @@ import StatsSection from "@/components/StatsSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import ResultsFooter from "@/components/ResultsFooter";
 import CookieConsent from "@/components/CookieConsent";
+import { usePageView, useScrollDepth } from "@/hooks/useGTM";
 
 const Index = () => {
+  usePageView();
+  useScrollDepth();
+
   return (
     <main className="min-h-screen">
       <Header />

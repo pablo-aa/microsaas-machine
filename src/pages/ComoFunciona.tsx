@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, Brain, Users, Target, Zap, Shield, Clock, Award } from "lucide-react";
 import Header from "@/components/Header";
 import ResultsFooter from "@/components/ResultsFooter";
+import { usePageView } from "@/hooks/useGTM";
+import { trackCTAClick } from "@/lib/analytics";
 
 const ComoFunciona = () => {
+  usePageView();
+  
   return (
     <>
       <Helmet>
@@ -471,12 +475,12 @@ const ComoFunciona = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-              <Link to="/comeco">
+              <Link to="/comeco" onClick={() => trackCTAClick('como_funciona', 'start_test')}>
                 <Button size="lg" className="gradient-primary hover:opacity-90 transition-opacity px-8 py-3 text-base font-semibold w-full sm:w-auto">
                   Começar Teste Agora
                 </Button>
               </Link>
-              <Link to="/">
+              <Link to="/" onClick={() => trackCTAClick('como_funciona', 'learn_more')}>
                 <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/5 px-8 py-3 text-base font-semibold w-full sm:w-auto">
                   Voltar para a Página Inicial
                 </Button>

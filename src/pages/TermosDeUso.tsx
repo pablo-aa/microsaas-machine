@@ -3,8 +3,11 @@ import Header from "@/components/Header";
 import ResultsFooter from "@/components/ResultsFooter";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { usePageView } from "@/hooks/useGTM";
 
 const TermosDeUso = () => {
+  usePageView();
+  
   return (
     <>
       <Helmet>

@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import ResultsFooter from "@/components/ResultsFooter";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Mail } from "lucide-react";
+import { usePageView } from "@/hooks/useGTM";
 import {
   Accordion,
   AccordionContent,
@@ -11,6 +12,8 @@ import {
 } from "@/components/ui/accordion";
 
 const FAQ = () => {
+  usePageView();
+  
   const faqs = [
     {
       question: "Quanto tempo leva para fazer o teste?",
