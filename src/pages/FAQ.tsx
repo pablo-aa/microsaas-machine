@@ -30,7 +30,7 @@ const FAQ = () => {
     },
     {
       question: "Como funciona o acesso ao relatório completo?",
-      answer: "Após concluir o teste, você pode liberar o relatório detalhado efetuando o pagamento via PIX. O acesso é individual e enviado por e-mail."
+      answer: "Após concluir o teste, você pode liberar o relatório detalhado efetuando o pagamento via PIX. O acesso é individual e gerado no próprio site."
     },
     {
       question: "Posso fazer o teste mais de uma vez?",
