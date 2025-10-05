@@ -44,7 +44,7 @@ serve(async (req) => {
       const origin = req.headers.get('origin') || req.headers.get('referer') || '';
       isProd = origin.includes('qualcarreira.com');
     }
-    const transactionAmount = isProd ? 1.00 : 12.90;
+    const transactionAmount = 19.90;
 
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {
