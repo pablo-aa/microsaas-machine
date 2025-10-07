@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { trackCTAClick } from "@/lib/analytics";
+import logoQualCarreira from "@/assets/logo-qualcarreira.png";
 
 const Header = () => {
   return (
@@ -9,12 +10,11 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">QC</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">Qual Carreira</span>
-            </div>
+            <img 
+              src={logoQualCarreira} 
+              alt="QualCarreira - Teste Vocacional" 
+              className="h-8 w-auto"
+            />
           </Link>
 
           {/* CTA Button */}
