@@ -8,12 +8,13 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           {/* Solution Name & Logo */}
-          <Link to="/" className="flex items-center justify-center mb-4">
+          <Link to="/" className="flex items-center justify-center space-x-2 mb-4">
             <img 
               src={logoQualCarreira} 
               alt="QualCarreira - Teste Vocacional" 
               className="h-10 w-auto"
             />
+            <span className="text-2xl font-bold text-foreground">Qual Carreira</span>
           </Link>
 
           {/* Subtitle */}

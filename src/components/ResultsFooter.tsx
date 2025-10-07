@@ -15,6 +15,7 @@ const ResultsFooter = () => {
                 alt="QualCarreira - Teste Vocacional" 
                 className="h-8 w-auto"
               />
+              <span className="text-xl font-bold text-white">Qual Carreira</span>
             </Link>
             
             <p className="text-slate-300 leading-relaxed max-w-md">
