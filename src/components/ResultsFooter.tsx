@@ -9,7 +9,7 @@ const ResultsFooter = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Column - Brand */}
           <div>
-            <Link to="/" className="flex items-center space-x-2 mb-4">
+            <Link to="/" className="flex items-center space-x-1 mb-4">
               <img 
                 src={logoQualCarreira} 
                 alt="QualCarreira - Teste Vocacional" 
