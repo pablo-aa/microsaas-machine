@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { usePageView } from "@/hooks/useGTM";
 import { trackTestStarted } from "@/lib/analytics";
+import logoQualCarreira from "@/assets/logo-qualcarreira.png";
 
 const Comeco = () => {
   const navigate = useNavigate();
@@ -32,10 +33,12 @@ const Comeco = () => {
       <header className="w-full bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">QC</span>
-              </div>
+            <Link to="/" className="flex items-center space-x-1">
+              <img 
+                src={logoQualCarreira} 
+                alt="QualCarreira - Teste Vocacional" 
+                className="h-8 w-auto"
+              />
               <span className="text-xl font-bold text-foreground">Qual Carreira</span>
             </Link>
           </div>
