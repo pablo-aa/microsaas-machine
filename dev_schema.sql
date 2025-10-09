@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS "public"."payments" (
     "user_email" "text" NOT NULL,
     "payment_id" "text" NOT NULL,
     "payment_method" "text" DEFAULT 'pix'::"text",
-    "amount" numeric(10,2) DEFAULT 12.90 NOT NULL,
+ "amount" numeric(10,2) DEFAULT 14.90 NOT NULL,
     "status" "text" DEFAULT 'pending'::"text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),

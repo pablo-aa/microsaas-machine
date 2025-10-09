@@ -88,7 +88,7 @@ create table public.payments (
   payment_method text default 'pix',
   
   -- Payment details
-  amount decimal(10,2) not null default 12.90,
+ amount decimal(10,2) not null default 14.90,
   status text not null default 'pending', -- pending, approved, rejected, cancelled
   
   -- Timestamps

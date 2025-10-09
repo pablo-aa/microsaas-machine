@@ -49,7 +49,7 @@ serve(async (req) => {
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {
       transaction_amount: transactionAmount,
-      description: 'Qual Carreira - Análise Completa de Perfil Vocacional',
+      description: 'Carrerium - Análise Completa de Perfil Vocacional',
       payment_method_id: 'pix',
       payer: {
         email: email,

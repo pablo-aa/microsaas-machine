@@ -236,6 +236,6 @@ Fase 3B - Email (Opcional)
 3. Salve o link do resultado
 4. Veja os resultados com blur
 5. Clique em "Desbloquear Resultados"
-6. Pague via PIX (R$ 12,90)
+6. Pague via PIX (R$ 14,90)
 7. Aguarde aprovação (auto polling)
 8. Resultados desbloqueados automaticamente!
