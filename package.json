@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:functions:dev": "bash scripts/deploy-functions-dev.sh",
+    "deploy:functions:prod": "bash scripts/deploy-functions-prod.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
