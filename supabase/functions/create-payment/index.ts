@@ -13,25 +13,60 @@ serve(async (req)=>{
     });
   }
   try {
-    const { test_id, email, name } = await req.json();
+    const { test_id, email, name, assigned_price } = await req.json();
     console.log('Creating payment for:', {
       test_id,
       email,
-      name
+      name,
+      assigned_price
     });
+    
     if (!test_id || !email) {
       throw new Error('test_id and email are required');
     }
+
+    if (!assigned_price || assigned_price <= 0) {
+      throw new Error('assigned_price is required and must be greater than 0');
+    }
+
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    const accessTokenType = Deno.env.get('MERCADOPAGO_TOKEN_TYPE') || 'production';
+    
     if (!accessToken) {
       console.error('MERCADOPAGO_ACCESS_TOKEN is not configured in environment variables');
       throw new Error('Payment service not configured. Please contact support.');
     }
+    
     console.log('Access token found:', accessToken.substring(0, 10) + '...');
-    // Detect amount based on origin (prod vs dev)
-    const origin = req.headers.get('origin') || '';
-    const isProd = origin.includes('qualcarreira.com');
-    const transactionAmount = isProd ? 14.90 : 14.90;
+    console.log('Token type:', accessTokenType);
+    console.log('Origin:', req.headers.get('origin'));
+    // Validate assigned_price against database
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: testResult, error: testError } = await supabase
+      .from('test_results')
+      .select('assigned_price, ab_test_id')
+      .eq('id', test_id)
+      .single();
+
+    if (testError) {
+      console.error('Error fetching test result:', testError);
+      throw new Error('Test result not found');
+    }
+
+    if (!testResult || testResult.assigned_price !== assigned_price) {
+      console.error('Price mismatch:', {
+        expected: testResult?.assigned_price,
+        received: assigned_price
+      });
+      throw new Error('Invalid price');
+    }
+
+    const transactionAmount = assigned_price;
+    console.log('Validated transaction amount:', transactionAmount);
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {
       transaction_amount: transactionAmount,
@@ -70,8 +105,8 @@ serve(async (req)=>{
       throw new Error(errorMessage);
     }
     console.log('Payment created successfully:', mpData.id);
+    
     // Salvar pagamento no banco de dados
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
     const { error: dbError } = await supabase.from('payments').insert({
       test_id,
       user_email: email,
