@@ -13,11 +13,12 @@ serve(async (req)=>{
     });
   }
   try {
-    const { test_id, email, name } = await req.json();
+    const { test_id, email, name, reuse_only } = await req.json();
     console.log('Creating payment for:', {
       test_id,
       email,
-      name
+      name,
+      reuse_only
     });
     if (!test_id || !email) {
       throw new Error('test_id and email are required');
@@ -32,6 +33,95 @@ serve(async (req)=>{
     const origin = req.headers.get('origin') || '';
     const isProd = origin.includes('qualcarreira.com');
     const transactionAmount = isProd ? 14.90 : 14.90;
+    
+    // Initialize Supabase client (used for reuse logic and saving records)
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '', 
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Try to reuse an existing payment for this test/email to avoid duplicates
+    const { data: existingPayment, error: existingError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('test_id', test_id)
+      .eq('user_email', email)
+      .in('status', ['pending', 'approved'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('Error checking existing payment:', existingError);
+    }
+
+    if (existingPayment) {
+      console.log('Reusing existing payment:', existingPayment.payment_id, existingPayment.status);
+
+      // If already approved, return immediately (frontend will attempt unlock)
+      if (existingPayment.status === 'approved') {
+        return new Response(JSON.stringify({
+          payment_id: existingPayment.payment_id,
+          qr_code: null,
+          qr_code_base64: null,
+          ticket_url: null,
+          status: 'approved'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      // Pending payment: fetch current QR details from Mercado Pago
+      try {
+        console.log('Fetching existing payment details from MP:', existingPayment.payment_id);
+        const mpGetResponse = await fetch(`https://api.mercadopago.com/v1/payments/${existingPayment.payment_id}`, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        const mpGetData = await mpGetResponse.json();
+        console.log('MP GET status:', mpGetResponse.status);
+
+        if (!mpGetResponse.ok) {
+          console.error('Mercado Pago GET error:', JSON.stringify(mpGetData, null, 2));
+          // Fall through to creating a new payment if reuse_only is not enforced
+          if (reuse_only) {
+            return new Response(JSON.stringify({ error: 'Failed to fetch existing payment details' }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 500
+            });
+          }
+        } else {
+          // Return QR data for existing pending payment
+          return new Response(JSON.stringify({
+            payment_id: mpGetData.id,
+            qr_code: mpGetData.point_of_interaction?.transaction_data?.qr_code,
+            qr_code_base64: mpGetData.point_of_interaction?.transaction_data?.qr_code_base64,
+            ticket_url: mpGetData.point_of_interaction?.transaction_data?.ticket_url,
+            status: mpGetData.status
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          });
+        }
+      } catch (e) {
+        console.error('Error fetching existing payment from MP:', e);
+        if (reuse_only) {
+          return new Response(JSON.stringify({ error: 'Error fetching existing payment from MP' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500
+          });
+        }
+      }
+    } else if (reuse_only) {
+      // No existing payment and reuse_only requested: do not create a new one
+      return new Response(JSON.stringify({ error: 'No existing payment found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404
+      });
+    }
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {
       transaction_amount: transactionAmount,
@@ -71,7 +161,6 @@ serve(async (req)=>{
     }
     console.log('Payment created successfully:', mpData.id);
     // Salvar pagamento no banco de dados
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
     const { error: dbError } = await supabase.from('payments').insert({
       test_id,
       user_email: email,

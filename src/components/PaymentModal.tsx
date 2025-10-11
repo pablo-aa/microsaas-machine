@@ -53,7 +53,8 @@ export const PaymentModal = ({
   useEffect(() => {
     if (isOpen && !paymentId) {
       trackBeginCheckout(testId);
-      createPayment();
+      // Primeiro tenta reaproveitar pagamento existente
+      probeExistingPaymentOrCreate();
     }
   }, [isOpen]);
 
@@ -67,6 +68,55 @@ export const PaymentModal = ({
 
     return () => clearInterval(interval);
   }, [paymentId, status]);
+
+  const probeExistingPaymentOrCreate = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Tenta localizar pagamento existente (pending/approved)
+      const { data: reuseData, error: reuseError } = await supabase.functions.invoke('create-payment', {
+        body: {
+          test_id: testId,
+          email: userEmail,
+          name: userName,
+          reuse_only: true,
+          isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
+        },
+      });
+
+      if (!reuseError && reuseData && reuseData.payment_id) {
+        console.log('Using existing payment:', reuseData);
+        setPaymentId(reuseData.payment_id);
+        setQrCode(reuseData.qr_code || '');
+        setQrCodeBase64(reuseData.qr_code_base64 || '');
+        setTicketUrl(reuseData.ticket_url || '');
+        setStatus(reuseData.status || 'pending');
+        setLoading(false);
+
+        // Se já aprovado, desbloqueia imediatamente
+        if (reuseData.status === 'approved') {
+          trackPurchase(testId, reuseData.payment_id, userEmail);
+          toast({
+            title: 'Pagamento aprovado! ',
+            description: 'Desbloqueando seu resultado...',
+          });
+          await unlockResult();
+          return;
+        }
+
+        // Caso contrário, segue com polling normal
+        return;
+      }
+
+      // Se não encontrou pagamento existente, cria um novo
+      await createPayment();
+    } catch (err: any) {
+      console.error('Error probing existing payment:', err);
+      // Fallback: tentar criar um novo pagamento
+      await createPayment();
+    }
+  };
 
   const createPayment = async () => {
     try {
@@ -116,9 +166,9 @@ export const PaymentModal = ({
     }
   };
 
-const checkPaymentStatus = async () => {
-  try {
-    if (!paymentId) return;
+  const checkPaymentStatus = async () => {
+    try {
+      if (!paymentId) return;
 
     console.log('Checking payment status:', paymentId);
 

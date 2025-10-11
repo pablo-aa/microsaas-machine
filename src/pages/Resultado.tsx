@@ -135,6 +135,62 @@ const Resultado = () => {
     setActiveTab(tab);
   };
 
+  // Background check: if resultado está bloqueado e o modal não está aberto,
+  // verifica periodicamente se há pagamento aprovado e tenta desbloquear.
+  useEffect(() => {
+    let interval: number | undefined;
+
+    const startBackgroundCheck = () => {
+      if (!result || result.is_unlocked || showPaymentModal) return;
+
+      interval = window.setInterval(async () => {
+        try {
+          console.log('[BG] Checking existing payment for auto-unlock...');
+          const { data, error } = await supabase.functions.invoke('create-payment', {
+            body: {
+              test_id: result.id,
+              email: result.email,
+              name: result.name,
+              reuse_only: true,
+            },
+          });
+
+          if (error) {
+            console.warn('[BG] Reuse check error:', error.message);
+            return;
+          }
+
+          if (data?.status === 'approved' && data?.payment_id) {
+            console.log('[BG] Payment approved, unlocking...', data.payment_id);
+            const { data: unlockData, error: unlockError } = await supabase.functions.invoke('unlock-result', {
+              body: { result_id: result.id, payment_id: data.payment_id },
+            });
+
+            if (unlockError || unlockData?.error) {
+              console.warn('[BG] Unlock error:', unlockError || unlockData?.error);
+              return;
+            }
+
+            // Refresh result to reflect unlocked state
+            await fetchResult();
+            toast({
+              title: 'Resultado desbloqueado!',
+              description: 'Detectamos seu pagamento e liberamos o acesso.',
+            });
+          }
+        } catch (e) {
+          console.warn('[BG] Unexpected error during background check:', e);
+        }
+      }, 20000); // a cada 20 segundos
+    };
+
+    startBackgroundCheck();
+
+    return () => {
+      if (interval) window.clearInterval(interval);
+    };
+  }, [result?.id, result?.email, result?.name, result?.is_unlocked, showPaymentModal]);
+
   // Loading state
   if (loadingState === 'loading') {
     return (
