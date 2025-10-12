@@ -27,6 +27,8 @@ O arquivo `supabase/config.toml` controla flags como `verify_jwt` por função. 
 - `unlock-result`
 - `get-analytics`
 
+- `send-whatsapp-on-payment`
+
 A função `process-payment-webhook` foi removida por não ser utilizada no fluxo atual (o front realiza polling via `check-payment-status`).
 
 ## Deploy Automático (DEV)
@@ -39,6 +41,9 @@ npm run deploy:functions:dev
 
 Este comando percorre `supabase/functions/*` e realiza `supabase functions deploy <nome>` para cada função, usando o `project ref` de DEV.
 
+Para testar webhooks do Mercado Pago, certifique-se que a função `send-whatsapp-on-payment` está publicada e que o `notification_url` do pagamento aponta para:
+`<SUPABASE_URL>/functions/v1/send-whatsapp-on-payment`.
+
 ## Deploy Automático (PROD)
 
 Depois de validar em DEV, para publicar as mesmas funções em PROD:
@@ -50,6 +55,12 @@ npm run deploy:functions:prod
 ## Variáveis de Ambiente (Supabase)
 
 Caso suas funções dependam de segredos (ex.: `MERCADOPAGO_ACCESS_TOKEN`), defina-os no Dashboard do Supabase em cada projeto (DEV/PROD) em: `Project Settings → API → Edge Functions → Environment Variables`.
+
+Para a função `send-whatsapp-on-payment`, configure:
+- `WAAPI_TOKEN` (já criado) — token Bearer do WAAPI
+- `WAAPI_CHAT_ID` (opcional) — ID do chat/grupo no WhatsApp; se não definido, usa `120363421610156383@g.us`
+
+Observação: O endpoint do WAAPI utilizado é `https://waapi.app/api/v1/instances/60123/client/action/send-message`.
 
 ## Dicas
 
