@@ -1,3 +1,7 @@
+// @ts-nocheck
+// Este arquivo roda em Deno (Supabase Edge Functions). A diretiva acima
+// suprime verificações locais do TypeScript que não reconhecem imports remotos
+// e o objeto global Deno no editor, evitando falsos positivos de diagnóstico.
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
@@ -32,7 +36,7 @@ serve(async (req)=>{
     // Detect amount based on origin (prod vs dev)
     const origin = req.headers.get('origin') || '';
     const isProd = origin.includes('qualcarreira.com');
-    const transactionAmount = isProd ? 14.90 : 14.90;
+    const transactionAmount = isProd ? 12.90 : 12.90;
     
     // Initialize Supabase client (used for reuse logic and saving records)
     const supabase = createClient(
@@ -72,47 +76,62 @@ serve(async (req)=>{
         });
       }
 
-      // Pending payment: fetch current QR details from Mercado Pago
-      try {
-        console.log('Fetching existing payment details from MP:', existingPayment.payment_id);
-        const mpGetResponse = await fetch(`https://api.mercadopago.com/v1/payments/${existingPayment.payment_id}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-          },
-        });
-
-        const mpGetData = await mpGetResponse.json();
-        console.log('MP GET status:', mpGetResponse.status);
-
-        if (!mpGetResponse.ok) {
-          console.error('Mercado Pago GET error:', JSON.stringify(mpGetData, null, 2));
-          // Fall through to creating a new payment if reuse_only is not enforced
-          if (reuse_only) {
-            return new Response(JSON.stringify({ error: 'Failed to fetch existing payment details' }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              status: 500
+      // Pending payment: reuse only if amount matches current price
+      if (existingPayment.status === 'pending') {
+        const existingAmount = Number(existingPayment.amount);
+        if (Number.isFinite(existingAmount) && existingAmount === transactionAmount) {
+          try {
+            console.log('Fetching existing payment details from MP:', existingPayment.payment_id);
+            const mpGetResponse = await fetch(`https://api.mercadopago.com/v1/payments/${existingPayment.payment_id}`, {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
             });
+
+            const mpGetData = await mpGetResponse.json();
+            console.log('MP GET status:', mpGetResponse.status);
+
+            if (!mpGetResponse.ok) {
+              console.error('Mercado Pago GET error:', JSON.stringify(mpGetData, null, 2));
+              // Fall through to creating a new payment if reuse_only is not enforced
+              if (reuse_only) {
+                return new Response(JSON.stringify({ error: 'Failed to fetch existing payment details' }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 500
+                });
+              }
+            } else {
+              // Return QR data for existing pending payment
+              return new Response(JSON.stringify({
+                payment_id: mpGetData.id,
+                qr_code: mpGetData.point_of_interaction?.transaction_data?.qr_code,
+                qr_code_base64: mpGetData.point_of_interaction?.transaction_data?.qr_code_base64,
+                ticket_url: mpGetData.point_of_interaction?.transaction_data?.ticket_url,
+                status: mpGetData.status
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 200
+              });
+            }
+          } catch (e) {
+            console.error('Error fetching existing payment from MP:', e);
+            if (reuse_only) {
+              return new Response(JSON.stringify({ error: 'Error fetching existing payment from MP' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 500
+              });
+            }
           }
         } else {
-          // Return QR data for existing pending payment
-          return new Response(JSON.stringify({
-            payment_id: mpGetData.id,
-            qr_code: mpGetData.point_of_interaction?.transaction_data?.qr_code,
-            qr_code_base64: mpGetData.point_of_interaction?.transaction_data?.qr_code_base64,
-            ticket_url: mpGetData.point_of_interaction?.transaction_data?.ticket_url,
-            status: mpGetData.status
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          });
-        }
-      } catch (e) {
-        console.error('Error fetching existing payment from MP:', e);
-        if (reuse_only) {
-          return new Response(JSON.stringify({ error: 'Error fetching existing payment from MP' }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500
-          });
+          console.log('Skipping reuse. Existing pending amount', existingAmount, 'differs from current', transactionAmount);
+          // If reuse_only, do not create new here; let caller handle fallback
+          if (reuse_only) {
+            return new Response(JSON.stringify({ error: 'Existing pending payment amount mismatch' }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 404
+            });
+          }
+          // Otherwise, fall through to creation below
         }
       }
     } else if (reuse_only) {

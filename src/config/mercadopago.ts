@@ -3,11 +3,11 @@
 export const mercadoPagoConfig = {
   dev: {
     publicKey: 'TEST-c01b60bb-9b82-4427-965f-32333af1dd20',
-    price: 14.90,
+    price: 12.90,
   },
   prod: {
     publicKey: 'APP_USR-40aea4f7-a179-402a-a1b8-f3b4bfed380e',
-    price: 14.90,
+    price: 12.90,
   }
 };
 
