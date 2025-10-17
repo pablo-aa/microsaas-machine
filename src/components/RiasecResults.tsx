@@ -13,6 +13,7 @@ interface RiasecResultsProps {
   onDesbloquear: () => void;
   activeTab?: 'riasec' | 'gardner' | 'gopc';
   onTabChange?: (tab: 'riasec' | 'gardner' | 'gopc') => void;
+  isUnlocked?: boolean;
 }
 
 // RIASEC data - mock data based on your image
@@ -34,32 +35,32 @@ const riasecDetails: Record<string, {
   R: {
     description: "Pessoas realistas preferem trabalhar com objetos, ferramentas e máquinas.",
     characteristics: ["Prático", "Mecânico", "Objetivo"],
-    careers: ["Engenheiro", "Mecânico", "Eletricista"]
+    careers: ["Engenheiro", "Mecânico", "Eletricista", "Arquiteto", "Piloto"]
   },
   I: {
     description: "Pessoas investigativas gostam de observar, aprender, investigar e resolver problemas.",
     characteristics: ["Analítico", "Intelectual", "Curioso"],
-    careers: ["Cientista", "Médico", "Pesquisador"]
+    careers: ["Cientista", "Médico", "Pesquisador", "Analista de Dados", "Programador"]
   },
   A: {
     description: "Pessoas artísticas apreciam trabalhar com formas, designs e padrões.",
     characteristics: ["Criativo", "Expressivo", "Original"],
-    careers: ["Designer", "Artista", "Músico"]
+    careers: ["Designer", "Artista", "Músico", "Escritor", "Fotógrafo"]
   },
   S: {
     description: "Pessoas sociais preferem trabalhar com e ajudar outras pessoas.",
     characteristics: ["Empático", "Cooperativo", "Prestativo"],
-    careers: ["Professor", "Enfermeiro", "Psicólogo"]
+    careers: ["Professor", "Psicólogo", "Assistente Social", "Enfermeiro", "Terapeuta"]
   },
   E: {
     description: "Pessoas empreendedoras gostam de liderar, gerenciar e influenciar outros.",
     characteristics: ["Persuasivo", "Ambicioso", "Líder"],
-    careers: ["Gerente", "Empresário", "Vendedor"]
+    careers: ["Empresário", "Gerente", "Advogado", "Vendedor", "Consultor"]
   },
   C: {
     description: "Pessoas convencionais preferem trabalhar com dados, registros e rotinas.",
     characteristics: ["Organizado", "Detalhista", "Metódico"],
-    careers: ["Contador", "Administrador", "Analista"]
+    careers: ["Contador", "Administrador", "Analista Financeiro", "Auditor", "Secretário Executivo"]
   }
 };
 
@@ -70,8 +71,15 @@ const RiasecResults = ({
   isBlurred = true, 
   onDesbloquear, 
   activeTab = 'riasec', 
-  onTabChange 
+  onTabChange,
+  isUnlocked = false
 }: RiasecResultsProps) => {
+  // Estado para rastrear quais abas foram visitadas
+  const [visitedTabs, setVisitedTabs] = useState<Record<string, boolean>>({
+    riasec: true, // RIASEC é a aba padrão, então já começa como visitada
+    gardner: false,
+    gopc: false
+  });
   const [selectedCategory, setSelectedCategory] = useState<string>("R");
   
   // Generate riasecData from actual scores
@@ -172,7 +180,14 @@ const RiasecResults = ({
               }`}
               style={item.code === selectedCategory ? { backgroundColor: item.color } : {}}
             >
-              {item.name}
+              <div className="flex flex-col items-center">
+                <span>{item.name}</span>
+                <span className={`text-xs mt-1 ${isBlurred ? 'filter blur-sm' : ''} ${
+                  item.code === selectedCategory ? 'text-white/80' : 'text-muted-foreground'
+                }`}>
+                  {item.value} pts
+                </span>
+              </div>
             </button>
           ))}
         </div>
@@ -275,26 +290,40 @@ const RiasecResults = ({
             </Button>
             <Button 
               variant={activeTab === 'gardner' ? 'default' : 'outline'}
-              onClick={() => onTabChange?.('gardner')}
-              className={activeTab === 'gardner' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground'}
+              onClick={() => {
+                onTabChange?.('gardner');
+                setVisitedTabs(prev => ({ ...prev, gardner: true }));
+              }}
+              className={activeTab === 'gardner' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground relative'}
             >
               Gardner
+              {!visitedTabs.gardner && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full"></span>
+              )}
             </Button>
             <Button 
               variant={activeTab === 'gopc' ? 'default' : 'outline'}
-              onClick={() => onTabChange?.('gopc')}
-              className={activeTab === 'gopc' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground'}
+              onClick={() => {
+                onTabChange?.('gopc');
+                setVisitedTabs(prev => ({ ...prev, gopc: true }));
+              }}
+              className={activeTab === 'gopc' ? 'bg-primary text-white px-4 sm:px-6' : 'text-muted-foreground relative'}
             >
               GOPC
+              {!visitedTabs.gopc && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full"></span>
+              )}
             </Button>
           </div>
           
-          <Button 
-            onClick={onDesbloquear}
-            className="gradient-primary hover:opacity-90 w-full sm:w-auto max-w-full"
-          >
-            <span className="truncate">Desbloquear Resultados</span>
-          </Button>
+          {!isUnlocked && (
+            <Button 
+              onClick={onDesbloquear}
+              className="gradient-primary hover:opacity-90 w-full sm:w-auto max-w-full"
+            >
+              <span className="truncate">Desbloquear Resultados</span>
+            </Button>
+          )}
         </div>
 
         {/* Tab Content */}
