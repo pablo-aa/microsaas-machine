@@ -125,8 +125,8 @@ serve(async (req)=>{
     // Compose WhatsApp message (prefer DB values and requested format)
     const amountStr = typeof mpAmount === 'number' ? mpAmount.toFixed(2) : String(mpAmount ?? '');
     const emailToUse = dbEmail ?? paymentRow?.user_email ?? mpEmail ?? '';
-    const title = 'Atualização de Pagamento';
-    const message = `${title}\n\n` + `ID: ${paymentId}\n` + `Resultado/Teste: ${paymentRow?.test_id ?? ''}\n` + `Nome: ${userName ?? ''}\n` + `Email: ${emailToUse}\n` + `Valor: R$ ${amountStr}`;
+    const title = '*Novo Pagante 🤑*';
+    const message = `${title}\n\n` + `ID: ${paymentId}\n` + 'Link do teste:\n' + `qualcarreira.com/resultado/${paymentRow?.test_id ?? ''}\n` + `Nome: ${userName ?? ''}\n` + `Email: ${emailToUse}\n` + `\nValor: R$ *${amountStr}*`;
     // Resolve chatId: prefer env WAAPI_CHAT_ID; fallback to sample group id provided
     const chatId = Deno.env.get('WAAPI_CHAT_ID') || '120363421610156383@g.us';
     // Send message via WAAPI

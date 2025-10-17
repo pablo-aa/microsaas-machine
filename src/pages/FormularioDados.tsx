@@ -99,11 +99,6 @@ const FormularioDados = ({ answers, testId }: FormularioDadosProps) => {
       // Redirect to results page
       navigate(`/resultado/${data.result_id}`);
 
-      toast({
-        title: "Sucesso!",
-        description: "Seus resultados foram gerados com sucesso",
-      });
-
     } catch (error) {
       console.error('Form submission error:', error);
       setIsLoading(false);
