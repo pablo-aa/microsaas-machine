@@ -47,41 +47,41 @@ const Comeco = () => {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main Card */}
-        <div className="text-center mb-16">
-          <Card className="gradient-primary p-0 border-0 shadow-2xl max-w-4xl mx-auto animate-scale-in">
-            <CardContent className="p-12 text-center text-white">
+        <div className="text-center mb-12">
+          <Card className="gradient-primary p-0 border-0 shadow-xl max-w-3xl mx-auto animate-scale-in">
+            <CardContent className="p-8 text-center text-white">
               {/* Icon */}
-              <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-8">
-                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                  <div className="w-6 h-6 bg-primary rounded-full"></div>
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                  <div className="w-5 h-5 bg-primary rounded-full"></div>
                 </div>
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-bold mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold mb-6">
                 Descubra sua carreira ideal agora!
               </h1>
 
               {/* Benefits */}
-              <div className="space-y-6 mb-10 max-w-2xl mx-auto">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-white/20 rounded-full p-2">
-                    <Clock className="h-6 w-6 text-white" />
+              <div className="space-y-4 mb-8 max-w-xl mx-auto">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white/20 rounded-full p-1.5">
+                    <Clock className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-xl text-white/90">O teste leva apenas 5 minutos para ser concluído.</p>
+                  <p className="text-base text-white/90">O teste leva apenas 5 minutos para ser concluído.</p>
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <div className="bg-white/20 rounded-full p-2">
-                    <CheckCircle className="h-6 w-6 text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white/20 rounded-full p-1.5">
+                    <CheckCircle className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-xl text-white/90">Responda com sinceridade para resultados mais precisos.</p>
+                  <p className="text-base text-white/90">Responda com sinceridade para resultados mais precisos.</p>
                 </div>
                 
-                <div className="flex items-center space-x-4">
-                  <div className="bg-white/20 rounded-full p-2">
-                    <ArrowRight className="h-6 w-6 text-white" />
+                <div className="flex items-center space-x-3">
+                  <div className="bg-white/20 rounded-full p-1.5">
+                    <ArrowRight className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-xl text-white/90">Você receberá recomendações personalizadas de carreira.</p>
+                  <p className="text-base text-white/90">Você receberá recomendações personalizadas de carreira.</p>
                 </div>
               </div>
 
@@ -90,11 +90,11 @@ const Comeco = () => {
                 onClick={handleStartAssessment}
                 disabled={isLoading}
                 size="lg"
-                className="bg-white hover:bg-white/90 text-primary text-base sm:text-xl font-bold px-6 sm:px-12 py-3 sm:py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-70 w-full sm:w-auto max-w-full"
+                className="bg-white hover:bg-white/90 text-primary text-base font-bold px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-70 w-full sm:w-auto max-w-full"
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     <span className="truncate">Preparando seu teste...</span>
                   </>
                 ) : (

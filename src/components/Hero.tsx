@@ -15,7 +15,7 @@ const Hero = () => {
           {/* Left Content */}
           <div className="animate-fade-in-up">
             {/* Breadcrumb */}
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mt-4 mb-6">
               ✨ Descubra sua carreira ideal
             </div>
 
