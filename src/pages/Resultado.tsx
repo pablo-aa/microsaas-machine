@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, Copy, CheckCircle, Lock, BookOpen, Star, Lightbul
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import RiasecResults from "@/components/RiasecResults";
+import RecommendedCareers from "@/components/RecommendedCareers";
 import PaymentSection from "@/components/PaymentSection";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
@@ -40,6 +41,7 @@ const Resultado = () => {
   const [activeTab, setActiveTab] = useState<'riasec' | 'gardner' | 'gopc'>('riasec');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const paymentRef = useRef<HTMLDivElement>(null);
 
   const resultUrl = `${window.location.origin}/resultado/${id}`;
 
@@ -123,6 +125,13 @@ const Resultado = () => {
 
   const handlePurchase = () => {
     setShowPaymentModal(true);
+  };
+  
+  const handleScrollToPayment = () => {
+    setShowFullResults(true);
+    setTimeout(() => {
+      paymentRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handlePaymentSuccess = () => {
@@ -382,14 +391,25 @@ const Resultado = () => {
             gardnerScores={result.gardner_scores}
             gopcScores={result.gopc_scores}
             isBlurred={!result.is_unlocked}
-            onDesbloquear={handlePurchase}
+            onDesbloquear={handleScrollToPayment}
             activeTab={activeTab}
             onTabChange={handleTabChange}
+            isUnlocked={result.is_unlocked}
+          />
+
+          {/* Recommended Careers Section */}
+          <RecommendedCareers 
+            riasecScores={result.riasec_scores}
+            gardnerScores={result.gardner_scores}
+            gopcScores={result.gopc_scores}
+            isBlurred={!result.is_unlocked}
           />
 
           {/* Payment Section (if locked) */}
           {!result.is_unlocked && (
-            <PaymentSection onPurchase={handlePurchase} />
+            <div ref={paymentRef}>
+              <PaymentSection onPurchase={handlePurchase} />
+            </div>
           )}
 
           {/* Footer */}

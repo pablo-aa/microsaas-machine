@@ -27,6 +27,7 @@ const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: Res
   const [activeTab, setActiveTab] = useState<'riasec' | 'gardner' | 'gopc'>('riasec');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const paymentRef = useRef<HTMLDivElement>(null);
 
   usePageView();
 
@@ -39,14 +40,18 @@ const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: Res
   const handleDesbloquearClick = () => {
     trackUnlockButtonClicked(testId);
     setShowFullResults(true);
-    // Scroll to results section after state update
+    // Scroll to payment section after state update
     setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
+      paymentRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
 
   const handlePurchase = () => {
     setShowPaymentModal(true);
+  };
+
+  const handleScrollToPayment = () => {
+    paymentRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handlePaymentSuccess = () => {
@@ -164,13 +169,16 @@ const ResultadosCompletos = ({ userName, userEmail, testId, onDesbloquear }: Res
           <RiasecResults 
             riasecScores={{ R: 18, I: 15, A: 22, S: 16, E: 14, C: 15 }}
             isBlurred={true}
-            onDesbloquear={handlePurchase}
+            onDesbloquear={handleScrollToPayment}
             activeTab={activeTab}
             onTabChange={handleTabChange}
+            isUnlocked={true}
           />
 
           {/* Payment Section */}
-          <PaymentSection onPurchase={handlePurchase} />
+          <div ref={paymentRef}>
+            <PaymentSection onPurchase={handlePurchase} />
+          </div>
 
           {/* Footer */}
           <ResultsFooter />

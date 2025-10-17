@@ -136,7 +136,7 @@ const GardnerResults = ({ gardnerScores, isBlurred = true }: GardnerResultsProps
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                {!isBlurred && <Tooltip content={<CustomTooltip />} />}
               </PieChart>
             </ResponsiveContainer>
           </div>
