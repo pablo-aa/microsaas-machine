@@ -46,6 +46,11 @@ const PaymentSection = ({ onPurchase }: PaymentSectionProps) => {
 
             {/* Price */}
             <div className="mb-6">
+              <div className="flex items-center justify-center mb-3">
+                <span className="text-muted-foreground line-through mr-3 text-base">R$ 19,90</span>
+                <span className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">-{Math.round((19.90 - price) / 19.90 * 100)}%</span>
+              </div>
+              <div className="text-amber-500 text-sm font-medium mb-2">Oferta por tempo limitado!</div>
               <span className="text-4xl font-bold text-foreground">{price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
               <span className="text-muted-foreground ml-2">pagamento único</span>
             </div>
