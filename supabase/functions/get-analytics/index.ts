@@ -4,7 +4,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 // Converte data brasileira "dd/MM/yyyy HH:mm" (GMT-3) para ISO UTC
-function parseBrazilianDateToUTC(dateStr) {
+function parseBrazilianDateToUTC(dateStr: string): string {
   // Parse "05/10/2025 00:00" -> [05, 10, 2025, 00, 00]
   const [datePart, timePart] = dateStr.split(' ');
   const [day, month, year] = datePart.split('/').map(Number);
@@ -23,6 +23,11 @@ Deno.serve(async (req)=>{
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase credentials');
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
     // Parse request body for optional date filters
     const { start_date, end_date } = await req.json().catch(()=>({}));
