@@ -59,6 +59,8 @@ serve(async (req)=>{
       console.error('Error checking existing payment:', existingError);
     }
 
+    let shouldCreateNewPayment = false;
+
     if (existingPayment) {
       console.log('Reusing existing payment:', existingPayment.payment_id, existingPayment.status);
 
@@ -79,8 +81,18 @@ serve(async (req)=>{
       // Pending payment: reuse only if amount matches current price
       if (existingPayment.status === 'pending') {
         const existingAmount = Number(existingPayment.amount);
-        if (Number.isFinite(existingAmount) && existingAmount === transactionAmount) {
-          // Check if payment is older than 24 hours
+        
+        if (!Number.isFinite(existingAmount) || existingAmount !== transactionAmount) {
+          console.log('Skipping reuse. Existing pending amount', existingAmount, 'differs from current', transactionAmount);
+          if (reuse_only) {
+            return new Response(JSON.stringify({ error: 'Existing pending payment amount mismatch' }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 404
+            });
+          }
+          shouldCreateNewPayment = true;
+        } else {
+          // Amount matches, check age and MP status
           const paymentAge = Date.now() - new Date(existingPayment.created_at).getTime();
           const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
 
@@ -100,32 +112,29 @@ serve(async (req)=>{
 
               if (!mpGetResponse.ok) {
                 console.error('Mercado Pago GET error:', JSON.stringify(mpGetData, null, 2));
-                // Fall through to creating a new payment if reuse_only is not enforced
                 if (reuse_only) {
                   return new Response(JSON.stringify({ error: 'Failed to fetch existing payment details' }), {
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                     status: 500
                   });
                 }
-                // Fall through to create new payment
+                shouldCreateNewPayment = true;
+              } else if (mpGetData.status === 'expired' || mpGetData.status === 'cancelled') {
+                // Payment expired or cancelled, need to create new one
+                console.log('Old payment is expired/cancelled, will create new payment');
+                shouldCreateNewPayment = true;
               } else {
-                // Check if payment expired or was cancelled
-                if (mpGetData.status === 'expired' || mpGetData.status === 'cancelled') {
-                  console.log('Old payment is expired/cancelled, creating new payment');
-                  // Fall through to create new payment
-                } else {
-                  // Payment still valid, return QR data
-                  return new Response(JSON.stringify({
-                    payment_id: mpGetData.id,
-                    qr_code: mpGetData.point_of_interaction?.transaction_data?.qr_code,
-                    qr_code_base64: mpGetData.point_of_interaction?.transaction_data?.qr_code_base64,
-                    ticket_url: mpGetData.point_of_interaction?.transaction_data?.ticket_url,
-                    status: mpGetData.status
-                  }), {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 200
-                  });
-                }
+                // Payment still valid, return QR data
+                return new Response(JSON.stringify({
+                  payment_id: mpGetData.id,
+                  qr_code: mpGetData.point_of_interaction?.transaction_data?.qr_code,
+                  qr_code_base64: mpGetData.point_of_interaction?.transaction_data?.qr_code_base64,
+                  ticket_url: mpGetData.point_of_interaction?.transaction_data?.ticket_url,
+                  status: mpGetData.status
+                }), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  status: 200
+                });
               }
             } catch (e) {
               console.error('Error fetching old payment from MP:', e);
@@ -135,12 +144,13 @@ serve(async (req)=>{
                   status: 500
                 });
               }
-              // Fall through to create new payment
+              shouldCreateNewPayment = true;
             }
           } else {
             // Payment is recent (<24h), fetch and return QR
+            console.log('Fetching existing payment details from MP:', existingPayment.payment_id);
+            
             try {
-              console.log('Fetching existing payment details from MP:', existingPayment.payment_id);
               const mpGetResponse = await fetch(`https://api.mercadopago.com/v1/payments/${existingPayment.payment_id}`, {
                 headers: {
                   'Authorization': `Bearer ${accessToken}`,
@@ -152,13 +162,13 @@ serve(async (req)=>{
 
               if (!mpGetResponse.ok) {
                 console.error('Mercado Pago GET error:', JSON.stringify(mpGetData, null, 2));
-                // Fall through to creating a new payment if reuse_only is not enforced
                 if (reuse_only) {
                   return new Response(JSON.stringify({ error: 'Failed to fetch existing payment details' }), {
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                     status: 500
                   });
                 }
+                shouldCreateNewPayment = true;
               } else {
                 // Return QR data for existing pending payment
                 return new Response(JSON.stringify({
@@ -180,18 +190,9 @@ serve(async (req)=>{
                   status: 500
                 });
               }
+              shouldCreateNewPayment = true;
             }
           }
-        } else {
-          console.log('Skipping reuse. Existing pending amount', existingAmount, 'differs from current', transactionAmount);
-          // If reuse_only, do not create new here; let caller handle fallback
-          if (reuse_only) {
-            return new Response(JSON.stringify({ error: 'Existing pending payment amount mismatch' }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              status: 404
-            });
-          }
-          // Otherwise, fall through to creation below
         }
       }
     } else if (reuse_only) {
@@ -199,6 +200,16 @@ serve(async (req)=>{
       return new Response(JSON.stringify({ error: 'No existing payment found' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 404
+      });
+    } else {
+      shouldCreateNewPayment = true;
+    }
+
+    // Only create new payment if flag is set
+    if (!shouldCreateNewPayment) {
+      return new Response(JSON.stringify({ error: 'Unable to process payment request' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
       });
     }
     // Criar pagamento PIX no Mercado Pago
