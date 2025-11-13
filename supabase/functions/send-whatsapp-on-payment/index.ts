@@ -62,9 +62,25 @@ serve(async (req)=>{
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, serviceKey);
     // Fetch stored payment context (email, test_id, amount)
-    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status').eq('payment_id', paymentId).maybeSingle();
+    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at').eq('payment_id', paymentId).maybeSingle();
     if (paymentRowError) {
       console.warn('[send-whatsapp-on-payment] Error fetching payment row:', paymentRowError);
+    }
+    // Check if already notified (idempotency)
+    if (paymentRow?.whatsapp_notified_at) {
+      console.log('[send-whatsapp-on-payment] Already notified at:', paymentRow.whatsapp_notified_at);
+      return new Response(JSON.stringify({
+        ok: true,
+        skipped: true,
+        reason: 'already_notified',
+        notified_at: paymentRow.whatsapp_notified_at
+      }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
     }
     // Fetch user info from test_results (name, email)
     let userName;
@@ -158,6 +174,10 @@ serve(async (req)=>{
         }
       });
     }
+    // Mark as notified (idempotency)
+    await supabase.from('payments').update({
+      whatsapp_notified_at: new Date().toISOString()
+    }).eq('payment_id', paymentId).is('whatsapp_notified_at', null);
     return new Response(JSON.stringify({
       ok: true,
       message_sent: true,

@@ -77,15 +77,10 @@ Deno.serve(async (req)=>{
     if (startDateUTC) revenueQuery = revenueQuery.gte('created_at', startDateUTC);
     if (endDateUTC) revenueQuery = revenueQuery.lte('created_at', endDateUTC);
     const { data: revenueData, error: revenueError } = await revenueQuery;
-
     // 6. Segmentação por preço (amount)
-    let priceSegQuery = supabase
-      .from('payments')
-      .select('amount,status');
-
+    let priceSegQuery = supabase.from('payments').select('amount,status');
     if (startDateUTC) priceSegQuery = priceSegQuery.gte('created_at', startDateUTC);
     if (endDateUTC) priceSegQuery = priceSegQuery.lte('created_at', endDateUTC);
-
     const { data: priceSegData, error: priceSegError } = await priceSegQuery;
     if (emailError || resultsError || paymentsError || approvedError || revenueError || priceSegError) {
       console.error('Database query error:', {
@@ -99,13 +94,16 @@ Deno.serve(async (req)=>{
       throw new Error('Database query failed');
     }
     const totalRevenue = revenueData?.reduce((sum, payment)=>sum + (Number(payment.amount) || 0), 0) || 0;
-
     // Build price segments aggregation
-    const priceSegments = {} as Record<string, { payments_initiated: number; payments_approved: number; revenue: number }>;
-    for (const p of priceSegData || []) {
+    const priceSegments = {};
+    for (const p of priceSegData || []){
       const key = Number(p.amount ?? 0).toFixed(2);
       if (!priceSegments[key]) {
-        priceSegments[key] = { payments_initiated: 0, payments_approved: 0, revenue: 0 };
+        priceSegments[key] = {
+          payments_initiated: 0,
+          payments_approved: 0,
+          revenue: 0
+        };
       }
       priceSegments[key].payments_initiated += 1;
       if ((p.status || '').toLowerCase() === 'approved') {
