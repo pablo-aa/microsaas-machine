@@ -69,10 +69,21 @@ export const PaymentModal = ({
     return () => clearInterval(interval);
   }, [paymentId, status]);
 
+  // Função para obter parâmetros de URL
+  const getURLParams = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const source = urlParams.get('source');
+    const campaign = urlParams.get('campaign');
+    return { source, campaign };
+  };
+
   const probeExistingPaymentOrCreate = async () => {
     try {
       setLoading(true);
       setError('');
+      
+      // Obter parâmetros de rastreamento da URL
+      const { source, campaign } = getURLParams();
 
       // Tenta localizar pagamento existente (pending/approved)
       const { data: reuseData, error: reuseError } = await supabase.functions.invoke('create-payment', {
@@ -82,6 +93,8 @@ export const PaymentModal = ({
           name: userName,
           reuse_only: true,
           isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
+          source: source,
+          campaign: campaign
         },
       });
 
@@ -124,6 +137,9 @@ export const PaymentModal = ({
       setError('');
 
       console.log('Creating payment for test:', testId);
+      
+      // Obter parâmetros de rastreamento da URL
+      const { source, campaign } = getURLParams();
 
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
@@ -132,6 +148,8 @@ export const PaymentModal = ({
           name: userName,
           // Explicit environment flag for accurate pricing on Edge Functions
           isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
+          source: source,
+          campaign: campaign
         },
       });
 
