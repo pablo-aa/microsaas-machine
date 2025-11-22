@@ -125,6 +125,21 @@ serve(async (req)=>{
         }
       });
     }
+    
+    // Validate that we have payment data before proceeding
+    if (!paymentRow) {
+      console.error('[send-whatsapp-on-payment] Payment not found in database for payment_id:', paymentId);
+      return new Response(JSON.stringify({
+        error: 'Payment not found in database',
+        payment_id: paymentId
+      }), {
+        status: 404,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
     // Try to mark as "in processing" (atomic idempotency check)
     // This UPDATE is atomic - only one request can successfully mark it
     const { data: updateResult, error: updateError } = await supabase
@@ -179,6 +194,55 @@ serve(async (req)=>{
         userName = resultRow.name;
         dbEmail = resultRow.email;
       }
+    }
+    
+    // Send Google Analytics 4 conversion event via Measurement Protocol
+    const ga4MeasurementId = Deno.env.get('GA4_MEASUREMENT_ID');
+    const ga4ApiSecret = Deno.env.get('GA4_API_SECRET');
+    
+    if (ga4MeasurementId && ga4ApiSecret) {
+      try {
+        const ga4Payload = {
+          client_id: paymentId, // Use payment_id as client_id for uniqueness
+          events: [{
+            name: 'purchase',
+            params: {
+              transaction_id: paymentId,
+              value: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
+              currency: 'BRL',
+              payment_type: 'pix',
+              items: [{
+                item_id: 'qualcarreira_full_analysis',
+                item_name: 'Análise Vocacional Completa',
+                price: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
+                quantity: 1,
+                item_category: 'Digital Product'
+              }]
+            }
+          }]
+        };
+        
+        const ga4Url = `https://www.google-analytics.com/mp/collect?measurement_id=${ga4MeasurementId}&api_secret=${ga4ApiSecret}`;
+        const ga4Response = await fetch(ga4Url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(ga4Payload)
+        });
+        
+        if (ga4Response.ok) {
+          console.log('[send-whatsapp-on-payment] GA4 conversion event sent successfully');
+        } else {
+          const ga4ErrorText = await ga4Response.text();
+          console.warn('[send-whatsapp-on-payment] GA4 conversion event failed:', ga4Response.status, ga4ErrorText);
+        }
+      } catch (ga4Error) {
+        // Don't fail the whole process if GA4 fails
+        console.warn('[send-whatsapp-on-payment] Error sending GA4 conversion event:', ga4Error);
+      }
+    } else {
+      console.warn('[send-whatsapp-on-payment] GA4_MEASUREMENT_ID or GA4_API_SECRET not configured; skipping conversion tracking');
     }
     
     // Compose WhatsApp message (prefer DB values and requested format)

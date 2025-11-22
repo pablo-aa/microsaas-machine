@@ -8,7 +8,6 @@ import { getMercadoPagoConfig } from '@/config/mercadopago';
 import { 
   trackBeginCheckout, 
   trackAddPaymentInfo, 
-  trackPurchase, 
   trackPixCodeCopied, 
   trackPaymentError 
 } from '@/lib/analytics';
@@ -56,6 +55,7 @@ export const PaymentModal = ({
       // Primeiro tenta reaproveitar pagamento existente
       probeExistingPaymentOrCreate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Polling de status
@@ -67,6 +67,7 @@ export const PaymentModal = ({
     }, 5000); // Check a cada 5 segundos
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentId, status]);
 
   // Função para obter parâmetros de URL
@@ -109,7 +110,7 @@ export const PaymentModal = ({
 
         // Se já aprovado, desbloqueia imediatamente
         if (reuseData.status === 'approved') {
-          trackPurchase(testId, reuseData.payment_id, userEmail);
+          // Conversion event is now handled by backend webhook (send-whatsapp-on-payment)
           toast({
             title: 'Pagamento aprovado! ',
             description: 'Desbloqueando seu resultado...',
@@ -205,8 +206,7 @@ export const PaymentModal = ({
     if (data?.status === 'approved') {
       setStatus('approved');
       
-      // Track purchase event
-      trackPurchase(testId, paymentId, userEmail);
+      // Conversion event is now handled by backend webhook (send-whatsapp-on-payment)
       
       toast({
         title: "Pagamento aprovado!",
@@ -301,8 +301,8 @@ export const PaymentModal = ({
   const handleDevBypass = async () => {
     setStatus('approved');
     
-    // Track purchase event for dev testing
-    trackPurchase(testId, paymentId || 'DEV_PAYMENT_ID', userEmail);
+    // Conversion event is now handled by backend webhook (send-whatsapp-on-payment)
+    // Note: DEV bypass won't trigger webhook, so conversion won't be tracked in dev mode
     
     toast({
       title: "🎭 Simulando pagamento aprovado",
