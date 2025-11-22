@@ -66,7 +66,7 @@ serve(async (req)=>{
     if (paymentRowError) {
       console.warn('[send-whatsapp-on-payment] Error fetching payment row:', paymentRowError);
     }
-    // Check if already notified (idempotency)
+    // Check if already notified (idempotency - early check for already processed)
     if (paymentRow?.whatsapp_notified_at) {
       console.log('[send-whatsapp-on-payment] Already notified at:', paymentRow.whatsapp_notified_at);
       return new Response(JSON.stringify({
@@ -81,19 +81,6 @@ serve(async (req)=>{
           'Content-Type': 'application/json'
         }
       });
-    }
-    // Fetch user info from test_results (name, email)
-    let userName;
-    let dbEmail;
-    if (paymentRow?.test_id) {
-      const { data: resultRow, error: resultRowError } = await supabase.from('test_results').select('name, email').eq('id', paymentRow.test_id).maybeSingle();
-      if (resultRowError) {
-        console.warn('[send-whatsapp-on-payment] Error fetching test_results row:', resultRowError);
-      }
-      if (resultRow) {
-        userName = resultRow.name;
-        dbEmail = resultRow.email;
-      }
     }
     // Optionally verify status on Mercado Pago and only notify on approved
     const mpToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
@@ -138,6 +125,62 @@ serve(async (req)=>{
         }
       });
     }
+    // Try to mark as "in processing" (atomic idempotency check)
+    // This UPDATE is atomic - only one request can successfully mark it
+    const { data: updateResult, error: updateError } = await supabase
+      .from('payments')
+      .update({ whatsapp_notified_at: new Date().toISOString() })
+      .eq('payment_id', paymentId)
+      .is('whatsapp_notified_at', null)
+      .select();
+    
+    if (updateError) {
+      console.error('[send-whatsapp-on-payment] Error marking as notified:', updateError);
+      return new Response(JSON.stringify({
+        error: 'Failed to mark payment as notified',
+        details: updateError.message
+      }), {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+    
+    // If no rows were affected, another request is already processing this payment
+    if (!updateResult || updateResult.length === 0) {
+      console.log('[send-whatsapp-on-payment] Another request is already processing this payment');
+      return new Response(JSON.stringify({
+        ok: true,
+        skipped: true,
+        reason: 'already_processing'
+      }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+    
+    // This request won the race condition - continue with processing
+    console.log('[send-whatsapp-on-payment] Successfully marked as processing, continuing with WhatsApp send');
+    
+    // Fetch user info from test_results (name, email) - only now that we know we'll send
+    let userName;
+    let dbEmail;
+    if (paymentRow?.test_id) {
+      const { data: resultRow, error: resultRowError } = await supabase.from('test_results').select('name, email').eq('id', paymentRow.test_id).maybeSingle();
+      if (resultRowError) {
+        console.warn('[send-whatsapp-on-payment] Error fetching test_results row:', resultRowError);
+      }
+      if (resultRow) {
+        userName = resultRow.name;
+        dbEmail = resultRow.email;
+      }
+    }
+    
     // Compose WhatsApp message (prefer DB values and requested format)
     const amountStr = typeof mpAmount === 'number' ? mpAmount.toFixed(2) : String(mpAmount ?? '');
     const emailToUse = dbEmail ?? paymentRow?.user_email ?? mpEmail ?? '';
@@ -162,6 +205,8 @@ serve(async (req)=>{
     console.log('[send-whatsapp-on-payment] WAAPI response status:', waapiResp.status);
     if (!waapiResp.ok) {
       console.error('[send-whatsapp-on-payment] WAAPI error:', waapiData);
+      // Note: whatsapp_notified_at is already marked, so we won't retry on next webhook
+      // This prevents spam of retry attempts
       return new Response(JSON.stringify({
         error: 'Failed to send WhatsApp message',
         status: waapiResp.status,
@@ -174,10 +219,8 @@ serve(async (req)=>{
         }
       });
     }
-    // Mark as notified (idempotency)
-    await supabase.from('payments').update({
-      whatsapp_notified_at: new Date().toISOString()
-    }).eq('payment_id', paymentId).is('whatsapp_notified_at', null);
+    // WhatsApp sent successfully
+    // Note: whatsapp_notified_at was already marked before sending (atomic check above)
     return new Response(JSON.stringify({
       ok: true,
       message_sent: true,
