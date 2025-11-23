@@ -196,6 +196,75 @@ serve(async (req)=>{
       }
     }
     
+    // Send purchase confirmation email to user
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (resendApiKey && paymentRow?.test_id) {
+      try {
+        const emailToUse = dbEmail ?? paymentRow?.user_email ?? mpEmail ?? '';
+        if (emailToUse) {
+          // Function to escape HTML (reuse pattern from send-recovery-email)
+          function escapeHtml(s = '') {
+            return s.replace(/[&<>"']/g, (c) => ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              '"': '&quot;',
+              "'": '&#39;'
+            })[c]);
+          }
+          
+          const baseUrl = Deno.env.get('PUBLIC_URL') || 'https://qualcarreira.com';
+          const resultUrl = `${baseUrl}/resultado/${encodeURIComponent(paymentRow.test_id)}`;
+          const userNameEscaped = escapeHtml((userName || 'Olá').trim());
+          
+          const emailSubject = 'Seu resultado está pronto!';
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <p>Olá ${userNameEscaped},</p>
+              <p>Seu pagamento foi aprovado com sucesso! 🎉</p>
+              <p>Agora você pode acessar seu perfil vocacional completo e todas as recomendações personalizadas.</p>
+              <p style="margin: 30px 0;">
+                <a href="${resultUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                  Acessar meus resultados
+                </a>
+              </p>
+              <p>Ou copie e cole este link no seu navegador:</p>
+              <p style="color: #666; word-break: break-all;">${resultUrl}</p>
+              <p>Abraços,<br>Equipe Qual Carreira</p>
+            </div>
+          `;
+          
+          const emailResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${resendApiKey}`
+            },
+            body: JSON.stringify({
+              from: 'Qual Carreira <contato@qualcarreira.com>',
+              to: emailToUse,
+              subject: emailSubject,
+              html: emailHtml
+            })
+          });
+          
+          const emailResult = await emailResponse.json();
+          if (emailResponse.ok) {
+            console.log('[send-whatsapp-on-payment] Purchase confirmation email sent successfully to:', emailToUse);
+          } else {
+            console.warn('[send-whatsapp-on-payment] Failed to send purchase confirmation email:', emailResult);
+          }
+        }
+      } catch (emailError) {
+        // Don't fail the whole process if email fails
+        console.warn('[send-whatsapp-on-payment] Error sending purchase confirmation email:', emailError);
+      }
+    } else {
+      if (!resendApiKey) {
+        console.warn('[send-whatsapp-on-payment] RESEND_API_KEY not configured; skipping purchase confirmation email');
+      }
+    }
+    
     // Send Google Analytics 4 conversion event via Measurement Protocol
     const ga4MeasurementId = Deno.env.get('GA4_MEASUREMENT_ID');
     const ga4ApiSecret = Deno.env.get('GA4_API_SECRET');
