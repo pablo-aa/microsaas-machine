@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -6,7 +7,6 @@ import { ChevronLeft, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import LikertScale from "@/components/LikertScale";
 import FormularioDados from "./FormularioDados";
-import ResultadosCompletos from "./ResultadosCompletos";
 import { v4 as uuidv4 } from 'uuid';
 import { questions, TOTAL_QUESTIONS } from "@/data/questions";
 import { assessmentStorage } from "@/lib/assessmentStorage";
@@ -29,7 +29,7 @@ import {
   trackTestCompleted 
 } from "@/lib/analytics";
 
-type AssessmentStage = 'questions' | 'processing' | 'form' | 'results-loading' | 'results';
+type AssessmentStage = 'questions' | 'processing' | 'form';
 
 interface Answer {
   question_id: number;
@@ -44,7 +44,6 @@ const Avaliacao = () => {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
   const [stage, setStage] = useState<AssessmentStage>('questions');
-  const [userData, setUserData] = useState<{name: string; email: string; age: string} | null>(null);
   const [testId, setTestId] = useState<string>('');
 
   // GTM Tracking
@@ -156,7 +155,6 @@ const Avaliacao = () => {
     setAnswers([]);
     setSelectedAnswer(undefined);
     setStage('questions');
-    setUserData(null);
   };
 
   const handleAutoFill = () => {
@@ -203,67 +201,47 @@ const Avaliacao = () => {
     });
   };
 
-  const handleFormSubmit = async (data: {name: string; email: string; age: string}) => {
-    // This is now handled directly in FormularioDados
-    console.log('Form submitted (legacy handler):', data);
-  };
-
-  const handleDesbloquear = () => {
-    // TODO: Implement unlock logic
-    console.log('Desbloquear resultados:', userData);
-  };
-
   // Processing stage
   if (stage === 'processing') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Calculando seus resultados...</h2>
-          <p className="text-muted-foreground">Analisando suas respostas com nossa IA avançada</p>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Calculando seus resultados...</h2>
+            <p className="text-muted-foreground">Analisando suas respostas com nossa IA avançada</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   // Form stage
   if (stage === 'form') {
     return (
-      <FormularioDados 
-        answers={answers}
-        testId={testId}
-      />
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <FormularioDados 
+          answers={answers}
+          testId={testId}
+        />
+      </>
     );
   }
 
-  // Results loading stage
-  if (stage === 'results-loading') {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Preparando seus resultados...</h2>
-          <p className="text-muted-foreground">Criando seu perfil vocacional personalizado</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Results stage
-  if (stage === 'results' && userData) {
-    return (
-      <ResultadosCompletos 
-        userName={userData.name}
-        userEmail={userData.email}
-        testId={testId}
-        onDesbloquear={handleDesbloquear}
-      />
-    );
-  }
 
   // Questions stage - original assessment interface
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="w-full bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -403,6 +381,7 @@ const Avaliacao = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 
