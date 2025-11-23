@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Helmet } from "react-helmet";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -203,86 +204,110 @@ const Resultado = () => {
   // Loading state
   if (loadingState === 'loading') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-2">Carregando seus resultados...</h2>
-          <p className="text-muted-foreground">Aguarde um momento</p>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Carregando seus resultados...</h2>
+            <p className="text-muted-foreground">Aguarde um momento</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   // Expired state
   if (loadingState === 'expired') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Resultado Expirado</h2>
-            <p className="text-muted-foreground mb-6">
-              Este resultado expirou após 30 dias. Faça um novo teste para obter resultados atualizados.
-            </p>
-            <Button asChild className="gradient-primary">
-              <Link to="/">Fazer novo teste</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-foreground mb-2">Resultado Expirado</h2>
+              <p className="text-muted-foreground mb-6">
+                Este resultado expirou após 30 dias. Faça um novo teste para obter resultados atualizados.
+              </p>
+              <Button asChild className="gradient-primary">
+                <Link to="/">Fazer novo teste</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   // Not found state
   if (loadingState === 'not-found') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Resultado não encontrado</h2>
-            <p className="text-muted-foreground mb-6">
-              Não encontramos um resultado com este identificador. Verifique o link e tente novamente.
-            </p>
-            <Button asChild className="gradient-primary">
-              <Link to="/">Voltar para início</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-foreground mb-2">Resultado não encontrado</h2>
+              <p className="text-muted-foreground mb-6">
+                Não encontramos um resultado com este identificador. Verifique o link e tente novamente.
+              </p>
+              <Button asChild className="gradient-primary">
+                <Link to="/">Voltar para início</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   // Error state
   if (loadingState === 'error' || !result) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar</h2>
-            <p className="text-muted-foreground mb-6">
-              Ocorreu um erro ao carregar seus resultados. Tente novamente.
-            </p>
-            <div className="flex gap-2 justify-center">
-              <Button onClick={fetchResult} variant="outline">
-                Tentar novamente
-              </Button>
-              <Button asChild className="gradient-primary">
-                <Link to="/">Voltar para início</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <Card className="max-w-md">
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-foreground mb-2">Erro ao carregar</h2>
+              <p className="text-muted-foreground mb-6">
+                Ocorreu um erro ao carregar seus resultados. Tente novamente.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={fetchResult} variant="outline">
+                  Tentar novamente
+                </Button>
+                <Button asChild className="gradient-primary">
+                  <Link to="/">Voltar para início</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   // Success state - show results with original UI/UX
   return (
-    <div className="min-h-screen">
-      {/* Hero Section - Original Design */}
-      <section className="min-h-screen gradient-primary relative">
+    <>
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <div className="min-h-screen">
+        {/* Hero Section - Original Design */}
+        <section className="min-h-screen gradient-primary relative">
         {/* Header */}
         <header className="w-full bg-white/10 backdrop-blur-sm border-b border-white/20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -427,6 +452,7 @@ const Resultado = () => {
         userName={result.name}
       />
     </div>
+    </>
   );
 };
 
