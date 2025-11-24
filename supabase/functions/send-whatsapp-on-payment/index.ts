@@ -272,7 +272,8 @@ serve(async (req)=>{
     const gaSessionId = paymentRow?.ga_session_id;
     const gaSessionNumber = paymentRow?.ga_session_number ? Number(paymentRow.ga_session_number) : undefined;
     
-    if (ga4MeasurementId && ga4ApiSecret && gaClientId && gaSessionId) {
+    // client_id is required, session_id is optional but recommended
+    if (ga4MeasurementId && ga4ApiSecret && gaClientId) {
       try {
         const ga4Payload = {
           client_id: gaClientId,
@@ -284,7 +285,7 @@ serve(async (req)=>{
               value: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
               currency: 'BRL',
               payment_type: 'pix',
-              ga_session_id: gaSessionId,
+              ...(gaSessionId ? { ga_session_id: gaSessionId } : {}),
               ...(gaSessionNumber ? { ga_session_number: gaSessionNumber } : {}),
               items: [{
                 item_id: 'qualcarreira_full_analysis',
@@ -307,7 +308,10 @@ serve(async (req)=>{
         });
         
         if (ga4Response.ok) {
-          console.log('[send-whatsapp-on-payment] GA4 conversion event sent successfully');
+          console.log('[send-whatsapp-on-payment] GA4 conversion event sent successfully', {
+            hasSessionId: !!gaSessionId,
+            hasSessionNumber: !!gaSessionNumber
+          });
         } else {
           const ga4ErrorText = await ga4Response.text();
           console.warn('[send-whatsapp-on-payment] GA4 conversion event failed:', ga4Response.status, ga4ErrorText);
@@ -319,11 +323,8 @@ serve(async (req)=>{
     } else {
       if (!ga4MeasurementId || !ga4ApiSecret) {
         console.warn('[send-whatsapp-on-payment] GA4_MEASUREMENT_ID or GA4_API_SECRET not configured; skipping conversion tracking');
-      } else {
-        console.warn('[send-whatsapp-on-payment] Missing GA identifiers on payment; skipping GA4 event', {
-          gaClientId,
-          gaSessionId
-        });
+      } else if (!gaClientId) {
+        console.warn('[send-whatsapp-on-payment] Missing ga_client_id on payment; skipping GA4 event');
       }
     }
     
