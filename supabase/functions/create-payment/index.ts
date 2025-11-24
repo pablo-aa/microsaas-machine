@@ -17,12 +17,23 @@ serve(async (req)=>{
     });
   }
   try {
-    const { test_id, email, name, reuse_only } = await req.json();
+    const {
+      test_id,
+      email,
+      name,
+      reuse_only,
+      ga_client_id,
+      ga_session_id,
+      ga_session_number
+    } = await req.json();
     console.log('Creating payment for:', {
       test_id,
       email,
       name,
-      reuse_only
+      reuse_only,
+      ga_client_id,
+      ga_session_id,
+      ga_session_number
     });
     if (!test_id || !email) {
       throw new Error('test_id and email are required');
@@ -133,8 +144,21 @@ serve(async (req)=>{
               }
               // Caso contrário (expired, cancelled, rejected, ou >24h), não retorna aqui
               // e segue para criar um novo pagamento
-              console.log('Existing payment not reusable (status:', mpStatus, 'olderThan24h:', olderThan24h, '). Creating a new one.');
+            console.log('Existing payment not reusable (status:', mpStatus, 'olderThan24h:', olderThan24h, '). Creating a new one.');
+          }
+
+          // If we have GA identifiers now but record is missing, update it
+          if (ga_client_id || ga_session_id || typeof ga_session_number !== 'undefined') {
+            const updatePayload: Record<string, unknown> = {};
+            if (ga_client_id && !existingPayment.ga_client_id) updatePayload.ga_client_id = ga_client_id;
+            if (ga_session_id && !existingPayment.ga_session_id) updatePayload.ga_session_id = ga_session_id;
+            if (typeof ga_session_number !== 'undefined' && existingPayment.ga_session_number == null) {
+              updatePayload.ga_session_number = ga_session_number;
             }
+            if (Object.keys(updatePayload).length > 0) {
+              await supabase.from('payments').update(updatePayload).eq('id', existingPayment.id);
+            }
+          }
           } catch (e) {
             console.error('Error fetching existing payment from MP:', e);
             if (reuse_only) {
@@ -217,14 +241,18 @@ serve(async (req)=>{
     }
     console.log('Payment created successfully:', mpData.id);
     // Salvar pagamento no banco de dados
-    const { error: dbError } = await supabase.from('payments').insert({
+    const insertPayload: Record<string, unknown> = {
       test_id,
       user_email: email,
       payment_id: mpData.id.toString(),
       amount: transactionAmount,
       status: mpData.status,
-      payment_method: 'pix'
-    });
+      payment_method: 'pix',
+      ga_client_id: ga_client_id ?? null,
+      ga_session_id: ga_session_id ?? null,
+      ga_session_number: ga_session_number ?? null
+    };
+    const { error: dbError } = await supabase.from('payments').insert(insertPayload);
     if (dbError) {
       console.error('Database error:', dbError);
       throw new Error(`Database error: ${dbError.message}`);

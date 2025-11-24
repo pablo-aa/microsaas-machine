@@ -62,7 +62,7 @@ serve(async (req)=>{
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, serviceKey);
     // Fetch stored payment context (email, test_id, amount)
-    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at').eq('payment_id', paymentId).maybeSingle();
+    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at, ga_client_id, ga_session_id, ga_session_number').eq('payment_id', paymentId).maybeSingle();
     if (paymentRowError) {
       console.warn('[send-whatsapp-on-payment] Error fetching payment row:', paymentRowError);
     }
@@ -268,11 +268,15 @@ serve(async (req)=>{
     // Send Google Analytics 4 conversion event via Measurement Protocol
     const ga4MeasurementId = Deno.env.get('GA4_MEASUREMENT_ID');
     const ga4ApiSecret = Deno.env.get('GA4_API_SECRET');
+    const gaClientId = paymentRow?.ga_client_id;
+    const gaSessionId = paymentRow?.ga_session_id;
+    const gaSessionNumber = paymentRow?.ga_session_number ? Number(paymentRow.ga_session_number) : undefined;
     
-    if (ga4MeasurementId && ga4ApiSecret) {
+    if (ga4MeasurementId && ga4ApiSecret && gaClientId && gaSessionId) {
       try {
         const ga4Payload = {
-          client_id: paymentId, // Use payment_id as client_id for uniqueness
+          client_id: gaClientId,
+          timestamp_micros: Date.now() * 1000,
           events: [{
             name: 'purchase',
             params: {
@@ -280,6 +284,8 @@ serve(async (req)=>{
               value: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
               currency: 'BRL',
               payment_type: 'pix',
+              ga_session_id: gaSessionId,
+              ...(gaSessionNumber ? { ga_session_number: gaSessionNumber } : {}),
               items: [{
                 item_id: 'qualcarreira_full_analysis',
                 item_name: 'Análise Vocacional Completa',
@@ -311,7 +317,14 @@ serve(async (req)=>{
         console.warn('[send-whatsapp-on-payment] Error sending GA4 conversion event:', ga4Error);
       }
     } else {
-      console.warn('[send-whatsapp-on-payment] GA4_MEASUREMENT_ID or GA4_API_SECRET not configured; skipping conversion tracking');
+      if (!ga4MeasurementId || !ga4ApiSecret) {
+        console.warn('[send-whatsapp-on-payment] GA4_MEASUREMENT_ID or GA4_API_SECRET not configured; skipping conversion tracking');
+      } else {
+        console.warn('[send-whatsapp-on-payment] Missing GA identifiers on payment; skipping GA4 event', {
+          gaClientId,
+          gaSessionId
+        });
+      }
     }
     
     // Compose WhatsApp message (prefer DB values and requested format)

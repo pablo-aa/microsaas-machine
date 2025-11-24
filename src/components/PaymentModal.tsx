@@ -11,6 +11,7 @@ import {
   trackPixCodeCopied, 
   trackPaymentError 
 } from '@/lib/analytics';
+import { getGaIdentifiers } from '@/lib/gaCookies';
 
 // Get Supabase URL from environment (kept for potential direct calls if needed)
 const getSupabaseUrl = () => {
@@ -78,6 +79,27 @@ export const PaymentModal = ({
     return { source, campaign };
   };
 
+  const getGaFields = () => {
+    try {
+      const { ga_client_id, ga_session_id, ga_session_number } = getGaIdentifiers();
+      if (!ga_client_id || !ga_session_id) {
+        console.warn('[PaymentModal] GA identifiers not available yet');
+      }
+      return {
+        ga_client_id,
+        ga_session_id,
+        ga_session_number: ga_session_number ? Number(ga_session_number) : null,
+      };
+    } catch (error) {
+      console.warn('[PaymentModal] Error reading GA cookies', error);
+      return {
+        ga_client_id: null,
+        ga_session_id: null,
+        ga_session_number: null,
+      };
+    }
+  };
+
   const probeExistingPaymentOrCreate = async () => {
     try {
       setLoading(true);
@@ -85,6 +107,7 @@ export const PaymentModal = ({
       
       // Obter parâmetros de rastreamento da URL
       const { source, campaign } = getURLParams();
+      const gaFields = getGaFields();
 
       // Tenta localizar pagamento existente (pending/approved)
       const { data: reuseData, error: reuseError } = await supabase.functions.invoke('create-payment', {
@@ -95,7 +118,8 @@ export const PaymentModal = ({
           reuse_only: true,
           isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
           source: source,
-          campaign: campaign
+          campaign: campaign,
+          ...gaFields
         },
       });
 
@@ -141,6 +165,7 @@ export const PaymentModal = ({
       
       // Obter parâmetros de rastreamento da URL
       const { source, campaign } = getURLParams();
+      const gaFields = getGaFields();
 
       const { data, error } = await supabase.functions.invoke('create-payment', {
         body: {
@@ -150,7 +175,8 @@ export const PaymentModal = ({
           // Explicit environment flag for accurate pricing on Edge Functions
           isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
           source: source,
-          campaign: campaign
+          campaign: campaign,
+          ...gaFields
         },
       });
 
