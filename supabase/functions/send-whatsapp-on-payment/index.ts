@@ -354,6 +354,48 @@ serve(async (req)=>{
     }
     // WhatsApp sent successfully
     // Note: whatsapp_notified_at was already marked before sending (atomic check above)
+    
+    // Send Pushover notification
+    const pushoverUserKey = Deno.env.get('PUSHOVER_USER_KEY');
+    const pushoverApiToken = Deno.env.get('PUSHOVER_API_TOKEN');
+    
+    if (pushoverUserKey && pushoverApiToken) {
+      try {
+        const pushoverMessage = `Valor: R$ ${amountStr}`;
+        
+        const pushoverPayload = {
+          token: pushoverApiToken,
+          user: pushoverUserKey,
+          message: pushoverMessage,
+          title: 'Novo pagante - QC 🪙',
+          priority: 1, // Normal priority (0 = lowest, 2 = high)
+          sound: 'cashregister' // Optional: cash register sound for payment notifications
+        };
+        
+        const pushoverResponse = await fetch('https://api.pushover.net/1/messages.json', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(pushoverPayload)
+        });
+        
+        const pushoverResult = await pushoverResponse.json();
+        if (pushoverResponse.ok) {
+          console.log('[send-whatsapp-on-payment] Pushover notification sent successfully');
+        } else {
+          console.warn('[send-whatsapp-on-payment] Pushover notification failed:', pushoverResult);
+        }
+      } catch (pushoverError) {
+        // Don't fail the whole process if Pushover fails
+        console.warn('[send-whatsapp-on-payment] Error sending Pushover notification:', pushoverError);
+      }
+    } else {
+      if (!pushoverUserKey || !pushoverApiToken) {
+        console.warn('[send-whatsapp-on-payment] PUSHOVER_USER_KEY or PUSHOVER_API_TOKEN not configured; skipping Pushover notification');
+      }
+    }
+    
     return new Response(JSON.stringify({
       ok: true,
       message_sent: true,
