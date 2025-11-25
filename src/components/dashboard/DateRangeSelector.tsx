@@ -1,7 +1,14 @@
-import { DateRange, CustomDateRange } from "@/types/metrics";
+import { DateRange, CustomDateRange, Granularity } from "@/types/metrics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 
@@ -10,13 +17,19 @@ interface DateRangeSelectorProps {
   onChange: (range: DateRange) => void;
   customRange?: CustomDateRange;
   onCustomRangeChange?: (range: CustomDateRange) => void;
+  granularity: Granularity;
+  onGranularityChange: (granularity: Granularity) => void;
+  dataPointsCount: number;
 }
 
 export const DateRangeSelector = ({ 
   selected, 
   onChange, 
   customRange,
-  onCustomRangeChange 
+  onCustomRangeChange,
+  granularity,
+  onGranularityChange,
+  dataPointsCount
 }: DateRangeSelectorProps) => {
   const ranges: { value: DateRange; label: string }[] = [
     { value: "today", label: "Hoje" },
@@ -24,7 +37,10 @@ export const DateRangeSelector = ({
     { value: "7", label: "Últimos 7 dias" },
     { value: "14", label: "Últimos 14 dias" },
     { value: "30", label: "Últimos 30 dias" },
+    { value: "all", label: "Histórico" },
   ];
+  
+  const showGranularitySelector = dataPointsCount > 14;
 
   const handleCustomDateChange = (type: 'from' | 'to', value: string) => {
     if (!value) return;
@@ -46,7 +62,7 @@ export const DateRangeSelector = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {ranges.map((range) => (
         <Button
           key={range.value}
@@ -61,6 +77,19 @@ export const DateRangeSelector = ({
           {range.label}
         </Button>
       ))}
+      
+      {showGranularitySelector && (
+        <Select value={granularity} onValueChange={onGranularityChange}>
+          <SelectTrigger className="w-[140px] h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="day">Por dia</SelectItem>
+            <SelectItem value="week">Por semana</SelectItem>
+            <SelectItem value="month">Por mês</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
       
       <Popover>
         <PopoverTrigger asChild>

@@ -1,46 +1,61 @@
 import { useState, useMemo } from "react";
 import { mockMetrics } from "@/data/mockMetrics";
-import { DateRange, CustomDateRange } from "@/types/metrics";
+import { DateRange, CustomDateRange, Granularity } from "@/types/metrics";
 import { DateRangeSelector } from "@/components/dashboard/DateRangeSelector";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { FunnelChart } from "@/components/dashboard/FunnelChart";
 import { MetricsTable } from "@/components/dashboard/MetricsTable";
 import { isWithinInterval, startOfDay, subDays } from "date-fns";
+import { aggregateData } from "@/utils/dataAggregation";
 
 const Index = () => {
   const [dateRange, setDateRange] = useState<DateRange>("30");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
+  const [granularity, setGranularity] = useState<Granularity>("day");
 
   const filteredData = useMemo(() => {
     const today = startOfDay(new Date());
     
+    let rawData;
     switch (dateRange) {
       case "today": {
         const todayStr = today.toISOString().split('T')[0];
-        return mockMetrics.filter(m => m.date === todayStr);
+        rawData = mockMetrics.filter(m => m.date === todayStr);
+        break;
       }
       case "yesterday": {
         const yesterday = subDays(today, 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
-        return mockMetrics.filter(m => m.date === yesterdayStr);
+        rawData = mockMetrics.filter(m => m.date === yesterdayStr);
+        break;
+      }
+      case "all": {
+        rawData = mockMetrics;
+        break;
       }
       case "custom": {
-        if (!customRange) return mockMetrics;
-        return mockMetrics.filter(m => {
-          const metricDate = new Date(m.date);
-          return isWithinInterval(metricDate, {
-            start: startOfDay(customRange.from),
-            end: startOfDay(customRange.to)
+        if (!customRange) {
+          rawData = mockMetrics;
+        } else {
+          rawData = mockMetrics.filter(m => {
+            const metricDate = new Date(m.date);
+            return isWithinInterval(metricDate, {
+              start: startOfDay(customRange.from),
+              end: startOfDay(customRange.to)
+            });
           });
-        });
+        }
+        break;
       }
       default: {
         const days = parseInt(dateRange);
-        return mockMetrics.slice(-days);
+        rawData = mockMetrics.slice(-days);
       }
     }
-  }, [dateRange, customRange]);
+    
+    return aggregateData(rawData, granularity);
+  }, [dateRange, customRange, granularity]);
 
   const kpis = useMemo(() => {
     const totalRevenue = filteredData.reduce((sum, d) => sum + d.revenue, 0);
@@ -67,6 +82,9 @@ const Index = () => {
             onChange={setDateRange}
             customRange={customRange}
             onCustomRangeChange={setCustomRange}
+            granularity={granularity}
+            onGranularityChange={setGranularity}
+            dataPointsCount={filteredData.length}
           />
         </div>
 
@@ -80,8 +98,8 @@ const Index = () => {
 
         {/* Charts */}
         <div className="space-y-6 mb-8">
-          <RevenueChart data={filteredData} />
-          <FunnelChart data={filteredData} />
+          <RevenueChart data={filteredData} granularity={granularity} />
+          <FunnelChart data={filteredData} granularity={granularity} />
         </div>
 
         {/* Table */}
