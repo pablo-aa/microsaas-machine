@@ -90,17 +90,32 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
           <Legend />
           <Bar dataKey="formsSubmitted" fill="hsl(217, 91%, 60%)" name="Formulários Enviados">
             {showLabels && (
-              <LabelList dataKey="formsSubmitted" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+              <LabelList 
+                dataKey="formsSubmitted" 
+                position="top" 
+                style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => Math.round(value)}
+              />
             )}
           </Bar>
           <Bar dataKey="paymentStarted" fill="hsl(45, 93%, 47%)" name="Pagamento Iniciado">
             {showLabels && (
-              <LabelList dataKey="paymentStarted" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+              <LabelList 
+                dataKey="paymentStarted" 
+                position="top" 
+                style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => Math.round(value)}
+              />
             )}
           </Bar>
           <Bar dataKey="paymentApproved" fill="hsl(142, 76%, 36%)" name="Pagamento Aprovado">
             {showLabels && (
-              <LabelList dataKey="paymentApproved" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+              <LabelList 
+                dataKey="paymentApproved" 
+                position="top" 
+                style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => Math.round(value)}
+              />
             )}
           </Bar>
         </BarChart>
