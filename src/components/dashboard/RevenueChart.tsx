@@ -61,7 +61,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
         )}
       </div>
       <ResponsiveContainer width="100%" height={350}>
-        <ComposedChart data={chartData}>
+        <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey="date" 
@@ -85,6 +85,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
             }}
+            formatter={(value: number) => value.toFixed(2)}
           />
           <Legend />
           <Bar yAxisId="left" dataKey="revenue" fill="hsl(217, 91%, 60%)" name="Receita ($)">
