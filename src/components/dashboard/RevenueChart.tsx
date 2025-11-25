@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { DailyMetrics, Granularity } from "@/types/metrics";
 import {
   Bar,
@@ -12,26 +13,53 @@ import {
   LabelList,
 } from "recharts";
 import { Card } from "@/components/ui/card";
-import { formatDateByGranularity } from "@/utils/dataAggregation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { aggregateData, formatDateByGranularity } from "@/utils/dataAggregation";
 
 interface RevenueChartProps {
   data: DailyMetrics[];
-  granularity: Granularity;
 }
 
-export const RevenueChart = ({ data, granularity }: RevenueChartProps) => {
-  const chartData = data.map((d) => ({
+export const RevenueChart = ({ data }: RevenueChartProps) => {
+  const [granularity, setGranularity] = useState<Granularity>("day");
+  
+  const aggregatedData = useMemo(() => {
+    return aggregateData(data, granularity);
+  }, [data, granularity]);
+  
+  const chartData = aggregatedData.map((d) => ({
     date: formatDateByGranularity(d.date, granularity),
     revenue: d.revenue,
     adSpend: d.adSpend,
     roas: d.roas,
   }));
   
-  const showLabels = data.length <= 14;
+  const showLabels = aggregatedData.length <= 14;
+  const showGranularitySelector = data.length > 14;
 
   return (
     <Card className="p-6 border border-border rounded-lg bg-card">
-      <h3 className="text-lg font-semibold mb-4 text-foreground">Receita vs Gastos com Anúncios & ROAS</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-foreground">Receita vs Gastos com Anúncios & ROAS</h3>
+        {showGranularitySelector && (
+          <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Por dia</SelectItem>
+              <SelectItem value="week">Por semana</SelectItem>
+              <SelectItem value="month">Por mês</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={350}>
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

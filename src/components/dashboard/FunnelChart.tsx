@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { DailyMetrics, Granularity } from "@/types/metrics";
 import {
   Bar,
@@ -11,27 +12,40 @@ import {
   LabelList,
 } from "recharts";
 import { Card } from "@/components/ui/card";
-import { formatDateByGranularity } from "@/utils/dataAggregation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { aggregateData, formatDateByGranularity } from "@/utils/dataAggregation";
 
 interface FunnelChartProps {
   data: DailyMetrics[];
-  granularity: Granularity;
 }
 
-export const FunnelChart = ({ data, granularity }: FunnelChartProps) => {
-  const chartData = data.map((d) => ({
+export const FunnelChart = ({ data }: FunnelChartProps) => {
+  const [granularity, setGranularity] = useState<Granularity>("day");
+  
+  const aggregatedData = useMemo(() => {
+    return aggregateData(data, granularity);
+  }, [data, granularity]);
+  
+  const chartData = aggregatedData.map((d) => ({
     date: formatDateByGranularity(d.date, granularity),
     formsSubmitted: d.formsSubmitted,
     paymentStarted: d.paymentStarted,
     paymentApproved: d.paymentApproved,
   }));
   
-  const showLabels = data.length <= 14;
+  const showLabels = aggregatedData.length <= 14;
+  const showGranularitySelector = data.length > 14;
 
   // Calculate average conversions for the displayed period
-  const totalForms = data.reduce((sum, d) => sum + d.formsSubmitted, 0);
-  const totalStarted = data.reduce((sum, d) => sum + d.paymentStarted, 0);
-  const totalApproved = data.reduce((sum, d) => sum + d.paymentApproved, 0);
+  const totalForms = aggregatedData.reduce((sum, d) => sum + d.formsSubmitted, 0);
+  const totalStarted = aggregatedData.reduce((sum, d) => sum + d.paymentStarted, 0);
+  const totalApproved = aggregatedData.reduce((sum, d) => sum + d.paymentApproved, 0);
 
   const convFormToStart = ((totalStarted / totalForms) * 100).toFixed(2);
   const convStartToApproved = ((totalApproved / totalStarted) * 100).toFixed(2);
@@ -39,7 +53,21 @@ export const FunnelChart = ({ data, granularity }: FunnelChartProps) => {
 
   return (
     <Card className="p-6 border border-border rounded-lg bg-card">
-      <h3 className="text-lg font-semibold mb-4 text-foreground">Funil Diário</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-foreground">Funil Diário</h3>
+        {showGranularitySelector && (
+          <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Por dia</SelectItem>
+              <SelectItem value="week">Por semana</SelectItem>
+              <SelectItem value="month">Por mês</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={350}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

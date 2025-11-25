@@ -1,14 +1,7 @@
-import { DateRange, CustomDateRange, Granularity } from "@/types/metrics";
+import { DateRange, CustomDateRange } from "@/types/metrics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 
@@ -17,19 +10,13 @@ interface DateRangeSelectorProps {
   onChange: (range: DateRange) => void;
   customRange?: CustomDateRange;
   onCustomRangeChange?: (range: CustomDateRange) => void;
-  granularity: Granularity;
-  onGranularityChange: (granularity: Granularity) => void;
-  dataPointsCount: number;
 }
 
 export const DateRangeSelector = ({ 
   selected, 
   onChange, 
   customRange,
-  onCustomRangeChange,
-  granularity,
-  onGranularityChange,
-  dataPointsCount
+  onCustomRangeChange
 }: DateRangeSelectorProps) => {
   const ranges: { value: DateRange; label: string }[] = [
     { value: "today", label: "Hoje" },
@@ -39,8 +26,6 @@ export const DateRangeSelector = ({
     { value: "30", label: "Últimos 30 dias" },
     { value: "all", label: "Histórico" },
   ];
-  
-  const showGranularitySelector = dataPointsCount > 14;
 
   const handleCustomDateChange = (type: 'from' | 'to', value: string) => {
     if (!value) return;
@@ -77,19 +62,6 @@ export const DateRangeSelector = ({
           {range.label}
         </Button>
       ))}
-      
-      {showGranularitySelector && (
-        <Select value={granularity} onValueChange={onGranularityChange}>
-          <SelectTrigger className="w-[140px] h-9">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="day">Por dia</SelectItem>
-            <SelectItem value="week">Por semana</SelectItem>
-            <SelectItem value="month">Por mês</SelectItem>
-          </SelectContent>
-        </Select>
-      )}
       
       <Popover>
         <PopoverTrigger asChild>
