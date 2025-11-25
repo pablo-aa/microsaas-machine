@@ -69,7 +69,7 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
         )}
       </div>
       <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={chartData}>
+        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey="date" 
@@ -86,6 +86,7 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
             }}
+            formatter={(value: number) => Math.round(value)}
           />
           <Legend />
           <Bar dataKey="formsSubmitted" fill="hsl(217, 91%, 60%)" name="Formulários Enviados">

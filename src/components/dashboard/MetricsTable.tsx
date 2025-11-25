@@ -19,7 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { aggregateData, formatDateByGranularity } from "@/utils/dataAggregation";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+type SortField = keyof DailyMetrics;
+type SortOrder = "asc" | "desc" | null;
 
 interface MetricsTableProps {
   data: DailyMetrics[];
@@ -29,19 +32,80 @@ export const MetricsTable = ({ data }: MetricsTableProps) => {
   const [granularity, setGranularity] = useState<Granularity>("day");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(null);
   const itemsPerPage = 10;
 
   const aggregatedData = useMemo(() => {
     return aggregateData(data, granularity);
   }, [data, granularity]);
 
-  const filteredData = useMemo(() => {
-    if (!searchTerm) return aggregatedData;
-    return aggregatedData.filter((row) => {
-      const dateStr = formatDateByGranularity(row.date, granularity).toLowerCase();
-      return dateStr.includes(searchTerm.toLowerCase());
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortOrder === "asc") {
+        setSortOrder("desc");
+      } else if (sortOrder === "desc") {
+        setSortField(null);
+        setSortOrder(null);
+      } else {
+        setSortOrder("asc");
+      }
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 ml-1 inline" />;
+    if (sortOrder === "asc") return <ArrowUp className="h-4 w-4 ml-1 inline" />;
+    if (sortOrder === "desc") return <ArrowDown className="h-4 w-4 ml-1 inline" />;
+    return <ArrowUpDown className="h-4 w-4 ml-1 inline" />;
+  };
+
+  const sortedData = useMemo(() => {
+    if (!sortField || !sortOrder) return aggregatedData;
+    
+    return [...aggregatedData].sort((a, b) => {
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortOrder === "asc" 
+          ? aVal.localeCompare(bVal) 
+          : bVal.localeCompare(aVal);
+      }
+      
+      return 0;
     });
-  }, [aggregatedData, searchTerm, granularity]);
+  }, [aggregatedData, sortField, sortOrder]);
+
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return sortedData;
+    
+    return sortedData.filter((row) => {
+      const searchLower = searchTerm.toLowerCase();
+      const dateStr = formatDateByGranularity(row.date, granularity).toLowerCase();
+      const revenue = row.revenue.toFixed(2);
+      const adSpend = row.adSpend.toFixed(2);
+      const roas = row.roas.toFixed(2);
+      
+      return (
+        dateStr.includes(searchLower) ||
+        revenue.includes(searchLower) ||
+        adSpend.includes(searchLower) ||
+        roas.includes(searchLower) ||
+        row.formsSubmitted.toString().includes(searchLower) ||
+        row.paymentStarted.toString().includes(searchLower) ||
+        row.paymentApproved.toString().includes(searchLower)
+      );
+    });
+  }, [sortedData, searchTerm, granularity]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -75,7 +139,7 @@ export const MetricsTable = ({ data }: MetricsTableProps) => {
             <div className="relative w-full sm:w-[250px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por data..."
+                placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -91,16 +155,66 @@ export const MetricsTable = ({ data }: MetricsTableProps) => {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-foreground font-semibold">Data</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Receita</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Gasto Anúncios</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">ROAS</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Formulários</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Iniciados</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Aprovados</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Conv. F→I</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Conv. I→A</TableHead>
-                <TableHead className="text-foreground font-semibold text-right">Conv. F→A</TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("date")}
+                >
+                  Data {getSortIcon("date")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("revenue")}
+                >
+                  Receita {getSortIcon("revenue")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("adSpend")}
+                >
+                  Gasto Anúncios {getSortIcon("adSpend")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("roas")}
+                >
+                  ROAS {getSortIcon("roas")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("formsSubmitted")}
+                >
+                  Formulários {getSortIcon("formsSubmitted")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("paymentStarted")}
+                >
+                  Iniciados {getSortIcon("paymentStarted")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("paymentApproved")}
+                >
+                  Aprovados {getSortIcon("paymentApproved")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("conversionFormToStart")}
+                >
+                  Conv. F→I {getSortIcon("conversionFormToStart")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("conversionStartToApproved")}
+                >
+                  Conv. I→A {getSortIcon("conversionStartToApproved")}
+                </TableHead>
+                <TableHead 
+                  className="text-foreground font-semibold text-right cursor-pointer hover:bg-muted/70 transition-colors"
+                  onClick={() => handleSort("conversionFormToApproved")}
+                >
+                  Conv. F→A {getSortIcon("conversionFormToApproved")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

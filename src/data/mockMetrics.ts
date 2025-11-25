@@ -1,6 +1,6 @@
 import { DailyMetrics } from "@/types/metrics";
 
-// Generate 30 days of mock data
+// Generate 30 days of mock data with some negative revenue days
 const generateMockData = (): DailyMetrics[] => {
   const data: DailyMetrics[] = [];
   const today = new Date();
@@ -13,8 +13,15 @@ const generateMockData = (): DailyMetrics[] => {
     const paymentStarted = Math.floor(formsSubmitted * (0.4 + Math.random() * 0.3));
     const paymentApproved = Math.floor(paymentStarted * (0.6 + Math.random() * 0.3));
     
-    const revenue = paymentApproved * (50 + Math.random() * 100);
+    let revenue = paymentApproved * (50 + Math.random() * 100);
     const adSpend = 100 + Math.random() * 200;
+    
+    // Add some days with negative revenue (refunds/chargebacks)
+    // Days 5, 12, 18, and 25 will have negative revenue
+    if (i === 5 || i === 12 || i === 18 || i === 25) {
+      revenue = -(50 + Math.random() * 150);
+    }
+    
     const roas = revenue / adSpend;
     
     data.push({
