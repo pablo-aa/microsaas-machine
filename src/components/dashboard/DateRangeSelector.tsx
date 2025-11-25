@@ -1,12 +1,9 @@
-import { useState } from "react";
 import { DateRange, CustomDateRange } from "@/types/metrics";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { DateRange as CalendarDateRange } from "react-day-picker";
 
 interface DateRangeSelectorProps {
   selected: DateRange;
@@ -21,10 +18,6 @@ export const DateRangeSelector = ({
   customRange,
   onCustomRangeChange 
 }: DateRangeSelectorProps) => {
-  const [dateRange, setDateRange] = useState<CalendarDateRange | undefined>(
-    customRange ? { from: customRange.from, to: customRange.to } : undefined
-  );
-
   const ranges: { value: DateRange; label: string }[] = [
     { value: "today", label: "Hoje" },
     { value: "yesterday", label: "Ontem" },
@@ -33,12 +26,23 @@ export const DateRangeSelector = ({
     { value: "30", label: "Últimos 30 dias" },
   ];
 
-  const handleCustomRangeSelect = (range: CalendarDateRange | undefined) => {
-    setDateRange(range);
-    if (range?.from && range?.to && onCustomRangeChange) {
-      onCustomRangeChange({ from: range.from, to: range.to });
-      onChange("custom");
+  const handleCustomDateChange = (type: 'from' | 'to', value: string) => {
+    if (!value) return;
+    
+    const newDate = new Date(value);
+    if (type === 'from') {
+      const to = customRange?.to || new Date();
+      onCustomRangeChange?.({ from: newDate, to });
+    } else {
+      const from = customRange?.from || new Date();
+      onCustomRangeChange?.({ from, to: newDate });
     }
+    onChange("custom");
+  };
+
+  const formatDateForInput = (date?: Date) => {
+    if (!date) return "";
+    return date.toISOString().split('T')[0];
   };
 
   return (
@@ -69,28 +73,36 @@ export const DateRangeSelector = ({
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange?.from ? (
-              dateRange.to ? (
-                <>
-                  {format(dateRange.from, "dd/MM")} - {format(dateRange.to, "dd/MM")}
-                </>
-              ) : (
-                format(dateRange.from, "dd/MM/yyyy")
-              )
+            {customRange?.from && customRange?.to ? (
+              <>
+                {customRange.from.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - {customRange.to.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+              </>
             ) : (
               "Personalizado"
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="end">
-          <Calendar
-            mode="range"
-            selected={dateRange}
-            onSelect={handleCustomRangeSelect}
-            numberOfMonths={2}
-            initialFocus
-            className="pointer-events-auto"
-          />
+        <PopoverContent className="w-auto p-4" align="end">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data inicial</label>
+              <Input
+                type="date"
+                value={formatDateForInput(customRange?.from)}
+                onChange={(e) => handleCustomDateChange('from', e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data final</label>
+              <Input
+                type="date"
+                value={formatDateForInput(customRange?.to)}
+                onChange={(e) => handleCustomDateChange('to', e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
     </div>
