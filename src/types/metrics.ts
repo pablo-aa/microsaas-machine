@@ -11,9 +11,11 @@ export type DailyMetrics = {
   conversionFormToApproved: number;
 };
 
-export type DateRange = "today" | "yesterday" | "7" | "14" | "30" | "custom";
+export type DateRange = "today" | "yesterday" | "7" | "14" | "30" | "all" | "custom";
 
 export type CustomDateRange = {
   from: Date;
   to: Date;
 };
+
+export type Granularity = "day" | "week" | "month";

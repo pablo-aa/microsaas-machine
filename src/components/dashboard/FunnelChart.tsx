@@ -1,4 +1,4 @@
-import { DailyMetrics } from "@/types/metrics";
+import { DailyMetrics, Granularity } from "@/types/metrics";
 import {
   Bar,
   BarChart,
@@ -8,20 +8,25 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from "recharts";
 import { Card } from "@/components/ui/card";
+import { formatDateByGranularity } from "@/utils/dataAggregation";
 
 interface FunnelChartProps {
   data: DailyMetrics[];
+  granularity: Granularity;
 }
 
-export const FunnelChart = ({ data }: FunnelChartProps) => {
+export const FunnelChart = ({ data, granularity }: FunnelChartProps) => {
   const chartData = data.map((d) => ({
-    date: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: formatDateByGranularity(d.date, granularity),
     formsSubmitted: d.formsSubmitted,
     paymentStarted: d.paymentStarted,
     paymentApproved: d.paymentApproved,
   }));
+  
+  const showLabels = data.length <= 14;
 
   // Calculate average conversions for the displayed period
   const totalForms = data.reduce((sum, d) => sum + d.formsSubmitted, 0);
@@ -34,7 +39,7 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
 
   return (
     <Card className="p-6 border border-border rounded-lg bg-card">
-      <h3 className="text-lg font-semibold mb-4 text-foreground">Daily Funnel</h3>
+      <h3 className="text-lg font-semibold mb-4 text-foreground">Funil Diário</h3>
       <ResponsiveContainer width="100%" height={350}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -55,23 +60,35 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
             }}
           />
           <Legend />
-          <Bar dataKey="formsSubmitted" fill="hsl(217, 91%, 60%)" name="Forms Submitted" />
-          <Bar dataKey="paymentStarted" fill="hsl(45, 93%, 47%)" name="Payment Started" />
-          <Bar dataKey="paymentApproved" fill="hsl(142, 76%, 36%)" name="Payment Approved" />
+          <Bar dataKey="formsSubmitted" fill="hsl(217, 91%, 60%)" name="Formulários Enviados">
+            {showLabels && (
+              <LabelList dataKey="formsSubmitted" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+            )}
+          </Bar>
+          <Bar dataKey="paymentStarted" fill="hsl(45, 93%, 47%)" name="Pagamento Iniciado">
+            {showLabels && (
+              <LabelList dataKey="paymentStarted" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+            )}
+          </Bar>
+          <Bar dataKey="paymentApproved" fill="hsl(142, 76%, 36%)" name="Pagamento Aprovado">
+            {showLabels && (
+              <LabelList dataKey="paymentApproved" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+            )}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
       
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 bg-accent rounded-lg border border-border">
-          <p className="text-xs text-muted-foreground mb-1">Forms → Started</p>
+          <p className="text-xs text-muted-foreground mb-1">Formulários → Iniciados</p>
           <p className="text-2xl font-semibold text-foreground">{convFormToStart}%</p>
         </div>
         <div className="p-4 bg-accent rounded-lg border border-border">
-          <p className="text-xs text-muted-foreground mb-1">Started → Approved</p>
+          <p className="text-xs text-muted-foreground mb-1">Iniciados → Aprovados</p>
           <p className="text-2xl font-semibold text-foreground">{convStartToApproved}%</p>
         </div>
         <div className="p-4 bg-accent rounded-lg border border-border">
-          <p className="text-xs text-muted-foreground mb-1">Forms → Approved</p>
+          <p className="text-xs text-muted-foreground mb-1">Formulários → Aprovados</p>
           <p className="text-2xl font-semibold text-foreground">{convFormToApproved}%</p>
         </div>
       </div>

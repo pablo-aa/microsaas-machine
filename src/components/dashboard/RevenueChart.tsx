@@ -1,4 +1,4 @@
-import { DailyMetrics } from "@/types/metrics";
+import { DailyMetrics, Granularity } from "@/types/metrics";
 import {
   Bar,
   Line,
@@ -9,24 +9,29 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from "recharts";
 import { Card } from "@/components/ui/card";
+import { formatDateByGranularity } from "@/utils/dataAggregation";
 
 interface RevenueChartProps {
   data: DailyMetrics[];
+  granularity: Granularity;
 }
 
-export const RevenueChart = ({ data }: RevenueChartProps) => {
+export const RevenueChart = ({ data, granularity }: RevenueChartProps) => {
   const chartData = data.map((d) => ({
-    date: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: formatDateByGranularity(d.date, granularity),
     revenue: d.revenue,
     adSpend: d.adSpend,
     roas: d.roas,
   }));
+  
+  const showLabels = data.length <= 14;
 
   return (
     <Card className="p-6 border border-border rounded-lg bg-card">
-      <h3 className="text-lg font-semibold mb-4 text-foreground">Daily Revenue vs Ad Spend & ROAS</h3>
+      <h3 className="text-lg font-semibold mb-4 text-foreground">Receita vs Gastos com Anúncios & ROAS</h3>
       <ResponsiveContainer width="100%" height={350}>
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -54,8 +59,16 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
             }}
           />
           <Legend />
-          <Bar yAxisId="left" dataKey="revenue" fill="hsl(217, 91%, 60%)" name="Revenue ($)" />
-          <Bar yAxisId="left" dataKey="adSpend" fill="hsl(220, 13%, 70%)" name="Ad Spend ($)" />
+          <Bar yAxisId="left" dataKey="revenue" fill="hsl(217, 91%, 60%)" name="Receita ($)">
+            {showLabels && (
+              <LabelList dataKey="revenue" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+            )}
+          </Bar>
+          <Bar yAxisId="left" dataKey="adSpend" fill="hsl(220, 13%, 70%)" name="Gasto com Anúncios ($)">
+            {showLabels && (
+              <LabelList dataKey="adSpend" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+            )}
+          </Bar>
           <Line 
             yAxisId="right" 
             type="monotone" 
