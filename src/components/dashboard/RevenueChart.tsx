@@ -89,12 +89,22 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
           <Legend />
           <Bar yAxisId="left" dataKey="revenue" fill="hsl(217, 91%, 60%)" name="Receita ($)">
             {showLabels && (
-              <LabelList dataKey="revenue" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+              <LabelList 
+                dataKey="revenue" 
+                position="top" 
+                style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => value.toFixed(2)}
+              />
             )}
           </Bar>
           <Bar yAxisId="left" dataKey="adSpend" fill="hsl(220, 13%, 70%)" name="Gasto com Anúncios ($)">
             {showLabels && (
-              <LabelList dataKey="adSpend" position="top" style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }} />
+              <LabelList 
+                dataKey="adSpend" 
+                position="top" 
+                style={{ fontSize: '10px', fill: 'hsl(var(--foreground))' }}
+                formatter={(value: number) => value.toFixed(2)}
+              />
             )}
           </Bar>
           <Line 
