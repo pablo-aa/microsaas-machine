@@ -17,31 +17,58 @@ export const isProduction = (): boolean => {
 };
 
 export const initializeGTM = () => {
-  const gtmId = getGTMId();
-  
-  // Initialize dataLayer
-  window.dataLayer = window.dataLayer || [];
-  
-  // Inject GTM script
-  const script = document.createElement('script');
-  script.innerHTML = `
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','${gtmId}');
-  `;
-  document.head.insertBefore(script, document.head.firstChild);
-  
-  // Inject noscript
-  const noscript = document.createElement('noscript');
-  noscript.innerHTML = `
-    <iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe>
-  `;
-  document.body.insertBefore(noscript, document.body.firstChild);
-  
-  console.log(`[GTM] Initialized with ID: ${gtmId}`);
+  // Verificar se já foi inicializado
+  if (typeof window === 'undefined' || document.getElementById('gtm-script')) {
+    return;
+  }
+
+  try {
+    const gtmId = getGTMId();
+    
+    // Initialize dataLayer
+    window.dataLayer = window.dataLayer || [];
+    
+    // Inject GTM script
+    const script = document.createElement('script');
+    script.id = 'gtm-script';
+    script.innerHTML = `
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','${gtmId}');
+    `;
+    
+    // Aguardar o DOM estar pronto
+    if (document.head) {
+      document.head.insertBefore(script, document.head.firstChild);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.head.insertBefore(script, document.head.firstChild);
+      });
+    }
+    
+    // Inject noscript
+    const noscript = document.createElement('noscript');
+    noscript.id = 'gtm-noscript';
+    noscript.innerHTML = `
+      <iframe src="https://www.googletagmanager.com/ns.html?id=${gtmId}"
+      height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    `;
+    
+    // Aguardar o body estar pronto
+    if (document.body) {
+      document.body.insertBefore(noscript, document.body.firstChild);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.insertBefore(noscript, document.body.firstChild);
+      });
+    }
+    
+    console.log(`[GTM] Initialized with ID: ${gtmId}`);
+  } catch (error) {
+    console.error('[GTM] Error initializing:', error);
+  }
 };
 
 export const pushToDataLayer = (data: any) => {

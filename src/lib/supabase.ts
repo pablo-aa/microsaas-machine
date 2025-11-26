@@ -2,10 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 
 // Detecta o ambiente baseado no hostname
 const isProduction = () => {
-  if (typeof window === 'undefined') return false;
-  const hostname = window.location.hostname;
-  // Produção apenas quando o domínio final estiver ativo
-  return hostname === 'qualcarreira.com' || hostname === 'www.qualcarreira.com';
+  if (typeof window === 'undefined' || !window.location) return false;
+  try {
+    const hostname = window.location.hostname;
+    // Produção apenas quando o domínio final estiver ativo
+    return hostname === 'qualcarreira.com' || hostname === 'www.qualcarreira.com';
+  } catch (error) {
+    console.error('[Supabase] Error detecting environment:', error);
+    return false;
+  }
 };
 
 // Configurações por ambiente

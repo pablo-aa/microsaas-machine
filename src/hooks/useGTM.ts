@@ -8,11 +8,16 @@ export const usePageView = () => {
   const location = useLocation();
   
   useEffect(() => {
-    pushToDataLayer({
-      event: 'page_view',
-      page_path: location.pathname,
-      page_title: document.title,
-    });
+    // Aguardar um pouco para garantir que o título da página esteja definido
+    const timeoutId = setTimeout(() => {
+      pushToDataLayer({
+        event: 'page_view',
+        page_path: location.pathname,
+        page_title: typeof document !== 'undefined' ? document.title : '',
+      });
+    }, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [location]);
 };
 

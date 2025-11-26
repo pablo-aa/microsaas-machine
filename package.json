@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
     "deploy:functions:dev": "bash scripts/deploy-functions-dev.sh",
     "deploy:functions:prod": "bash scripts/deploy-functions-prod.sh"
   },
