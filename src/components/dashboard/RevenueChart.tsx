@@ -41,7 +41,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
   }));
   
   const showLabels = aggregatedData.length <= 14;
-  const showGranularitySelector = data.length > 14;
+  const showGranularitySelector = data.length >= 7;
 
   return (
     <Card className="p-6 border border-border rounded-lg bg-card">
@@ -88,7 +88,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
             formatter={(value: number) => value.toFixed(2)}
           />
           <Legend />
-          <Bar yAxisId="left" dataKey="revenue" fill="hsl(217, 91%, 60%)" name="Receita ($)">
+          <Bar yAxisId="left" dataKey="revenue" fill="hsl(217, 91%, 60%)" name="Receita (R$)">
             {showLabels && (
               <LabelList 
                 dataKey="revenue" 
@@ -98,7 +98,7 @@ export const RevenueChart = ({ data }: RevenueChartProps) => {
               />
             )}
           </Bar>
-          <Bar yAxisId="left" dataKey="adSpend" fill="hsl(220, 13%, 70%)" name="Gasto com Anúncios ($)">
+          <Bar yAxisId="left" dataKey="adSpend" fill="hsl(220, 13%, 70%)" name="Gasto com Anúncios (R$)">
             {showLabels && (
               <LabelList 
                 dataKey="adSpend" 

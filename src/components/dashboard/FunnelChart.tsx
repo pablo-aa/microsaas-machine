@@ -2,7 +2,8 @@ import { useState, useMemo } from "react";
 import { DailyMetrics, Granularity } from "@/types/metrics";
 import {
   Bar,
-  BarChart,
+  Line,
+  ComposedChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { aggregateData, formatDateByGranularity } from "@/utils/dataAggregation";
 
 interface FunnelChartProps {
@@ -27,6 +29,9 @@ interface FunnelChartProps {
 
 export const FunnelChart = ({ data }: FunnelChartProps) => {
   const [granularity, setGranularity] = useState<Granularity>("day");
+  const [showConvFormToStart, setShowConvFormToStart] = useState<boolean>(true);
+  const [showConvStartToApproved, setShowConvStartToApproved] = useState<boolean>(false);
+  const [showConvFormToApproved, setShowConvFormToApproved] = useState<boolean>(false);
   
   const aggregatedData = useMemo(() => {
     return aggregateData(data, granularity);
@@ -37,10 +42,13 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
     formsSubmitted: d.formsSubmitted,
     paymentStarted: d.paymentStarted,
     paymentApproved: d.paymentApproved,
+    convFormToStart: d.conversionFormToStart,
+    convStartToApproved: d.conversionStartToApproved,
+    convFormToApproved: d.conversionFormToApproved,
   }));
   
   const showLabels = aggregatedData.length <= 14;
-  const showGranularitySelector = data.length > 14;
+  const showGranularitySelector = data.length >= 7;
 
   // Calculate average conversions for the displayed period
   const totalForms = aggregatedData.reduce((sum, d) => sum + d.formsSubmitted, 0);
@@ -53,23 +61,56 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
 
   return (
     <Card className="p-6 border border-border rounded-lg bg-card">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Funil Diário</h3>
-        {showGranularitySelector && (
-          <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
-            <SelectTrigger className="w-[140px] h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">Por dia</SelectItem>
-              <SelectItem value="week">Por semana</SelectItem>
-              <SelectItem value="month">Por mês</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex justify-between items-center gap-4">
+          <h3 className="text-lg font-semibold text-foreground">Funil diário</h3>
+          {showGranularitySelector && (
+            <Select value={granularity} onValueChange={(value) => setGranularity(value as Granularity)}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">Por dia</SelectItem>
+                <SelectItem value="week">Por semana</SelectItem>
+                <SelectItem value="month">Por mês</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="font-medium mr-1">Linhas de conversão:</span>
+            <label className="inline-flex items-center gap-1 cursor-pointer">
+              <Checkbox
+                checked={showConvFormToStart}
+                onCheckedChange={(v) => setShowConvFormToStart(Boolean(v))}
+              />
+              <span>F→I (%)</span>
+            </label>
+            <label className="inline-flex items-center gap-1 cursor-pointer">
+              <Checkbox
+                checked={showConvStartToApproved}
+                onCheckedChange={(v) => setShowConvStartToApproved(Boolean(v))}
+              />
+              <span>I→A (%)</span>
+            </label>
+            <label className="inline-flex items-center gap-1 cursor-pointer">
+              <Checkbox
+                checked={showConvFormToApproved}
+                onCheckedChange={(v) => setShowConvFormToApproved(Boolean(v))}
+              />
+              <span>F→A (%)</span>
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span>F→I: pessoas que enviaram formulário e iniciaram pagamento</span>
+            <span>· I→A: iniciaram pagamento e viraram pagantes</span>
+            <span>· F→A: pessoas que enviaram o formulário e pagaram</span>
+          </div>
+        </div>
       </div>
       <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
           <XAxis 
             dataKey="date" 
@@ -77,8 +118,16 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
             style={{ fontSize: '12px' }}
           />
           <YAxis 
+            yAxisId="left"
             stroke="hsl(var(--muted-foreground))"
             style={{ fontSize: '12px' }}
+          />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            stroke="hsl(var(--muted-foreground))"
+            style={{ fontSize: '12px' }}
+            tickFormatter={(value) => `${value}%`}
           />
           <Tooltip
             contentStyle={{
@@ -89,7 +138,7 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
             formatter={(value: number) => Math.round(value)}
           />
           <Legend />
-          <Bar dataKey="formsSubmitted" fill="hsl(217, 91%, 60%)" name="Formulários Enviados">
+          <Bar yAxisId="left" dataKey="formsSubmitted" fill="hsl(217, 91%, 60%)" name="Formulários Enviados">
             {showLabels && (
               <LabelList 
                 dataKey="formsSubmitted" 
@@ -99,7 +148,7 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
               />
             )}
           </Bar>
-          <Bar dataKey="paymentStarted" fill="hsl(45, 93%, 47%)" name="Pagamento Iniciado">
+          <Bar yAxisId="left" dataKey="paymentStarted" fill="hsl(45, 93%, 47%)" name="Pagamento Iniciado">
             {showLabels && (
               <LabelList 
                 dataKey="paymentStarted" 
@@ -109,7 +158,7 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
               />
             )}
           </Bar>
-          <Bar dataKey="paymentApproved" fill="hsl(142, 76%, 36%)" name="Pagamento Aprovado">
+          <Bar yAxisId="left" dataKey="paymentApproved" fill="hsl(142, 76%, 36%)" name="Pagamento Aprovado">
             {showLabels && (
               <LabelList 
                 dataKey="paymentApproved" 
@@ -119,7 +168,40 @@ export const FunnelChart = ({ data }: FunnelChartProps) => {
               />
             )}
           </Bar>
-        </BarChart>
+          {showConvFormToStart && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="convFormToStart"
+              stroke="hsl(217, 91%, 60%)"
+              strokeWidth={2}
+              name="F→I (%)"
+              dot={false}
+            />
+          )}
+          {showConvStartToApproved && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="convStartToApproved"
+              stroke="hsl(45, 93%, 47%)"
+              strokeWidth={2}
+              name="I→A (%)"
+              dot={false}
+            />
+          )}
+          {showConvFormToApproved && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="convFormToApproved"
+              stroke="hsl(142, 76%, 36%)"
+              strokeWidth={2}
+              name="F→A (%)"
+              dot={false}
+            />
+          )}
+        </ComposedChart>
       </ResponsiveContainer>
       
       <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">

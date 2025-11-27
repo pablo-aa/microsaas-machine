@@ -230,8 +230,8 @@ export const MetricsTable = ({ data }: MetricsTableProps) => {
                     <TableCell className="font-medium">
                       {formatDateByGranularity(row.date, granularity)}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">${row.revenue.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono text-sm">${row.adSpend.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">R${row.revenue.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-sm">R${row.adSpend.toFixed(2)}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{row.roas.toFixed(2)}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{Math.round(row.formsSubmitted)}</TableCell>
                     <TableCell className="text-right font-mono text-sm">{Math.round(row.paymentStarted)}</TableCell>

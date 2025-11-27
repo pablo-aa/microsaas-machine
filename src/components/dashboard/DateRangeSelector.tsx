@@ -27,10 +27,21 @@ export const DateRangeSelector = ({
     { value: "all", label: "Histórico" },
   ];
 
+  // Interpreta data do input como data local (GMT-3 via runtime do browser),
+  // evitando o bug de `new Date("YYYY-MM-DD")` que assume UTC.
+  const parseInputDate = (value: string): Date => {
+    const [yearStr, monthStr, dayStr] = value.split("-");
+    const year = Number(yearStr);
+    const month = Number(monthStr); // 1-12
+    const day = Number(dayStr);
+    // new Date(ano, mesIndex, dia) usa fuso local
+    return new Date(year, month - 1, day);
+  };
+
   const handleCustomDateChange = (type: 'from' | 'to', value: string) => {
     if (!value) return;
     
-    const newDate = new Date(value);
+    const newDate = parseInputDate(value);
     if (type === 'from') {
       const to = customRange?.to || new Date();
       onCustomRangeChange?.({ from: newDate, to });
@@ -43,7 +54,10 @@ export const DateRangeSelector = ({
 
   const formatDateForInput = (date?: Date) => {
     if (!date) return "";
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   return (
