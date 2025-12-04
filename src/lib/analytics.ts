@@ -195,27 +195,38 @@ export const trackViewItem = (testId: string) => {
   });
 };
 
-export const trackBeginCheckout = (testId: string) => {
-  const price = getMercadoPagoConfig().price;
+export const trackBeginCheckout = (
+  testId: string, 
+  coupon?: string, 
+  discountedPrice?: number
+) => {
+  const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'begin_checkout',
     ecommerce: {
       currency: 'BRL',
       value: price,
+      ...(coupon ? { coupon } : {}),
       items: [getProductItem()],
     },
     user_properties: { test_id: testId },
   });
 };
 
-export const trackAddPaymentInfo = (testId: string, paymentId: string) => {
-  const price = getMercadoPagoConfig().price;
+export const trackAddPaymentInfo = (
+  testId: string, 
+  paymentId: string,
+  coupon?: string,
+  discountedPrice?: number
+) => {
+  const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'add_payment_info',
     ecommerce: {
       currency: 'BRL',
       value: price,
       payment_type: 'pix',
+      ...(coupon ? { coupon } : {}),
       items: [getProductItem()],
     },
     user_properties: {
@@ -240,9 +251,11 @@ export const trackPixCodeCopied = (testId: string, paymentId: string) => {
 export const trackPurchase = (
   testId: string,
   paymentId: string,
-  userEmail: string
+  userEmail: string,
+  coupon?: string,
+  discountedPrice?: number
 ) => {
-  const price = getMercadoPagoConfig().price;
+  const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'purchase',
     ecommerce: {
@@ -250,6 +263,7 @@ export const trackPurchase = (
       value: price,
       transaction_id: paymentId,
       payment_type: 'pix',
+      ...(coupon ? { coupon } : {}),
       items: [getProductItem()],
     },
     user_properties: {

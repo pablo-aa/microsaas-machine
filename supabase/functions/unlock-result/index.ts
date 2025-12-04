@@ -13,7 +13,11 @@ serve(async (req)=>{
   }
   try {
     // Get result_id and payment_id from request body
-    const { result_id: resultId, payment_id: paymentId } = await req.json();
+    const { result_id: resultId, payment_id: paymentIdRaw } = await req.json();
+    
+    // Ensure paymentId is a string
+    const paymentId = String(paymentIdRaw);
+    
     console.log(`[unlock-result] Request received:`, {
       resultId,
       paymentId

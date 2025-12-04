@@ -87,7 +87,7 @@ export const PaymentModal = ({
   // Track begin_checkout when modal opens
   useEffect(() => {
     if (isOpen && !paymentId) {
-      trackBeginCheckout(testId);
+      trackBeginCheckout(testId, couponCode || undefined, finalPrice);
       // Primeiro tenta reaproveitar pagamento existente
       probeExistingPaymentOrCreate();
     }
@@ -275,7 +275,7 @@ export const PaymentModal = ({
       setLoading(false);
       
       // Track payment info added (QR Code generated)
-      trackAddPaymentInfo(testId, data.payment_id);
+      trackAddPaymentInfo(testId, data.payment_id, couponCode || undefined, finalPrice);
     } catch (err: any) {
       console.error('Error in createPayment:', err);
       const errorMessage = err.message || 'Erro ao criar pagamento. Tente novamente.';

@@ -40,7 +40,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
   }, []);
 
   const handleFreeUnlock = async () => {
-    if (!coupon || coupon.discount_percentage !== 100) return;
+    if (!coupon || coupon.discount_percentage !== 100 || !coupon.code) return;
     
     setIsUnlocking(true);
     try {
