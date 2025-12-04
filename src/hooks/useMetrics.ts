@@ -1,8 +1,8 @@
 // Custom hook for fetching and transforming metrics data
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DailyMetrics } from '@/types/metrics';
 import { fetchDailyMetrics, DayMetricResponse, MetricsApiResponse } from '@/services/supabase';
-import { getCache, setCache, getCacheKey } from '@/utils/cache';
+import { getCache, setCache, getCacheKey, clearCache } from '@/utils/cache';
 
 /**
  * Transform API response to frontend format
@@ -90,6 +90,7 @@ export function useMetrics(
   const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const currentRequestRef = useRef<string | null>(null);
 
   // Hoje no fuso horário do Brasil (GMT-3)
   const todayBrazilISO = useMemo(() => {
@@ -107,11 +108,22 @@ export function useMetrics(
       return;
     }
 
+    // Create unique request ID for this fetch
+    const requestId = `${startDate}_${endDate}_${Date.now()}`;
+    currentRequestRef.current = requestId;
+
     setLoading(true);
     setError(null);
 
     try {
       const endsToday = endDate === todayBrazilISO;
+      
+      // Calculate number of days in range to decide if we should trim empty days
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const daysInRange = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      // Only trim empty days for ranges > 30 days (like "Histórico")
+      const shouldTrimEmptyDays = daysInRange > 30;
 
       // Caso 1: range termina ANTES de hoje -> cache simples por range (24h)
       if (!endsToday) {
@@ -122,11 +134,32 @@ export function useMetrics(
           console.log('[useMetrics] Using cached metrics data (past range)', {
             startDate,
             endDate,
+            cachedDays: cached.days.map(d => ({ date: d.date, revenue: d.revenue })),
           });
-          const transformed = trimLeadingEmptyDays(transformMetrics(cached.days));
-          setMetrics(transformed);
-          setLoading(false);
-          return;
+          // CRITICAL: Filter to only include days in the requested range
+          const filteredDays = cached.days.filter(d => d.date >= startDate && d.date <= endDate);
+          
+          // Safety check: if filtered days don't match expected range, clear cache and refetch
+          if (filteredDays.length === 0 || (daysInRange === 1 && filteredDays.length !== 1)) {
+            console.warn('[useMetrics] Cache data mismatch, clearing cache and refetching', {
+              expectedRange: { startDate, endDate },
+              cachedDays: cached.days.length,
+              filteredDays: filteredDays.length,
+            });
+            clearCache(cacheKey);
+            // Fall through to fetch fresh data
+          } else {
+            const transformed = transformMetrics(filteredDays);
+            const finalData = shouldTrimEmptyDays ? trimLeadingEmptyDays(transformed) : transformed;
+            console.log('[useMetrics] Transformed data (filtered to range):', finalData.map(d => ({ date: d.date, revenue: d.revenue })));
+            
+            // Only update if this is still the current request
+            if (currentRequestRef.current === requestId) {
+              setMetrics(finalData);
+              setLoading(false);
+            }
+            return;
+          }
         }
 
         console.log('[useMetrics] No cache for past range, fetching from API', {
@@ -134,14 +167,48 @@ export function useMetrics(
           endDate,
         });
         const data = await fetchDailyMetrics(startDate, endDate);
+        console.log('[useMetrics] Raw API response:', {
+          days: data.days.map(d => ({ date: d.date, revenue: d.revenue, cost: d.cost })),
+          totals: data.totals,
+        });
         setCache(cacheKey, data);
 
-        const transformed = trimLeadingEmptyDays(transformMetrics(data.days));
-        setMetrics(transformed);
+        // CRITICAL: Filter to only include days in the requested range (safety check)
+        const filteredDays = data.days.filter(d => d.date >= startDate && d.date <= endDate);
+        const transformed = transformMetrics(filteredDays);
+        console.log('[useMetrics] Transformed data (filtered to range):', transformed.map(d => ({ date: d.date, revenue: d.revenue, adSpend: d.adSpend })));
+        const finalData = shouldTrimEmptyDays ? trimLeadingEmptyDays(transformed) : transformed;
+        console.log('[useMetrics] Final data after trim:', finalData.map(d => ({ date: d.date, revenue: d.revenue })));
+        
+        // Only update if this is still the current request
+        if (currentRequestRef.current === requestId) {
+          setMetrics(finalData);
+          setLoading(false);
+        }
         return;
       }
 
       // Caso 2: range termina HOJE -> cache incremental até ontem
+      // BUT: if range is just "today", don't use incremental cache - fetch directly
+      if (startDate === endDate && endDate === todayBrazilISO) {
+        // Single day = today: fetch directly, no cache logic
+        console.log('[useMetrics] Fetching single day (today) directly', {
+          date: todayBrazilISO,
+        });
+        const todayData = await fetchDailyMetrics(todayBrazilISO, todayBrazilISO);
+        
+        // CRITICAL: Filter to only include the requested day
+        const filteredDays = todayData.days.filter(d => d.date === todayBrazilISO);
+        const transformed = transformMetrics(filteredDays);
+        
+        // Only update if this is still the current request
+        if (currentRequestRef.current === requestId) {
+          setMetrics(transformed);
+          setLoading(false);
+        }
+        return;
+      }
+
       const yesterday = new Date(todayBrazilISO);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayISO = yesterday.toISOString().split('T')[0];
@@ -168,8 +235,17 @@ export function useMetrics(
           ...todayData.days,
         ];
 
-        const transformed = trimLeadingEmptyDays(transformMetrics(combinedDays));
-        setMetrics(transformed);
+        // CRITICAL: Filter to only include days in the requested range
+        const filteredDays = combinedDays.filter(d => d.date >= startDate && d.date <= endDate);
+        const transformed = transformMetrics(filteredDays);
+        const finalData = shouldTrimEmptyDays ? trimLeadingEmptyDays(transformed) : transformed;
+        console.log('[useMetrics] Combined and filtered data:', finalData.map(d => ({ date: d.date, revenue: d.revenue })));
+        
+        // Only update if this is still the current request
+        if (currentRequestRef.current === requestId) {
+          setMetrics(finalData);
+          setLoading(false);
+        }
         return;
       }
 
@@ -180,57 +256,69 @@ export function useMetrics(
       });
       const fullData = await fetchDailyMetrics(startDate, endDate);
 
-      // Separa apenas dias até ontem para cache
-      const historyDays = fullData.days.filter((d) => d.date < todayBrazilISO);
+      // CRITICAL: Filter to only include days in the requested range
+      const filteredFullDays = fullData.days.filter(d => d.date >= startDate && d.date <= endDate);
 
-      if (historyDays.length > 0) {
-        console.log('[useMetrics] Creating history snapshot until yesterday for future cache', {
-          startDate,
-          historyEnd: yesterdayISO,
-          daysCount: historyDays.length,
-        });
-        // Recalcula totais para o histórico (não é usado no front, mas mantemos coerente)
-        const historyTotals = historyDays.reduce(
-          (acc, day) => ({
-            forms_submitted: acc.forms_submitted + day.forms_submitted,
-            payments_initiated: acc.payments_initiated + day.payments_initiated,
-            payments_approved: acc.payments_approved + day.payments_approved,
-            revenue: acc.revenue + day.revenue,
-            cost: acc.cost + day.cost,
-            profit: acc.profit + day.profit,
-            roas: null,
-          }),
-          {
-            forms_submitted: 0,
-            payments_initiated: 0,
-            payments_approved: 0,
-            revenue: 0,
-            cost: 0,
-            profit: 0,
-            roas: null as number | null,
-          }
-        );
+      // Separa apenas dias até ontem para cache (only if range includes history)
+      if (startDate < todayBrazilISO) {
+        const historyDays = filteredFullDays.filter((d) => d.date < todayBrazilISO);
 
-        if (historyTotals.cost > 0) {
-          historyTotals.roas = parseFloat(
-            (historyTotals.revenue / historyTotals.cost).toFixed(2)
+        if (historyDays.length > 0) {
+          console.log('[useMetrics] Creating history snapshot until yesterday for future cache', {
+            startDate,
+            historyEnd: yesterdayISO,
+            daysCount: historyDays.length,
+          });
+          // Recalcula totais para o histórico (não é usado no front, mas mantemos coerente)
+          const historyTotals = historyDays.reduce(
+            (acc, day) => ({
+              forms_submitted: acc.forms_submitted + day.forms_submitted,
+              payments_initiated: acc.payments_initiated + day.payments_initiated,
+              payments_approved: acc.payments_approved + day.payments_approved,
+              revenue: acc.revenue + day.revenue,
+              cost: acc.cost + day.cost,
+              profit: acc.profit + day.profit,
+              roas: null,
+            }),
+            {
+              forms_submitted: 0,
+              payments_initiated: 0,
+              payments_approved: 0,
+              revenue: 0,
+              cost: 0,
+              profit: 0,
+              roas: null as number | null,
+            }
           );
+
+          if (historyTotals.cost > 0) {
+            historyTotals.roas = parseFloat(
+              (historyTotals.revenue / historyTotals.cost).toFixed(2)
+            );
+          }
+
+          const historySnapshot: MetricsApiResponse = {
+            period: {
+              start: startDate,
+              end: yesterdayISO,
+            },
+            days: historyDays,
+            totals: historyTotals,
+          };
+
+          setCache(historyCacheKey, historySnapshot);
         }
-
-        const historySnapshot: MetricsApiResponse = {
-          period: {
-            start: startDate,
-            end: yesterdayISO,
-          },
-          days: historyDays,
-          totals: historyTotals,
-        };
-
-        setCache(historyCacheKey, historySnapshot);
       }
 
-      const transformed = trimLeadingEmptyDays(transformMetrics(fullData.days));
-      setMetrics(transformed);
+        const transformed = transformMetrics(filteredFullDays);
+        const finalData = shouldTrimEmptyDays ? trimLeadingEmptyDays(transformed) : transformed;
+        console.log('[useMetrics] Final data (filtered to range):', finalData.map(d => ({ date: d.date, revenue: d.revenue })));
+        
+        // Only update if this is still the current request
+        if (currentRequestRef.current === requestId) {
+          setMetrics(finalData);
+          setLoading(false);
+        }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch metrics';
       setError(errorMessage);
@@ -238,7 +326,7 @@ export function useMetrics(
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, enabled]);
+  }, [startDate, endDate, enabled, todayBrazilISO]);
 
   useEffect(() => {
     fetchData();

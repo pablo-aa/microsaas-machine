@@ -3,6 +3,7 @@ import { DateRange, CustomDateRange } from "@/types/metrics";
 import { DateRangeSelector } from "@/components/dashboard/DateRangeSelector";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { ProfitChart } from "@/components/dashboard/ProfitChart";
 import { FunnelChart } from "@/components/dashboard/FunnelChart";
 import { MetricsTable } from "@/components/dashboard/MetricsTable";
 import { startOfDay, subDays, format } from "date-fns";
@@ -11,10 +12,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearAllCache } from "@/utils/cache";
+import { Navigation } from "@/components/Navigation";
+
+interface IndexProps {
+  onLogout?: () => void;
+}
 
 const LOCAL_RANGE_KEY = "qc_performance_date_range";
 
-const Index = () => {
+const Index = ({ onLogout }: IndexProps) => {
   const [dateRange, setDateRange] = useState<DateRange>("7");
   const [customRange, setCustomRange] = useState<CustomDateRange | undefined>();
 
@@ -67,8 +73,13 @@ const Index = () => {
   }, [dateRange, customRange]);
 
   // Calculate date range for API call
+  // Use GMT-3 timezone to match backend logic
   const { startDate, endDate } = useMemo(() => {
-    const today = startOfDay(new Date());
+    // Calculate today in GMT-3 (Brazil timezone)
+    const now = new Date();
+    const brazilOffset = -3 * 60; // GMT-3 in minutes
+    const brazilTime = new Date(now.getTime() + (now.getTimezoneOffset() + brazilOffset) * 60000);
+    const today = startOfDay(brazilTime);
     
     switch (dateRange) {
       case "today": {
@@ -132,7 +143,7 @@ const Index = () => {
   const kpis = useMemo(() => {
     const totalRevenue = filteredData.reduce((sum, d) => sum + d.revenue, 0);
     const totalAdSpend = filteredData.reduce((sum, d) => sum + d.adSpend, 0);
-    const avgRoas = totalRevenue / totalAdSpend;
+    const avgRoas = totalAdSpend > 0 ? totalRevenue / totalAdSpend : 0;
     const totalApproved = filteredData.reduce((sum, d) => sum + d.paymentApproved, 0);
 
     return {
@@ -145,6 +156,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navigation onLogout={onLogout} />
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
@@ -234,6 +246,7 @@ const Index = () => {
             {/* Charts */}
             <div className="space-y-6 mb-8">
               <RevenueChart data={filteredData} />
+              <ProfitChart data={filteredData} />
               <FunnelChart data={filteredData} />
             </div>
 

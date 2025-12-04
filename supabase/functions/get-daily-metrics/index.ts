@@ -3,11 +3,9 @@
 // Author: Migrated from Python script generate-daily-metrics.py
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 interface DailyMetricsRequest {
   start_date: string; // Format: YYYY-MM-DD
@@ -62,38 +60,10 @@ function generateDateRange(startDate: string, endDate: string): string[] {
   return dates;
 }
 
-// Check if date is completed (yesterday or earlier) - Brazil timezone GMT-3
-// Only cache dates that are fully completed (after 23:59 of that day)
-function isDateCompleted(dateStr: string): boolean {
-  const now = new Date();
-  const brazilOffset = -3 * 60; // GMT-3 in minutes
-  const brazilTime = new Date(now.getTime() + (now.getTimezoneOffset() + brazilOffset) * 60000);
-  const today = brazilTime.toISOString().split('T')[0];
-  
-  // Date is completed if it's before today
-  return dateStr < today;
-}
-
-// Fetch metrics from get-analytics edge function (with cache)
-async function fetchDayMetrics(date: string, supabase: any): Promise<any> {
-  const cacheKey = `get-analytics_${date}`;
-  
-  // Check cache (skip if date is not completed)
-  if (isDateCompleted(date)) {
-    const { data: cached, error } = await supabase
-      .from("metrics_cache")
-      .select("data")
-      .eq("cache_key", cacheKey)
-      .single();
-
-    if (!error && cached) {
-      console.log(`Metrics cache hit for ${date}`);
-      return cached.data;
-    }
-  }
-
-  // Fetch from get-analytics
-  console.log(`Fetching metrics from get-analytics for ${date}`);
+// Fetch metrics from get-analytics edge function (no cache - always fresh data)
+async function fetchDayMetrics(date: string): Promise<any> {
+  // Always fetch from get-analytics (no cache)
+  console.log(`Fetching metrics from get-analytics for ${date} (no cache)`);
   
   const startDateTime = formatDateForAnalytics(date, true);
   const endDateTime = formatDateForAnalytics(date, false);
@@ -117,18 +87,9 @@ async function fetchDayMetrics(date: string, supabase: any): Promise<any> {
   }
 
   const data = await response.json();
-
-  // Cache the response (only if date is completed)
-  if (isDateCompleted(date)) {
-    await supabase
-      .from("metrics_cache")
-      .upsert({
-        cache_key: cacheKey,
-        data,
-      }, { onConflict: "cache_key" });
-    
-    console.log(`Cached metrics for ${date}`);
-  }
+  
+  // Log raw response from get-analytics for debugging
+  console.log(`[get-daily-metrics] Raw get-analytics response for ${date}:`, JSON.stringify(data, null, 2));
 
   return data;
 }
@@ -175,12 +136,25 @@ async function fetchCostsForRange(
 
 // Process and combine data for a single day
 function processDayData(date: string, metricsData: any, cost: number): DayMetric {
+  // Log full structure for debugging
+  console.log(`[processDayData] Processing ${date}, metricsData structure:`, JSON.stringify(metricsData, null, 2));
+  
   const metrics = metricsData.metrics || {};
+  
+  // Try multiple possible field names for revenue
+  const revenue = parseFloat(
+    metrics.total_revenue || 
+    metrics.revenue || 
+    metricsData.total_revenue || 
+    metricsData.revenue || 
+    0
+  );
   
   const formsSubmitted = metrics.forms_submitted || 0;
   const paymentsInitiated = metrics.payments_initiated || 0;
   const paymentsApproved = metrics.payments_approved || 0;
-  const revenue = parseFloat(metrics.total_revenue || 0);
+  
+  console.log(`[processDayData] Extracted values for ${date}: revenue=${revenue}, forms=${formsSubmitted}, initiated=${paymentsInitiated}, approved=${paymentsApproved}`);
   
   const profit = revenue - cost;
   const roas = cost > 0 ? revenue / cost : null;
@@ -238,9 +212,6 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Supabase client with service role (for cache access)
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     // Generate date range
     const dates = generateDateRange(start_date, end_date);
     console.log(`Processing ${dates.length} days from ${start_date} to ${end_date}`);
@@ -274,12 +245,12 @@ serve(async (req) => {
       const batchPromises = batch.map(async (date) => {
         try {
           // Fetch metrics (per day) and read cost from pre-fetched map
-          const metricsData = await fetchDayMetrics(date, supabase);
+          const metricsData = await fetchDayMetrics(date);
           const cost = costsByDate[date] ?? 0.0;
 
           // Process and combine data
           const dayMetric = processDayData(date, metricsData, cost);
-          console.log(`✓ Processed ${date}: revenue=${dayMetric.revenue}, cost=${dayMetric.cost}, profit=${dayMetric.profit}`);
+          console.log(`✓ Processed ${date}: revenue=${dayMetric.revenue}, cost=${dayMetric.cost}, profit=${dayMetric.profit}, metricsData=${JSON.stringify(metricsData.metrics || {})}`);
           return dayMetric;
         } catch (error) {
           console.error(`Error processing ${date}:`, error);
@@ -310,7 +281,7 @@ serve(async (req) => {
       revenue: acc.revenue + day.revenue,
       cost: acc.cost + day.cost,
       profit: acc.profit + day.profit,
-      roas: null, // Will calculate after
+      roas: null as number | null, // Will calculate after
     }), {
       forms_submitted: 0,
       payments_initiated: 0,
@@ -318,7 +289,7 @@ serve(async (req) => {
       revenue: 0,
       cost: 0,
       profit: 0,
-      roas: null,
+      roas: null as number | null,
     });
 
     // Calculate overall ROAS
@@ -347,10 +318,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in get-daily-metrics:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetails = error instanceof Error ? error.stack : String(error);
     return new Response(
       JSON.stringify({
-        error: error.message || "Internal server error",
-        details: error.toString(),
+        error: errorMessage || "Internal server error",
+        details: errorDetails,
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
