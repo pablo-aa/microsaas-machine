@@ -61,8 +61,8 @@ serve(async (req)=>{
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, serviceKey);
-    // Fetch stored payment context (email, test_id, amount)
-    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at, ga_client_id, ga_session_id, ga_session_number').eq('payment_id', paymentId).maybeSingle();
+    // Fetch stored payment context (email, test_id, amount, coupon info)
+    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at, ga_client_id, ga_session_id, ga_session_number, coupon_code, original_amount').eq('payment_id', paymentId).maybeSingle();
     if (paymentRowError) {
       console.warn('[send-whatsapp-on-payment] Error fetching payment row:', paymentRowError);
     }
@@ -275,6 +275,13 @@ serve(async (req)=>{
     // client_id is required, session_id is optional but recommended
     if (ga4MeasurementId && ga4ApiSecret && gaClientId) {
       try {
+        // Calculate discount if coupon was used
+        const couponCode = paymentRow?.coupon_code;
+        const originalAmount = paymentRow?.original_amount;
+        const discountAmount = originalAmount && mpAmount !== null && mpAmount !== undefined 
+          ? (parseFloat(String(originalAmount)) - parseFloat(String(mpAmount))).toFixed(2)
+          : undefined;
+        
         const ga4Payload = {
           client_id: gaClientId,
           timestamp_micros: Date.now() * 1000,
@@ -284,9 +291,11 @@ serve(async (req)=>{
               transaction_id: paymentId,
               value: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
               currency: 'BRL',
-              payment_type: 'pix',
+              payment_type: paymentId.startsWith('FREE_') ? 'coupon' : 'pix',
               ...(gaSessionId ? { ga_session_id: gaSessionId } : {}),
               ...(gaSessionNumber ? { ga_session_number: gaSessionNumber } : {}),
+              ...(couponCode ? { coupon: couponCode } : {}),
+              ...(discountAmount ? { discount: discountAmount } : {}),
               items: [{
                 item_id: 'qualcarreira_full_analysis',
                 item_name: 'Análise Vocacional Completa',
@@ -331,8 +340,16 @@ serve(async (req)=>{
     // Compose WhatsApp message (prefer DB values and requested format)
     const amountStr = typeof mpAmount === 'number' ? mpAmount.toFixed(2) : String(mpAmount ?? '');
     const emailToUse = dbEmail ?? paymentRow?.user_email ?? mpEmail ?? '';
+    const couponCode = paymentRow?.coupon_code;
     const title = '*Novo Pagante 🤑*';
-    const message = `${title}\n\n` + `ID: ${paymentId}\n` + 'Link do teste:\n' + `qualcarreira.com/resultado/${paymentRow?.test_id ?? ''}\n` + `Nome: ${userName ?? ''}\n` + `Email: ${emailToUse}\n` + `\nValor: R$ *${amountStr}*`;
+    const message = `${title}\n\n` + 
+      `ID: ${paymentId}\n` + 
+      'Link do teste:\n' + 
+      `qualcarreira.com/resultado/${paymentRow?.test_id ?? ''}\n` + 
+      `Nome: ${userName ?? ''}\n` + 
+      `Email: ${emailToUse}\n` + 
+      (couponCode ? `Cupom: ${couponCode}\n` : '') +
+      `\nValor: R$ *${amountStr}*`;
     // Resolve chatId: prefer env WAAPI_CHAT_ID; fallback to sample group id provided
     const chatId = Deno.env.get('WAAPI_CHAT_ID') || '120363421610156383@g.us';
     // Send message via WAAPI

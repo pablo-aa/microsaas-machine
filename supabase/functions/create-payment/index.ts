@@ -22,6 +22,7 @@ serve(async (req)=>{
       email,
       name,
       reuse_only,
+      coupon_code,
       ga_client_id,
       ga_session_id,
       ga_session_number
@@ -31,6 +32,7 @@ serve(async (req)=>{
       email,
       name,
       reuse_only,
+      coupon_code,
       ga_client_id,
       ga_session_id,
       ga_session_number
@@ -44,12 +46,101 @@ serve(async (req)=>{
       throw new Error('Payment service not configured. Please contact support.');
     }
     console.log('Access token found:', accessToken.substring(0, 10) + '...');
-    // Detect amount based on origin (prod vs dev)
-    const origin = req.headers.get('origin') || '';
-    const isProd = origin.includes('qualcarreira.com');
-    const transactionAmount = isProd ? 12.90 : 12.90;
+    // Get base price from environment variable
+    const BASE_PRICE = parseFloat(Deno.env.get('BASE_PRICE') || '12.90');
+    let transactionAmount = BASE_PRICE;
+    let validatedCoupon = null;
+    let originalAmount = null;
     // Initialize Supabase client (used for reuse logic and saving records)
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+    
+    // Validate and apply coupon if provided
+    if (coupon_code) {
+      console.log('[create-payment] Validating coupon:', coupon_code);
+      const { data: coupon, error: couponError } = await supabase
+        .from('discount_coupons')
+        .select('*')
+        .ilike('code', coupon_code.trim())
+        .single();
+      
+      if (couponError || !coupon) {
+        console.error('[create-payment] Invalid coupon:', coupon_code);
+        throw new Error('Cupom inválido');
+      }
+      
+      if (!coupon.is_active) {
+        throw new Error('Cupom não está ativo');
+      }
+      
+      if (coupon.expires_at && new Date() > new Date(coupon.expires_at)) {
+        throw new Error('Cupom expirado');
+      }
+      
+      if (coupon.max_uses !== null && coupon.current_uses >= coupon.max_uses) {
+        throw new Error('Cupom atingiu o limite de usos');
+      }
+      
+      validatedCoupon = coupon;
+      originalAmount = BASE_PRICE;
+      transactionAmount = BASE_PRICE * (1 - coupon.discount_percentage / 100);
+      
+      console.log('[create-payment] Coupon applied:', {
+        code: coupon.code,
+        discount: coupon.discount_percentage,
+        original: originalAmount,
+        final: transactionAmount
+      });
+      
+      // Handle 100% discount (FREE)
+      if (coupon.discount_percentage === 100) {
+        console.log('[create-payment] FREE payment (100% discount)');
+        const freePaymentId = 'FREE_' + crypto.randomUUID();
+        
+        // Atomic increment
+        const { data: incrementSuccess, error: incrementError } = await supabase
+          .rpc('increment_coupon_usage', { p_coupon_code: coupon.code });
+        
+        if (incrementError || !incrementSuccess) {
+          console.error('[create-payment] Error incrementing coupon uses:', incrementError);
+          throw new Error('Cupom atingiu o limite de usos ou erro ao aplicar');
+        }
+        
+        // Create FREE payment record
+        const { error: paymentError } = await supabase.from('payments').insert({
+          test_id,
+          user_email: email,
+          payment_id: freePaymentId,
+          amount: 0.00,
+          original_amount: originalAmount,
+          status: 'approved',
+          payment_method: 'coupon',
+          coupon_code: coupon.code,
+          ga_client_id: ga_client_id ?? null,
+          ga_session_id: ga_session_id ?? null,
+          ga_session_number: ga_session_number ?? null
+        });
+        
+        if (paymentError) {
+          console.error('[create-payment] Error creating FREE payment:', paymentError);
+          throw new Error('Erro ao criar pagamento gratuito');
+        }
+        
+        return new Response(JSON.stringify({
+          status: 'free',
+          payment_id: freePaymentId,
+          discount: 100,
+          qr_code: null,
+          qr_code_base64: null,
+          ticket_url: null
+        }), {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          },
+          status: 200
+        });
+      }
+    }
     // Try to reuse an existing payment for this test/email to avoid duplicates
     const { data: existingPayment, error: existingError } = await supabase.from('payments').select('*').eq('test_id', test_id).eq('user_email', email).in('status', [
       'pending',
@@ -240,12 +331,25 @@ serve(async (req)=>{
       throw new Error(errorMessage);
     }
     console.log('Payment created successfully:', mpData.id);
+    
+    // Atomic increment of coupon usage if coupon was used
+    if (validatedCoupon) {
+      const { data: incrementSuccess, error: incrementError } = await supabase
+        .rpc('increment_coupon_usage', { p_coupon_code: validatedCoupon.code });
+      
+      if (incrementError || !incrementSuccess) {
+        console.warn('[create-payment] Warning: could not increment coupon uses:', incrementError);
+      }
+    }
+    
     // Salvar pagamento no banco de dados
     const insertPayload: Record<string, unknown> = {
       test_id,
       user_email: email,
       payment_id: mpData.id.toString(),
       amount: transactionAmount,
+      original_amount: originalAmount,
+      coupon_code: validatedCoupon?.code ?? null,
       status: mpData.status,
       payment_method: 'pix',
       ga_client_id: ga_client_id ?? null,
