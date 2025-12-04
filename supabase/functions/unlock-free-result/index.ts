@@ -156,7 +156,7 @@ serve(async (req) => {
       });
     }
 
-    if (coupon.discount_percentage !== 100) {
+    if (coupon.discount_percentage < 100) {
       console.error('[unlock-free-result] Coupon is not 100%:', coupon.discount_percentage);
       return new Response(JSON.stringify({
         error: 'This coupon is not for free access'

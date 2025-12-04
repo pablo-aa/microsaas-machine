@@ -40,7 +40,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
   }, []);
 
   const handleFreeUnlock = async () => {
-    if (!coupon || coupon.discount_percentage !== 100 || !coupon.code) return;
+    if (!coupon || coupon.discount_percentage < 100 || !coupon.code) return;
     
     setIsUnlocking(true);
     try {
@@ -87,7 +87,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
   };
 
   const finalPrice = coupon?.valid ? coupon.final_price : basePrice;
-  const isFree = coupon?.valid && coupon.discount_percentage === 100;
+  const isFree = coupon?.valid && coupon.discount_percentage >= 100;
 
   // Mostrar card especial para 100% desconto
   if (isFree) {

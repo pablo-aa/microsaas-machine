@@ -25,7 +25,7 @@ export function useCouponCapture() {
         if (result.valid) {
           // Determinar mensagem baseada no desconto
           const msg =
-            result.discount_percentage === 100
+            result.discount_percentage >= 100
               ? '🎁 Acesso GRATUITO aplicado!'
               : `🎉 Cupom ${cupom.toUpperCase()} aplicado! ${result.discount_percentage}% OFF`;
 

@@ -92,7 +92,7 @@ serve(async (req)=>{
       });
       
       // Handle 100% discount (FREE)
-      if (coupon.discount_percentage === 100) {
+      if (coupon.discount_percentage >= 100) {
         console.log('[create-payment] FREE payment (100% discount)');
         const freePaymentId = 'FREE_' + crypto.randomUUID();
         

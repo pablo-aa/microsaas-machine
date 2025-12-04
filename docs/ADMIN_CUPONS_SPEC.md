@@ -14,7 +14,7 @@ Sistema de administração de cupons de desconto para o Qual Carreira. Permite c
 CREATE TABLE discount_coupons (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   code text UNIQUE NOT NULL,                    -- Código do cupom (ex: "AMIGO50")
-  discount_percentage integer NOT NULL,          -- 0 a 100
+  discount_percentage numeric(5,2) NOT NULL,     -- 0.00 a 100.00 (aceita decimais)
   description text,                              -- Descrição opcional
   is_active boolean NOT NULL DEFAULT true,       -- Ativo/Inativo
   expires_at timestamptz,                        -- Data de expiração (nullable)
@@ -119,7 +119,8 @@ interface CupomForm {
 - `discount_percentage`:
   - Obrigatório
   - Entre 0 e 100
-  - Apenas números inteiros
+  - Aceita decimais (ex: 23.50, 49.99)
+  - Máximo 2 casas decimais
 - `expires_at`:
   - Opcional
   - Deve ser maior que data atual
