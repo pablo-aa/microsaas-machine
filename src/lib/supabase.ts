@@ -25,7 +25,8 @@ const config = {
   }
 };
 
-const env = isProduction() ? 'prod' : 'dev';
+// ⚠️ FORÇANDO PROD MESMO EM LOCALHOST PARA DEBUG
+const env = 'prod'; // Sempre usa prod
 const currentConfig = config[env];
 
 export const supabase = createClient(currentConfig.url, currentConfig.anonKey, {

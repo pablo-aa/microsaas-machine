@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import RiasecResults from "@/components/RiasecResults";
 import RecommendedCareers from "@/components/RecommendedCareers";
 import PaymentSection from "@/components/PaymentSection";
+import SupportCard from "@/components/SupportCard";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
@@ -436,6 +437,9 @@ const Resultado = () => {
               <PaymentSection onPurchase={handlePurchase} />
             </div>
           )}
+
+          {/* Support Card - sempre visível, após pagamento ou profissões */}
+          <SupportCard />
 
           {/* Footer */}
           <ResultsFooter />

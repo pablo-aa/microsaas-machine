@@ -12,9 +12,8 @@ export const mercadoPagoConfig = {
 };
 
 export const getMercadoPagoConfig = () => {
-  const isProd = window.location.hostname === 'qualcarreira.com' || 
-                 window.location.hostname === 'www.qualcarreira.com';
-  return isProd ? mercadoPagoConfig.prod : mercadoPagoConfig.dev;
+  // ⚠️ FORÇANDO PROD MESMO EM LOCALHOST PARA DEBUG
+  return mercadoPagoConfig.prod; // Sempre prod
 };
 
 // URLs de retorno

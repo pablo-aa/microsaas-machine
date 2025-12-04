@@ -5,10 +5,8 @@ declare global {
 }
 
 export const getGTMId = (): string => {
-  const isProd = 
-    window.location.hostname === 'qualcarreira.com' || 
-    window.location.hostname === 'www.qualcarreira.com';
-  return isProd ? 'GTM-PHS8NHMD' : 'GTM-TJG9LDR2';
+  // ⚠️ FORÇANDO PROD MESMO EM LOCALHOST PARA DEBUG
+  return 'GTM-PHS8NHMD'; // Sempre prod
 };
 
 export const isProduction = (): boolean => {

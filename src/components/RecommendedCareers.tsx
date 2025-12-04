@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 
 interface RecommendedCareersProps {
@@ -8,35 +8,239 @@ interface RecommendedCareersProps {
   isBlurred: boolean;
 }
 
-// Mapeamento de profissões por tipo RIASEC
+// Mapeamento de profissões por tipo RIASEC (15 carreiras por categoria)
 const riasecCareers: Record<string, string[]> = {
-  R: ["Engenheiro", "Mecânico", "Arquiteto", "Piloto", "Técnico"],
-  I: ["Cientista", "Médico", "Pesquisador", "Analista de Dados", "Programador"],
-  A: ["Designer", "Artista", "Músico", "Escritor", "Fotógrafo"],
-  S: ["Professor", "Psicólogo", "Assistente Social", "Enfermeiro", "Terapeuta"],
-  E: ["Empresário", "Gerente", "Advogado", "Vendedor", "Consultor"],
-  C: ["Contador", "Administrador", "Analista Financeiro", "Auditor", "Secretário Executivo"]
+  R: ["Engenheiro", "Mecânico", "Arquiteto", "Piloto", "Técnico", "Eletricista", "Soldador", "Carpinteiro", "Operador de Máquinas", "Topógrafo", "Geólogo", "Agrimensor", "Marceneiro", "Montador", "Instalador"],
+  I: ["Cientista", "Médico", "Pesquisador", "Analista de Dados", "Programador", "Físico", "Químico", "Biólogo", "Estatístico", "Epidemiologista", "Arqueólogo", "Antropólogo", "Astronomo", "Pesquisador de Mercado", "Cientista de Dados"],
+  A: ["Designer", "Artista", "Músico", "Escritor", "Fotógrafo", "Arquiteto", "Publicitário", "Diretor de Arte", "Ilustrador", "Cineasta", "Ator", "Dançarino", "Estilista", "Decorador", "Editor"],
+  S: ["Professor", "Psicólogo", "Assistente Social", "Enfermeiro", "Terapeuta", "Pedagogo", "Fonoaudiólogo", "Fisioterapeuta", "Nutricionista", "Coordenador Pedagógico", "Orientador Vocacional", "Cuidador", "Trabalhador Social", "Conselheiro", "Médico"],
+  E: ["Empresário", "Gerente", "Advogado", "Vendedor", "Consultor", "Diretor", "Coordenador", "Supervisor", "Empreendedor", "Corretor", "Relações Públicas", "Gestor de Projetos", "Executivo", "Líder de Equipe", "Negociador"],
+  C: ["Contador", "Administrador", "Analista Financeiro", "Auditor", "Secretário Executivo", "Analista de Sistemas", "Técnico Contábil", "Assistente Administrativo", "Operador de Caixa", "Atendente", "Recepcionista", "Arquivista", "Bibliotecário", "Digitador", "Auxiliar Administrativo"]
 };
 
-// Mapeamento de profissões por tipo Gardner
+// Mapeamento de profissões por tipo Gardner (15 carreiras por categoria)
 const gardnerCareers: Record<string, string[]> = {
-  "Intrapessoal": ["Escritor", "Filósofo", "Pesquisador", "Consultor", "Empreendedor"],
-  "Interpessoal": ["Psicólogo", "Professor", "Assistente Social", "Terapeuta", "Recursos Humanos"],
-  "Espacial": ["Arquiteto", "Designer", "Piloto", "Cirurgião", "Engenheiro"],
-  "Lógico-Matemática": ["Cientista", "Engenheiro", "Matemático", "Analista", "Programador"],
-  "Linguística": ["Escritor", "Jornalista", "Tradutor", "Professor de Idiomas", "Advogado"],
-  "Musical": ["Músico", "Compositor", "Professor de Música", "Produtor Musical", "Maestro"],
-  "Corporal-Cinestésica": ["Atleta", "Dançarino", "Cirurgião", "Fisioterapeuta", "Artesão"],
-  "Naturalista": ["Biólogo", "Veterinário", "Agrônomo", "Geólogo", "Ambientalista"],
-  "Existencial": ["Filósofo", "Teólogo", "Psicólogo", "Conselheiro", "Pesquisador"]
+  "Intrapessoal": ["Escritor", "Filósofo", "Pesquisador", "Consultor", "Empreendedor", "Psicólogo", "Terapeuta", "Coaching", "Mentor", "Autônomo", "Freelancer", "Artista", "Poeta", "Romancista", "Ensaísta"],
+  "Interpessoal": ["Psicólogo", "Professor", "Assistente Social", "Terapeuta", "Recursos Humanos", "Médico", "Enfermeiro", "Coordenador", "Líder de Equipe", "Treinador", "Palestrante", "Mediador", "Conselheiro", "Mentor", "Coach"],
+  "Espacial": ["Arquiteto", "Designer", "Piloto", "Cirurgião", "Engenheiro", "Urbanista", "Designer Gráfico", "Fotógrafo", "Cartógrafo", "Navegador", "Escultor", "Ilustrador", "Desenhista", "Topógrafo", "Geógrafo"],
+  "Lógico-Matemática": ["Cientista", "Engenheiro", "Matemático", "Analista", "Programador", "Estatístico", "Físico", "Químico", "Economista", "Contador", "Auditor", "Pesquisador", "Cientista de Dados", "Analista de Sistemas", "Desenvolvedor"],
+  "Linguística": ["Escritor", "Jornalista", "Tradutor", "Professor de Idiomas", "Advogado", "Redator", "Editor", "Revisor", "Locutor", "Apresentador", "Poeta", "Roteirista", "Copywriter", "Intérprete", "Linguista"],
+  "Musical": ["Músico", "Compositor", "Professor de Música", "Produtor Musical", "Maestro", "Cantor", "Instrumentista", "DJ", "Sonoplasta", "Técnico de Som", "Arranjador", "Musicoterapeuta", "Crítico Musical", "Regente", "Engenheiro de Áudio"],
+  "Corporal-Cinestésica": ["Atleta", "Dançarino", "Cirurgião", "Fisioterapeuta", "Artesão", "Educador Físico", "Personal Trainer", "Massagista", "Quiropraxista", "Acupunturista", "Pilates", "Yoga", "Marceneiro", "Escultor", "Ceramista"],
+  "Naturalista": ["Biólogo", "Veterinário", "Agrônomo", "Geólogo", "Ambientalista", "Oceanógrafo", "Meteorologista", "Botânico", "Zoólogo", "Ecólogo", "Engenheiro Florestal", "Técnico Agrícola", "Pesquisador Ambiental", "Conservacionista", "Geógrafo"],
+  "Existencial": ["Filósofo", "Teólogo", "Psicólogo", "Conselheiro", "Pesquisador", "Professor de Filosofia", "Escritor", "Mentor Espiritual", "Terapeuta", "Coaching", "Consultor", "Pesquisador Acadêmico", "Historiador", "Antropólogo", "Sociólogo"]
 };
 
-// Mapeamento de profissões por tipo GOPC
-const gopcCareers: Record<string, string[]> = {
-  "Gestão": ["Gerente", "Diretor", "Administrador", "Coordenador", "Supervisor"],
-  "Operacional": ["Técnico", "Operador", "Assistente", "Analista", "Especialista"],
-  "Pessoas": ["Recursos Humanos", "Psicólogo", "Treinador", "Assistente Social", "Recrutador"],
-  "Criativo": ["Designer", "Publicitário", "Arquiteto", "Diretor de Arte", "Desenvolvedor"]
+// Número de perguntas por categoria
+const riasecQuestionCounts: Record<string, number> = { R: 5, I: 5, A: 4, S: 4, E: 3, C: 5 };
+const gardnerQuestionCounts: Record<string, number> = {
+  "Lógico-Matemática": 16, "Interpessoal": 9, "Intrapessoal": 9, "Espacial": 6,
+  "Naturalista": 5, "Linguística": 4, "Existencial": 4, "Corporal-Cinestésica": 3, "Musical": 2
+};
+const gopcQuestionCounts: Record<string, number> = { AK: 37, PC: 8, TD: 15 };
+
+// Interface para vetor de profissão
+interface CareerVector {
+  riasec: Record<string, number>;
+  gardner: Record<string, number>;
+  gopc: Record<string, number>;
+}
+
+// Interface para vetor da pessoa
+interface PersonVector {
+  riasec: Record<string, number>;
+  gardner: Record<string, number>;
+  gopc: Record<string, number>;
+}
+
+// Gerar vetores de profissões automaticamente
+const generateCareerVectors = (): Record<string, CareerVector> => {
+  const careers: Record<string, CareerVector> = {};
+  
+  const getWeight = (index: number): number => {
+    if (index === 0) return 1.0;
+    if (index === 1) return 0.85;
+    if (index === 2) return 0.7;
+    return Math.max(0.3, 1.0 - (index * 0.15));
+  };
+  
+  Object.entries(riasecCareers).forEach(([category, careerList]) => {
+    careerList.forEach((career, index) => {
+      if (!careers[career]) {
+        careers[career] = { riasec: {}, gardner: {}, gopc: {} };
+      }
+      careers[career].riasec[category] = getWeight(index);
+    });
+  });
+  
+  Object.entries(gardnerCareers).forEach(([category, careerList]) => {
+    careerList.forEach((career, index) => {
+      if (!careers[career]) {
+        careers[career] = { riasec: {}, gardner: {}, gopc: {} };
+      }
+      careers[career].gardner[category] = getWeight(index);
+    });
+  });
+  
+  return careers;
+};
+
+// ETAPA 1: Normalização com peso de confiabilidade
+const normalizeWithReliability = (
+  scores: Record<string, number>,
+  questionCounts: Record<string, number>,
+  min: number = 1,
+  max: number = 5
+): Record<string, number> => {
+  const normalized: Record<string, number> = {};
+  Object.entries(scores).forEach(([category, score]) => {
+    const nItems = questionCounts[category] || 1;
+    const p = (score - nItems * min) / (nItems * (max - min));
+    const wConf = Math.sqrt(nItems);
+    normalized[category] = p * wConf;
+  });
+  return normalized;
+};
+
+// ETAPA 2: Função de realce para altas afinidades
+const applyEnhancement = (
+  normalizedScores: Record<string, number>,
+  questionCounts: Record<string, number>,
+  theta: number = 0.5,
+  gamma: number = 1.3
+): Record<string, number> => {
+  const enhanced: Record<string, number> = {};
+  const maxItems = Math.max(...Object.values(questionCounts));
+  const maxPossible = Math.sqrt(maxItems);
+  
+  Object.entries(normalizedScores).forEach(([category, score]) => {
+    const p = Math.min(1, score / maxPossible);
+    if (p <= theta) {
+      enhanced[category] = score * 0.3;
+    } else {
+      enhanced[category] = Math.pow((p - theta) / (1 - theta), gamma) * maxPossible;
+    }
+  });
+  return enhanced;
+};
+
+// ETAPA 3: Pesos por posição no ranking
+const applyRankingWeights = (
+  scores: Record<string, number>,
+  weights: number[] = [1.0, 0.75, 0.5, 0.25]
+): Record<string, number> => {
+  const ranked = Object.entries(scores)
+    .sort(([, a], [, b]) => b - a)
+    .map(([cat, score], index) => {
+      const weight = weights[Math.min(index, weights.length - 1)];
+      return { category: cat, score: score * weight };
+    });
+  return ranked.reduce((acc, { category, score }) => {
+    acc[category] = score;
+    return acc;
+  }, {} as Record<string, number>);
+};
+
+// ETAPA 4: Combinar os 3 modelos
+const combineModels = (
+  riasec: Record<string, number>,
+  gardner: Record<string, number>,
+  gopc: Record<string, number>,
+  weights: { riasec: number; gardner: number; gopc: number } = { riasec: 0.4, gardner: 0.4, gopc: 0.2 }
+): PersonVector => {
+  const sumRiasec = Object.values(riasec).reduce((a, b) => a + Math.abs(b), 0) || 1;
+  const sumGardner = Object.values(gardner).reduce((a, b) => a + Math.abs(b), 0) || 1;
+  const sumGopc = Object.values(gopc).reduce((a, b) => a + Math.abs(b), 0) || 1;
+  
+  const riasecNorm = Object.fromEntries(
+    Object.entries(riasec).map(([k, v]) => [k, (v / sumRiasec) * weights.riasec])
+  );
+  const gardnerNorm = Object.fromEntries(
+    Object.entries(gardner).map(([k, v]) => [k, (v / sumGardner) * weights.gardner])
+  );
+  const gopcNorm = Object.fromEntries(
+    Object.entries(gopc).map(([k, v]) => [k, (v / sumGopc) * weights.gopc])
+  );
+  
+  return { riasec: riasecNorm, gardner: gardnerNorm, gopc: gopcNorm };
+};
+
+// ETAPA 5: Calcular compatibilidade pessoa-profissão
+const calculateCompatibility = (personVector: PersonVector, careerVector: CareerVector): number => {
+  let compatBruta = 0;
+  
+  Object.entries(careerVector.riasec || {}).forEach(([cat, weight]) => {
+    compatBruta += (personVector.riasec[cat] || 0) * weight;
+  });
+  Object.entries(careerVector.gardner || {}).forEach(([cat, weight]) => {
+    compatBruta += (personVector.gardner[cat] || 0) * weight;
+  });
+  Object.entries(careerVector.gopc || {}).forEach(([cat, weight]) => {
+    compatBruta += (personVector.gopc[cat] || 0) * weight;
+  });
+  
+  const normCareer = Math.sqrt(
+    [
+      ...Object.values(careerVector.riasec || {}),
+      ...Object.values(careerVector.gardner || {}),
+      ...Object.values(careerVector.gopc || {})
+    ].reduce((sum, v) => sum + v * v, 0)
+  );
+  
+  const compatNorm = normCareer > 0 ? compatBruta / normCareer : 0;
+  
+  const highDimensions = [
+    ...Object.values(careerVector.riasec || {}),
+    ...Object.values(careerVector.gardner || {}),
+    ...Object.values(careerVector.gopc || {})
+  ].filter(v => v >= 0.7).length;
+  
+  const compatCorrigida = compatNorm / Math.sqrt(Math.max(1, highDimensions));
+  
+  const numDimensions = [
+    ...Object.keys(careerVector.riasec || {}),
+    ...Object.keys(careerVector.gardner || {}),
+    ...Object.keys(careerVector.gopc || {})
+  ].length;
+  
+  const compatFinal = compatCorrigida * (1 + numDimensions * 0.001);
+  
+  return compatFinal;
+};
+
+// Função principal para calcular top 6
+const getTop6Careers = (
+  riasecScores: Record<string, number>,
+  gardnerScores: Record<string, number>,
+  gopcScores: Record<string, number>
+): string[] => {
+  const allCareers = generateCareerVectors();
+  
+  const riasecNorm = normalizeWithReliability(riasecScores, riasecQuestionCounts);
+  const gardnerNorm = normalizeWithReliability(gardnerScores, gardnerQuestionCounts);
+  const gopcNorm = normalizeWithReliability(gopcScores, gopcQuestionCounts);
+  
+  const riasecEnhanced = applyEnhancement(riasecNorm, riasecQuestionCounts);
+  const gardnerEnhanced = applyEnhancement(gardnerNorm, gardnerQuestionCounts);
+  const gopcEnhanced = applyEnhancement(gopcNorm, gopcQuestionCounts);
+  
+  const riasecRanked = applyRankingWeights(riasecEnhanced);
+  const gardnerRanked = applyRankingWeights(gardnerEnhanced);
+  const gopcRanked = applyRankingWeights(gopcEnhanced);
+  
+  const personVector = combineModels(riasecRanked, gardnerRanked, gopcRanked);
+  
+  const compatibilities = Object.entries(allCareers).map(([career, vector]) => ({
+    career,
+    score: calculateCompatibility(personVector, vector)
+  })).sort((a, b) => {
+    if (Math.abs(b.score - a.score) < 0.01) {
+      return a.career.localeCompare(b.career);
+    }
+    return b.score - a.score;
+  });
+  
+  return compatibilities.slice(0, 6).map(item => item.career);
 };
 
 const RecommendedCareers: React.FC<RecommendedCareersProps> = ({ 
@@ -45,100 +249,9 @@ const RecommendedCareers: React.FC<RecommendedCareersProps> = ({
   gopcScores = {}, 
   isBlurred 
 }) => {
-  // Função para obter as top 3 categorias de cada teste
-  const getTopCategories = (scores: Record<string, number>, count: number = 3) => {
-    return Object.entries(scores)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, count)
-      .map(([category]) => category);
-  };
-
-  // Obter top categorias de cada teste
-  const topRiasec = getTopCategories(riasecScores);
-  const topGardner = gardnerScores ? getTopCategories(gardnerScores) : [];
-  const topGopc = gopcScores ? getTopCategories(gopcScores) : [];
-
-  // Coletar profissões das top categorias com sistema de pontuação
-  const collectCareers = () => {
-    // Objeto para armazenar pontuações de cada profissão
-    const careerScores: Record<string, number> = {};
-    
-    // Pesos para cada teste
-    const testWeights = {
-      riasec: 1.5,  // Maior peso para RIASEC
-      gardner: 1.2, // Peso médio para Gardner
-      gopc: 1.0     // Peso padrão para GOPC
-    };
-    
-    // Pesos para posição no ranking de cada teste (1º, 2º, 3º lugar)
-    const rankWeights = [3, 2, 1];
-    
-    // Processar profissões do RIASEC
-    topRiasec.forEach((category, index) => {
-      if (riasecCareers[category]) {
-        riasecCareers[category].forEach(career => {
-          // Pontuação base = peso do teste * peso do ranking
-          const score = testWeights.riasec * rankWeights[Math.min(index, rankWeights.length - 1)];
-          careerScores[career] = (careerScores[career] || 0) + score;
-        });
-      }
-    });
-    
-    // Processar profissões do Gardner
-    topGardner.forEach((category, index) => {
-      if (gardnerCareers[category]) {
-        gardnerCareers[category].forEach(career => {
-          // Pontuação base = peso do teste * peso do ranking
-          const score = testWeights.gardner * rankWeights[Math.min(index, rankWeights.length - 1)];
-          careerScores[career] = (careerScores[career] || 0) + score;
-        });
-      }
-    });
-    
-    // Processar profissões do GOPC
-    topGopc.forEach((category, index) => {
-      if (gopcCareers[category]) {
-        gopcCareers[category].forEach(career => {
-          // Pontuação base = peso do teste * peso do ranking
-          const score = testWeights.gopc * rankWeights[Math.min(index, rankWeights.length - 1)];
-          careerScores[career] = (careerScores[career] || 0) + score;
-        });
-      }
-    });
-    
-    // Bônus para profissões que aparecem em múltiplos testes (indica maior confiabilidade)
-    Object.keys(careerScores).forEach(career => {
-      let testsCount = 0;
-      
-      // Verificar se a profissão aparece no RIASEC
-      if (topRiasec.some(category => riasecCareers[category]?.includes(career))) {
-        testsCount++;
-      }
-      
-      // Verificar se a profissão aparece no Gardner
-      if (topGardner.some(category => gardnerCareers[category]?.includes(career))) {
-        testsCount++;
-      }
-      
-      // Verificar se a profissão aparece no GOPC
-      if (topGopc.some(category => gopcCareers[category]?.includes(career))) {
-        testsCount++;
-      }
-      
-      // Adicionar bônus para profissões que aparecem em múltiplos testes
-      if (testsCount > 1) {
-        careerScores[career] *= (1 + (testsCount - 1) * 0.5); // 50% de bônus por teste adicional
-      }
-    });
-    
-    // Ordenar profissões por pontuação e pegar as top 6
-    return Object.entries(careerScores)
-      .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
-      .slice(0, 6)
-      .map(([career]) => career);
-  };
-
-  const recommendedCareers = collectCareers();
+  const recommendedCareers = useMemo(() => {
+    return getTop6Careers(riasecScores, gardnerScores, gopcScores);
+  }, [riasecScores, gardnerScores, gopcScores]);
 
   return (
     <section className="py-12 bg-gradient-to-b from-white to-gray-50">
@@ -155,6 +268,14 @@ const RecommendedCareers: React.FC<RecommendedCareersProps> = ({
           <p className="text-gray-600">
             Com base na análise dos seus resultados, estas são as carreiras que mais se alinham com seu perfil
           </p>
+          
+          {/* Aviso de refatoração */}
+          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Nossas recomendações foram aprimoradas com um algoritmo mais preciso que considera normalização psicométrica e maior diversidade de profissões</span>
+          </div>
         </div>
         
         <div className="relative">

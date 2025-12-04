@@ -15,11 +15,8 @@ import { getGaIdentifiers } from '@/lib/gaCookies';
 
 // Get Supabase URL from environment (kept for potential direct calls if needed)
 const getSupabaseUrl = () => {
-  const hostname = window.location.hostname;
-  const isProduction = hostname === 'qualcarreira.com' || hostname === 'www.qualcarreira.com';
-  return isProduction 
-    ? 'https://iwovfvrmjaonzqlaavmi.supabase.co'
-    : 'https://sqmkerddgvshfqwgwnyc.supabase.co';
+  // ⚠️ FORÇANDO PROD MESMO EM LOCALHOST PARA DEBUG
+  return 'https://iwovfvrmjaonzqlaavmi.supabase.co'; // Sempre prod
 };
 
 interface PaymentModalProps {
@@ -116,7 +113,7 @@ export const PaymentModal = ({
           email: userEmail,
           name: userName,
           reuse_only: true,
-          isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
+          isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
           source: source,
           campaign: campaign,
           ...gaFields
@@ -173,7 +170,7 @@ export const PaymentModal = ({
           email: userEmail,
           name: userName,
           // Explicit environment flag for accurate pricing on Edge Functions
-          isProd: window.location.hostname === 'qualcarreira.com' || window.location.hostname === 'www.qualcarreira.com',
+          isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
           source: source,
           campaign: campaign,
           ...gaFields
@@ -337,7 +334,9 @@ export const PaymentModal = ({
     await unlockResult(true);
   };
 
-  const isDev = !window.location.hostname.includes('qualcarreira.com');
+  // Mantém o botão de dev bypass no localhost
+  const isDev = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
