@@ -30,3 +30,9 @@ verify_jwt = false
 [functions.get-daily-metrics]
 verify_jwt = false
 
+[functions.manage-coupons]
+verify_jwt = false
+
+[functions.apply-retroactive-discount]
+verify_jwt = false
+
