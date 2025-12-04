@@ -321,3 +321,64 @@ export const trackResultSectionExpanded = (sectionName: string, testId: string) 
     user_properties: { test_id: testId },
   });
 };
+
+// ==================== Coupon Events ====================
+
+export const trackCouponApplied = (
+  code: string, 
+  discount: number, 
+  originalPrice: number, 
+  finalPrice: number
+) => {
+  pushToDataLayer({
+    event: 'coupon_applied',
+    eventCategory: 'Coupon',
+    eventAction: 'Applied',
+    eventLabel: code,
+    coupon_properties: {
+      coupon_code: code,
+      discount_percentage: discount,
+      original_price: originalPrice,
+      final_price: finalPrice,
+      discount_amount: originalPrice - finalPrice,
+    },
+  });
+};
+
+export const trackCouponInvalid = (code: string, reason: string) => {
+  pushToDataLayer({
+    event: 'coupon_invalid',
+    eventCategory: 'Coupon',
+    eventAction: 'Invalid',
+    eventLabel: code,
+    coupon_properties: {
+      coupon_code: code,
+      rejection_reason: reason,
+    },
+  });
+};
+
+export const trackFreeUnlock = (testId: string, couponCode: string) => {
+  pushToDataLayer({
+    event: 'free_unlock',
+    eventCategory: 'Conversion',
+    eventAction: 'Free Unlock',
+    eventLabel: couponCode,
+    ecommerce: {
+      currency: 'BRL',
+      value: 0.00,
+      coupon: couponCode,
+      items: [{
+        item_id: 'qualcarreira_full_analysis',
+        item_name: 'Análise Vocacional Completa',
+        price: 0.00,
+        quantity: 1,
+        item_category: 'Digital Product',
+      }],
+    },
+    user_properties: {
+      test_id: testId,
+      coupon_code: couponCode,
+    },
+  });
+};

@@ -26,6 +26,7 @@ interface PaymentModalProps {
   testId: string;
   userEmail: string;
   userName: string;
+  couponCode?: string | null;
 }
 
 export const PaymentModal = ({ 
@@ -34,7 +35,8 @@ export const PaymentModal = ({
   onSuccess, 
   testId, 
   userEmail, 
-  userName 
+  userName,
+  couponCode
 }: PaymentModalProps) => {
   const [loading, setLoading] = useState(true);
   const [qrCode, setQrCode] = useState('');
@@ -43,9 +45,45 @@ export const PaymentModal = ({
   const [paymentId, setPaymentId] = useState('');
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected' | 'error'>('pending');
   const [error, setError] = useState('');
+  const [finalPrice, setFinalPrice] = useState<number>(getMercadoPagoConfig().price);
+  const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const { toast } = useToast();
-  const price = getMercadoPagoConfig().price;
+  const basePrice = getMercadoPagoConfig().price;
   
+  // Validate coupon and calculate final price (revalidate when coupon changes)
+  useEffect(() => {
+    const validateCouponPrice = async () => {
+      if (couponCode) {
+        try {
+          console.log('[PaymentModal] Validating coupon:', couponCode);
+          const { data } = await supabase.functions.invoke('validate-coupon', {
+            body: { code: couponCode }
+          });
+          
+          if (data?.valid) {
+            setFinalPrice(data.final_price);
+            setDiscountPercentage(data.discount_percentage);
+            console.log('[PaymentModal] Coupon validated:', data);
+          } else {
+            // Reset to base price if invalid
+            setFinalPrice(basePrice);
+            setDiscountPercentage(0);
+          }
+        } catch (error) {
+          console.error('[PaymentModal] Error validating coupon:', error);
+          setFinalPrice(basePrice);
+          setDiscountPercentage(0);
+        }
+      } else {
+        // No coupon, use base price
+        setFinalPrice(basePrice);
+        setDiscountPercentage(0);
+      }
+    };
+    
+    validateCouponPrice();
+  }, [couponCode, basePrice]); // Revalidate when couponCode changes
+
   // Track begin_checkout when modal opens
   useEffect(() => {
     if (isOpen && !paymentId) {
@@ -55,6 +93,24 @@ export const PaymentModal = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
+  
+  // Reset payment when coupon changes (force new payment creation)
+  useEffect(() => {
+    if (couponCode && paymentId) {
+      console.log('[PaymentModal] Coupon changed, resetting payment');
+      setPaymentId('');
+      setQrCode('');
+      setQrCodeBase64('');
+      setStatus('pending');
+      if (isOpen) {
+        // Recreate payment with new coupon
+        setTimeout(() => {
+          probeExistingPaymentOrCreate();
+        }, 100);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponCode]);
 
   // Polling de status
   useEffect(() => {
@@ -112,6 +168,7 @@ export const PaymentModal = ({
           test_id: testId,
           email: userEmail,
           name: userName,
+          coupon_code: couponCode || undefined,
           reuse_only: true,
           isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
           source: source,
@@ -169,6 +226,7 @@ export const PaymentModal = ({
           test_id: testId,
           email: userEmail,
           name: userName,
+          coupon_code: couponCode || undefined,
           // Explicit environment flag for accurate pricing on Edge Functions
           isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
           source: source,
@@ -190,6 +248,26 @@ export const PaymentModal = ({
       console.log('Payment created successfully:', data);
 
       setPaymentId(data.payment_id);
+      
+      // Handle FREE coupon (100% discount)
+      if (data.status === 'free') {
+        console.log('[PaymentModal] FREE payment detected');
+        setStatus('approved');
+        setLoading(false);
+        
+        toast({
+          title: "✅ Acesso liberado gratuitamente!",
+          description: "Desbloqueando seu resultado...",
+        });
+        
+        // Unlock and refresh
+        setTimeout(async () => {
+          await unlockResult(true); // Skip payment check for FREE
+        }, 500);
+        
+        return;
+      }
+      
       setQrCode(data.qr_code);
       setQrCodeBase64(data.qr_code_base64);
       setTicketUrl(data.ticket_url);
@@ -393,9 +471,28 @@ export const PaymentModal = ({
               </div>
 
               <div className="text-center">
-                <p className="text-2xl font-bold text-primary">
-                  {price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
+                {discountPercentage > 0 ? (
+                  <>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-base text-muted-foreground line-through">
+                        {basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                      <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        -{discountPercentage}% OFF
+                      </span>
+                    </div>
+                    <p className="text-2xl font-bold text-green-600">
+                      {finalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      🎉 Cupom aplicado!
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-2xl font-bold text-primary">
+                    {finalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                )}
                 <p className="text-sm text-muted-foreground mt-1">
                   Aguardando pagamento...
                 </p>

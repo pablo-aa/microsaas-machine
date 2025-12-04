@@ -7,6 +7,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, Copy, CheckCircle, Lock, BookOpen, Star, Lightbulb, ChevronDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useCouponCapture } from "@/hooks/useCouponCapture";
+import { getCoupon } from "@/lib/couponStorage";
 import RiasecResults from "@/components/RiasecResults";
 import RecommendedCareers from "@/components/RecommendedCareers";
 import PaymentSection from "@/components/PaymentSection";
@@ -36,16 +38,86 @@ const Resultado = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   
+  useCouponCapture(); // Captura cupom da URL se presente
+  
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [result, setResult] = useState<ResultData | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const [showFullResults, setShowFullResults] = useState(false);
   const [activeTab, setActiveTab] = useState<'riasec' | 'gardner' | 'gopc'>('riasec');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const paymentRef = useRef<HTMLDivElement>(null);
 
   const resultUrl = `${window.location.origin}/resultado/${id}`;
+
+  // Buscar cupom aplicado pelo backend (dashboard) no payment
+  useEffect(() => {
+    const checkBackendCoupon = async () => {
+      if (!id) return;
+      
+      try {
+        console.log('[Resultado] Verificando cupom aplicado no backend...');
+        const { data, error } = await supabase
+          .from('payments')
+          .select('coupon_code, original_amount, amount')
+          .eq('test_id', id)
+          .not('coupon_code', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (!error && data?.coupon_code) {
+          console.log('[Resultado] Cupom encontrado no backend:', data.coupon_code);
+          const savedCoupon = getCoupon();
+          
+          // Se é diferente do localStorage, aplicar o do backend
+          if (savedCoupon !== data.coupon_code) {
+            console.log('[Resultado] Aplicando cupom do backend:', data.coupon_code);
+            
+            // Validar e salvar
+            const { validateAndSaveCoupon } = await import('@/lib/couponStorage');
+            const validated = await validateAndSaveCoupon(data.coupon_code);
+            
+            if (validated.valid) {
+              setCouponCode(data.coupon_code);
+              toast({
+                title: '🎯 Cupom especial aplicado!',
+                description: `${data.coupon_code} - ${validated.discount_percentage}% de desconto`,
+              });
+            }
+          } else {
+            setCouponCode(savedCoupon);
+          }
+        } else {
+          // Não tem cupom no backend, usar do localStorage
+          const savedCoupon = getCoupon();
+          setCouponCode(savedCoupon);
+        }
+      } catch (error) {
+        console.error('[Resultado] Erro ao buscar cupom do backend:', error);
+        // Fallback para localStorage
+        const savedCoupon = getCoupon();
+        setCouponCode(savedCoupon);
+      }
+    };
+    
+    checkBackendCoupon();
+  }, [id]);
+  
+  // Ouvir mudanças no localStorage (quando cupom é atualizado via URL)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentCoupon = getCoupon();
+      if (currentCoupon !== couponCode) {
+        console.log('[Resultado] Cupom do localStorage mudou:', currentCoupon);
+        setCouponCode(currentCoupon);
+      }
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, [couponCode]);
 
   useEffect(() => {
     if (!id) {
@@ -434,7 +506,12 @@ const Resultado = () => {
           {/* Payment Section (if locked) */}
           {!result.is_unlocked && (
             <div ref={paymentRef}>
-              <PaymentSection onPurchase={handlePurchase} />
+              <PaymentSection 
+                onPurchase={handlePurchase} 
+                testId={id || ''}
+                userEmail={result.email}
+                userName={result.name}
+              />
             </div>
           )}
 
@@ -454,6 +531,7 @@ const Resultado = () => {
         testId={id || ''}
         userEmail={result.email}
         userName={result.name}
+        couponCode={couponCode}
       />
     </div>
     </>
