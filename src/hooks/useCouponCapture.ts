@@ -27,7 +27,7 @@ export function useCouponCapture() {
           const msg =
             result.discount_percentage >= 100
               ? '🎁 Acesso GRATUITO aplicado!'
-              : `🎉 Cupom ${cupom.toUpperCase()} aplicado! ${result.discount_percentage}% OFF`;
+              : `🎉 Cupom ${cupom.toUpperCase()} aplicado! ${Math.round(result.discount_percentage)}% OFF`;
 
           toast({
             title: msg,

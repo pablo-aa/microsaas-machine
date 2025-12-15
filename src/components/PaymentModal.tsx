@@ -478,7 +478,7 @@ export const PaymentModal = ({
                         {basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </span>
                       <span className="bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                        -{discountPercentage}% OFF
+                        -{Math.round(discountPercentage)}% OFF
                       </span>
                     </div>
                     <p className="text-2xl font-bold text-green-600">

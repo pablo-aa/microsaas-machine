@@ -214,7 +214,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
                       R$ {basePrice.toFixed(2)}
                     </span>
                     <span className="bg-green-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">
-                      -{coupon.discount_percentage}% OFF
+                      -{Math.round(coupon.discount_percentage)}% OFF
                     </span>
                   </div>
                   <div className="text-green-600 text-sm font-medium mb-2">

@@ -82,7 +82,8 @@ serve(async (req)=>{
       
       validatedCoupon = coupon;
       originalAmount = BASE_PRICE;
-      transactionAmount = BASE_PRICE * (1 - coupon.discount_percentage / 100);
+      // Round to 2 decimal places for Mercado Pago compatibility
+      transactionAmount = parseFloat((BASE_PRICE * (1 - coupon.discount_percentage / 100)).toFixed(2));
       
       console.log('[create-payment] Coupon applied:', {
         code: coupon.code,

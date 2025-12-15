@@ -84,7 +84,7 @@ const Resultado = () => {
               setCouponCode(data.coupon_code);
               toast({
                 title: '🎯 Cupom especial aplicado!',
-                description: `${data.coupon_code} - ${validated.discount_percentage}% de desconto`,
+                description: `${data.coupon_code} - ${Math.round(validated.discount_percentage)}% de desconto`,
               });
             }
           } else {
