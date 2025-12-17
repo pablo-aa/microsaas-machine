@@ -40,7 +40,9 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
   }, []);
 
   const handleFreeUnlock = async () => {
-    if (!coupon || coupon.discount_percentage < 100 || !coupon.code) return;
+    if (!coupon || !coupon.code) return;
+    const discount = coupon.discount_percentage ?? 0;
+    if (discount < 100) return;
     
     setIsUnlocking(true);
     try {
@@ -87,7 +89,8 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
   };
 
   const finalPrice = coupon?.valid ? coupon.final_price : basePrice;
-  const isFree = coupon?.valid && coupon.discount_percentage >= 100;
+  const discount = coupon?.discount_percentage ?? 0;
+  const isFree = coupon?.valid && discount >= 100;
 
   // Mostrar card especial para 100% desconto
   if (isFree) {
@@ -207,14 +210,14 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
 
             {/* Price */}
             <div className="mb-6">
-              {coupon?.valid && coupon.discount_percentage > 0 ? (
+              {coupon?.valid && discount > 0 ? (
                 <>
                   <div className="flex items-center justify-center mb-3">
                     <span className="text-muted-foreground line-through mr-3 text-base">
                       R$ {basePrice.toFixed(2)}
                     </span>
                     <span className="bg-green-600 text-white text-sm font-bold px-3 py-1 rounded-full shadow-sm">
-                      -{Math.round(coupon.discount_percentage)}% OFF
+                      -{Math.round(discount)}% OFF
                     </span>
                   </div>
                   <div className="text-green-600 text-sm font-medium mb-2">

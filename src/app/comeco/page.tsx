@@ -1,29 +1,32 @@
+"use client";
+
 import { useState } from "react";
+import Link from "next/link";
+import { v4 as uuidv4 } from "uuid";
+import { Clock, CheckCircle, ArrowRight, BarChart3, FileText, Target, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, CheckCircle, ArrowRight, BarChart3, FileText, Target, Loader2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
 import { usePageView } from "@/hooks/useGTM";
 import { trackTestStarted } from "@/lib/analytics";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
 
-const Comeco = () => {
-  const navigate = useNavigate();
+export default function ComecoPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  
+
   usePageView();
 
   const handleStartAssessment = () => {
     setIsLoading(true);
     const assessmentId = uuidv4();
-    
+
     // Track test started
     trackTestStarted(assessmentId);
-    
+
     // Loading effect for 2 seconds
     setTimeout(() => {
-      navigate(`/avaliacao/${assessmentId}`);
+      router.push(`/avaliacao/${assessmentId}`);
     }, 2000);
   };
 
@@ -33,10 +36,14 @@ const Comeco = () => {
       <header className="w-full bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-1">
-              <img 
-                src={logoQualCarreira} 
-                alt="QualCarreira - Teste Vocacional" 
+            <Link href="/" className="flex items-center space-x-1">
+              <img
+                src={
+                  typeof logoQualCarreira === "string"
+                    ? logoQualCarreira
+                    : logoQualCarreira.src
+                }
+                alt="QualCarreira - Teste Vocacional"
                 className="h-8 w-auto"
               />
               <span className="text-xl font-bold text-foreground">Qual Carreira</span>
@@ -67,21 +74,27 @@ const Comeco = () => {
                   <div className="bg-white/20 rounded-full p-1.5">
                     <Clock className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-base text-white/90">O teste leva apenas 5 minutos para ser concluído.</p>
+                  <p className="text-base text-white/90">
+                    O teste leva apenas 5 minutos para ser concluído.
+                  </p>
                 </div>
-                
+
                 <div className="flex items-center space-x-3">
                   <div className="bg-white/20 rounded-full p-1.5">
                     <CheckCircle className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-base text-white/90">Responda com sinceridade para resultados mais precisos.</p>
+                  <p className="text-base text-white/90">
+                    Responda com sinceridade para resultados mais precisos.
+                  </p>
                 </div>
-                
+
                 <div className="flex items-center space-x-3">
                   <div className="bg-white/20 rounded-full p-1.5">
                     <ArrowRight className="h-5 w-5 text-white" />
                   </div>
-                  <p className="text-base text-white/90">Você receberá recomendações personalizadas de carreira.</p>
+                  <p className="text-base text-white/90">
+                    Você receberá recomendações personalizadas de carreira.
+                  </p>
                 </div>
               </div>
 
@@ -123,7 +136,9 @@ const Comeco = () => {
                 <FileText className="h-8 w-8 text-primary" />
               </div>
               <h3 className="text-xl font-bold text-foreground mb-3">Relatório Detalhado</h3>
-              <p className="text-muted-foreground">Análise completa do seu perfil profissional</p>
+              <p className="text-muted-foreground">
+                Análise completa do seu perfil profissional
+              </p>
             </CardContent>
           </Card>
 
@@ -132,14 +147,17 @@ const Comeco = () => {
               <div className="bg-primary/10 rounded-full p-4 w-fit mx-auto mb-4">
                 <Target className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">Recomendações Personalizadas</h3>
-              <p className="text-muted-foreground">Carreiras alinhadas com suas habilidades e interesses</p>
+              <h3 className="text-xl font-bold text-foreground mb-3">
+                Recomendações Personalizadas
+              </h3>
+              <p className="text-muted-foreground">
+                Carreiras alinhadas com suas habilidades e interesses
+              </p>
             </CardContent>
           </Card>
         </div>
       </main>
     </div>
   );
-};
+}
 
-export default Comeco;

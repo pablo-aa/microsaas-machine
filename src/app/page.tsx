@@ -1,3 +1,5 @@
+"use client";
+
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import StatsSection from "@/components/StatsSection";
@@ -7,7 +9,7 @@ import CookieConsent from "@/components/CookieConsent";
 import { usePageView, useScrollDepth } from "@/hooks/useGTM";
 import { useCouponCapture } from "@/hooks/useCouponCapture";
 
-const Index = () => {
+export default function Home() {
   usePageView();
   useScrollDepth();
   useCouponCapture(); // Captura cupom da URL
@@ -22,6 +24,4 @@ const Index = () => {
       <CookieConsent />
     </main>
   );
-};
-
-export default Index;
+}

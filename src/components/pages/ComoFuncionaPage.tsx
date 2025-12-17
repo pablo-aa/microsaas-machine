@@ -1,5 +1,6 @@
-import { Helmet } from "react-helmet";
-import { Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Brain, Users, Target, Zap, Shield, Clock, Award } from "lucide-react";
 import Header from "@/components/Header";
@@ -7,24 +8,11 @@ import ResultsFooter from "@/components/ResultsFooter";
 import { usePageView } from "@/hooks/useGTM";
 import { trackCTAClick } from "@/lib/analytics";
 
-const ComoFunciona = () => {
+export default function ComoFuncionaPage() {
   usePageView();
-  
+
   return (
     <>
-      <Helmet>
-        <title>Como Funciona | QualCarreira - Teste Vocacional Científico</title>
-        <meta 
-          name="description" 
-          content="Descubra como funciona o teste vocacional da QualCarreira. Metodologias científicas RIASEC, Gardner e GOPC para identificar sua carreira ideal em minutos." 
-        />
-        <meta property="og:title" content="Como Funciona | QualCarreira - Teste Vocacional Científico" />
-        <meta property="og:description" content="Descubra como funciona o teste vocacional da QualCarreira. Metodologias científicas RIASEC, Gardner e GOPC para identificar sua carreira ideal em minutos." />
-        <meta property="og:url" content="https://www.qualcarreira.com/como-funciona" />
-        <meta property="og:image" content="https://www.qualcarreira.com/og-image.png" />
-        <link rel="canonical" href="https://www.qualcarreira.com/como-funciona" />
-      </Helmet>
-
       <Header />
 
       <main className="min-h-screen bg-background">
@@ -35,7 +23,7 @@ const ComoFunciona = () => {
               Como Funciona a <span className="text-gradient">QualCarreira</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Uma plataforma de teste vocacional baseada em ciência que utiliza algoritmos de psicometria 
+              Uma plataforma de teste vocacional baseada em ciência que utiliza algoritmos de psicometria
               para analisar sua personalidade, habilidades e interesses, oferecendo orientação personalizada para sua carreira.
             </p>
           </div>
@@ -49,7 +37,7 @@ const ComoFunciona = () => {
                 <Brain className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">Baseado em Ciência</h3>
                 <p className="text-muted-foreground">
-                  Utilizamos três metodologias científicas reconhecidas internacionalmente para garantir 
+                  Utilizamos três metodologias científicas reconhecidas internacionalmente para garantir
                   resultados precisos e confiáveis.
                 </p>
               </div>
@@ -58,7 +46,7 @@ const ComoFunciona = () => {
                 <Users className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">Personalizado</h3>
                 <p className="text-muted-foreground">
-                  Cada resultado é único e personalizado com base nas suas respostas específicas, 
+                  Cada resultado é único e personalizado com base nas suas respostas específicas,
                   oferecendo orientação direcionada para seu perfil.
                 </p>
               </div>
@@ -67,7 +55,7 @@ const ComoFunciona = () => {
                 <Shield className="w-12 h-12 text-primary mb-4" />
                 <h3 className="text-xl font-semibold text-foreground mb-2">Privado e Seguro</h3>
                 <p className="text-muted-foreground">
-                  Seus dados são protegidos e o teste pode ser realizado de forma anônima, 
+                  Seus dados são protegidos e o teste pode ser realizado de forma anônima,
                   garantindo total privacidade durante o processo.
                 </p>
               </div>
@@ -82,7 +70,7 @@ const ComoFunciona = () => {
               Três Pilares Científicos
             </h2>
             <p className="text-lg text-muted-foreground text-center mb-12">
-              Nosso teste combina três modelos reconhecidos mundialmente para criar um perfil 
+              Nosso teste combina três modelos reconhecidos mundialmente para criar um perfil
               vocacional completo e abrangente.
             </p>
 
@@ -256,7 +244,7 @@ const ComoFunciona = () => {
               Como Funciona o Processo
             </h2>
             <p className="text-lg text-muted-foreground text-center mb-12">
-              Um processo simples e intuitivo que leva de 15 a 20 minutos para descobrir 
+              Um processo simples e intuitivo que leva de 15 a 20 minutos para descobrir
               sua carreira ideal de forma científica e personalizada.
             </p>
 
@@ -267,7 +255,7 @@ const ComoFunciona = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Responda o Questionário</h3>
                 <p className="text-muted-foreground">
-                  Complete perguntas sobre personalidade, habilidades e interesses. 
+                  Complete perguntas sobre personalidade, habilidades e interesses.
                   Não há respostas certas ou erradas - seja honesto!
                 </p>
               </div>
@@ -278,7 +266,7 @@ const ComoFunciona = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Processamento</h3>
                 <p className="text-muted-foreground">
-                  Nossos algoritmos analisam suas respostas usando as três metodologias científicas 
+                  Nossos algoritmos analisam suas respostas usando as três metodologias científicas
                   para criar seu perfil único.
                 </p>
               </div>
@@ -289,7 +277,7 @@ const ComoFunciona = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Pagamento Seguro</h3>
                 <p className="text-muted-foreground">
-                  Faça o pagamento via PIX de forma rápida e segura para acessar seus resultados 
+                  Faça o pagamento via PIX de forma rápida e segura para acessar seus resultados
                   completos e personalizados.
                 </p>
               </div>
@@ -300,7 +288,7 @@ const ComoFunciona = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-foreground mb-2">Receba os Resultados</h3>
                 <p className="text-muted-foreground">
-                  Acesse seu relatório completo com análise detalhada, carreiras compatíveis 
+                  Acesse seu relatório completo com análise detalhada, carreiras compatíveis
                   e orientações personalizadas.
                 </p>
               </div>
@@ -315,7 +303,7 @@ const ComoFunciona = () => {
               Pagamento Simples e Seguro
             </h2>
             <p className="text-lg text-muted-foreground text-center mb-12">
-              Utilizamos o Mercado Pago com PIX para garantir transações rápidas, 
+              Utilizamos o Mercado Pago com PIX para garantir transações rápidas,
               seguras e acessíveis para todos os usuários.
             </p>
 
@@ -404,7 +392,7 @@ const ComoFunciona = () => {
               O Que Você Recebe
             </h2>
             <p className="text-lg text-muted-foreground text-center mb-12">
-              Um relatório completo e personalizado com insights profundos sobre sua 
+              Um relatório completo e personalizado com insights profundos sobre sua
               personalidade profissional e orientações de carreira.
             </p>
 
@@ -470,18 +458,22 @@ const ComoFunciona = () => {
               Pronto Para Descobrir Sua Carreira Ideal?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Junte-se a milhares de pessoas que já descobriram seu caminho profissional 
+              Junte-se a milhares de pessoas que já descobriram seu caminho profissional
               com base em ciência e metodologias reconhecidas mundialmente.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-              <Link to="/comeco" onClick={() => trackCTAClick('como_funciona', 'start_test')}>
+              <Link href="/comeco" onClick={() => trackCTAClick("como_funciona", "start_test")}>
                 <Button size="lg" className="gradient-primary hover:opacity-90 transition-opacity px-8 py-3 text-base font-semibold w-full sm:w-auto">
                   Começar Teste Agora
                 </Button>
               </Link>
-              <Link to="/" onClick={() => trackCTAClick('como_funciona', 'learn_more')}>
-                <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary/5 px-8 py-3 text-base font-semibold w-full sm:w-auto">
+              <Link href="/" onClick={() => trackCTAClick("como_funciona", "learn_more")}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-primary text-primary hover:bg-primary/5 px-8 py-3 text-base font-semibold w-full sm:w-auto"
+                >
                   Voltar para a Página Inicial
                 </Button>
               </Link>
@@ -497,6 +489,4 @@ const ComoFunciona = () => {
       <ResultsFooter />
     </>
   );
-};
-
-export default ComoFunciona;
+}

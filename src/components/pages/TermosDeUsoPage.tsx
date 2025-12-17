@@ -1,33 +1,22 @@
-import { Helmet } from "react-helmet";
+"use client";
+
+import Link from "next/link";
 import Header from "@/components/Header";
 import ResultsFooter from "@/components/ResultsFooter";
-import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { usePageView } from "@/hooks/useGTM";
 
-const TermosDeUso = () => {
+export default function TermosDeUsoPage() {
   usePageView();
-  
+
   return (
     <>
-      <Helmet>
-        <title>Termos de Uso | QualCarreira - Teste Vocacional Online</title>
-        <meta 
-          name="description" 
-          content="Leia os Termos de Uso da QualCarreira. Conheça as regras e condições para utilizar nosso teste vocacional e serviços de orientação profissional." 
-        />
-        <meta property="og:title" content="Termos de Uso | QualCarreira" />
-        <meta property="og:description" content="Leia os Termos de Uso da QualCarreira. Conheça as regras e condições para utilizar nosso teste vocacional e serviços de orientação profissional." />
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://qualcarreira.com/termos-de-uso" />
-      </Helmet>
-
       <main className="min-h-screen bg-background">
         <Header />
-        
+
         <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Link 
-            to="/" 
+          <Link
+            href="/"
             className="inline-flex items-center text-primary hover:text-primary-dark transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -73,14 +62,28 @@ const TermosDeUso = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-foreground mb-4">5. Pagamentos e Reembolsos</h2>
               <p className="text-muted-foreground leading-relaxed">
-                O acesso ao relatório completo está disponível mediante pagamento via PIX. Caso tenha algum problema, entre em contato pelo e-mail <a href="mailto:suporte@qualcarreira.com" className="text-primary hover:underline">suporte@qualcarreira.com</a>.
+                O acesso ao relatório completo está disponível mediante pagamento via PIX. Caso tenha algum problema, entre em contato pelo e-mail {" "}
+                <a
+                  href="mailto:suporte@qualcarreira.com"
+                  className="text-primary hover:underline"
+                >
+                  suporte@qualcarreira.com
+                </a>
+                .
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-foreground mb-4">6. Dados Pessoais e Privacidade</h2>
               <p className="text-muted-foreground leading-relaxed">
-                As informações coletadas são usadas exclusivamente para geração do resultado. Não há compartilhamento com terceiros para fins comerciais. Consulte a <Link to="/politica-de-privacidade" className="text-primary hover:underline">Política de Privacidade</Link> para mais detalhes.
+                As informações coletadas são usadas exclusivamente para geração do resultado. Não há compartilhamento com terceiros para fins comerciais. Consulte a {" "}
+                <Link
+                  href="/politica-de-privacidade"
+                  className="text-primary hover:underline"
+                >
+                  Política de Privacidade
+                </Link>{" "}
+                para mais detalhes.
               </p>
             </section>
 
@@ -115,7 +118,14 @@ const TermosDeUso = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-foreground mb-4">11. Contato</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Para dúvidas, envie um e-mail para <a href="mailto:suporte@qualcarreira.com" className="text-primary hover:underline">suporte@qualcarreira.com</a>.
+                Para dúvidas, envie um e-mail para {" "}
+                <a
+                  href="mailto:suporte@qualcarreira.com"
+                  className="text-primary hover:underline"
+                >
+                  suporte@qualcarreira.com
+                </a>
+                .
               </p>
             </section>
           </div>
@@ -125,6 +135,4 @@ const TermosDeUso = () => {
       </main>
     </>
   );
-};
-
-export default TermosDeUso;
+}

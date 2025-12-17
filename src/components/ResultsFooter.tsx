@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Mail } from "lucide-react";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
 
@@ -9,10 +9,14 @@ const ResultsFooter = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Column - Brand */}
           <div>
-            <Link to="/" className="flex items-center space-x-1 mb-4">
-              <img 
-                src={logoQualCarreira} 
-                alt="QualCarreira - Teste Vocacional" 
+            <Link href="/" className="flex items-center space-x-1 mb-4">
+              <img
+                src={
+                  typeof logoQualCarreira === "string"
+                    ? logoQualCarreira
+                    : logoQualCarreira.src
+                }
+                alt="QualCarreira - Teste Vocacional"
                 className="h-8 w-auto"
               />
               <span className="text-xl font-bold text-white">Qual Carreira</span>
@@ -47,16 +51,28 @@ const ResultsFooter = () => {
             </p>
             
             <div className="flex flex-wrap gap-4 md:gap-6 mt-4 md:mt-0 justify-center md:justify-end">
-              <Link to="/como-funciona" className="text-slate-400 hover:text-white transition-colors text-sm">
+              <Link
+                href="/como-funciona"
+                className="text-slate-400 hover:text-white transition-colors text-sm"
+              >
                 Como Funciona
               </Link>
-              <Link to="/termos-de-uso" className="text-slate-400 hover:text-white transition-colors text-sm">
+              <Link
+                href="/termos-de-uso"
+                className="text-slate-400 hover:text-white transition-colors text-sm"
+              >
                 Termos de Uso
               </Link>
-              <Link to="/politica-de-privacidade" className="text-slate-400 hover:text-white transition-colors text-sm">
+              <Link
+                href="/politica-de-privacidade"
+                className="text-slate-400 hover:text-white transition-colors text-sm"
+              >
                 Política de Privacidade
               </Link>
-              <Link to="/faq" className="text-slate-400 hover:text-white transition-colors text-sm">
+              <Link
+                href="/faq"
+                className="text-slate-400 hover:text-white transition-colors text-sm"
+              >
                 FAQ
               </Link>
             </div>

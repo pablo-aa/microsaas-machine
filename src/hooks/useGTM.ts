@@ -1,24 +1,28 @@
-import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { pushToDataLayer } from '@/lib/gtm';
-import { trackTestAbandoned, trackScrollDepth } from '@/lib/analytics';
+"use client";
+
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { pushToDataLayer } from "@/lib/gtm";
+import { trackTestAbandoned, trackScrollDepth } from "@/lib/analytics";
 
 // Hook para rastrear pageviews automaticamente
 export const usePageView = () => {
-  const location = useLocation();
+  const pathname = usePathname();
   
   useEffect(() => {
     // Aguardar um pouco para garantir que o título da página esteja definido
     const timeoutId = setTimeout(() => {
       pushToDataLayer({
         event: 'page_view',
-        page_path: location.pathname,
+        page_path:
+          pathname ??
+          (typeof window !== "undefined" ? window.location.pathname : ""),
         page_title: typeof document !== 'undefined' ? document.title : '',
       });
     }, 100);
     
     return () => clearTimeout(timeoutId);
-  }, [location]);
+  }, [pathname]);
 };
 
 // Hook para rastrear abandono de teste

@@ -1,33 +1,22 @@
-import { Helmet } from "react-helmet";
+"use client";
+
+import Link from "next/link";
 import Header from "@/components/Header";
 import ResultsFooter from "@/components/ResultsFooter";
-import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { usePageView } from "@/hooks/useGTM";
 
-const PoliticaDePrivacidade = () => {
+export default function PoliticaDePrivacidadePage() {
   usePageView();
-  
+
   return (
     <>
-      <Helmet>
-        <title>Política de Privacidade | QualCarreira - Proteção de Dados LGPD</title>
-        <meta 
-          name="description" 
-          content="Conheça nossa Política de Privacidade e como a QualCarreira protege seus dados pessoais conforme a LGPD. Transparência e segurança para você." 
-        />
-        <meta property="og:title" content="Política de Privacidade | QualCarreira" />
-        <meta property="og:description" content="Conheça nossa Política de Privacidade e como a QualCarreira protege seus dados pessoais conforme a LGPD." />
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://qualcarreira.com/politica-de-privacidade" />
-      </Helmet>
-
       <main className="min-h-screen bg-background">
         <Header />
-        
+
         <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Link 
-            to="/" 
+          <Link
+            href="/"
             className="inline-flex items-center text-primary hover:text-primary-dark transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -47,7 +36,7 @@ const PoliticaDePrivacidade = () => {
           <div className="prose prose-slate max-w-none">
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-foreground mb-4">1. Informações que coletamos</h2>
-              
+
               <h3 className="text-xl font-semibold text-foreground mb-3 mt-6">1.1 Informações fornecidas por você</h3>
               <p className="text-muted-foreground leading-relaxed mb-3">
                 Coletamos as informações que você insere voluntariamente:
@@ -139,7 +128,14 @@ const PoliticaDePrivacidade = () => {
                 <li>Solicitar revisão de decisões automatizadas</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-3">
-                Para exercer seus direitos, entre em contato em <a href="mailto:suporte@qualcarreira.com" className="text-primary hover:underline">suporte@qualcarreira.com</a>.
+                Para exercer seus direitos, entre em contato em {" "}
+                <a
+                  href="mailto:suporte@qualcarreira.com"
+                  className="text-primary hover:underline"
+                >
+                  suporte@qualcarreira.com
+                </a>
+                .
               </p>
             </section>
 
@@ -177,7 +173,13 @@ const PoliticaDePrivacidade = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-foreground mb-4">11. Encarregado e contato</h2>
               <p className="text-muted-foreground leading-relaxed">
-                E-mail: <a href="mailto:suporte@qualcarreira.com" className="text-primary hover:underline">suporte@qualcarreira.com</a>
+                E-mail: {" "}
+                <a
+                  href="mailto:suporte@qualcarreira.com"
+                  className="text-primary hover:underline"
+                >
+                  suporte@qualcarreira.com
+                </a>
               </p>
             </section>
           </div>
@@ -187,6 +189,4 @@ const PoliticaDePrivacidade = () => {
       </main>
     </>
   );
-};
-
-export default PoliticaDePrivacidade;
+}

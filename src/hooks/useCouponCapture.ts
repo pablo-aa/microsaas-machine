@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getCoupon, validateAndSaveCoupon, clearCoupon } from '@/lib/couponStorage';
 
@@ -9,25 +10,42 @@ import { getCoupon, validateAndSaveCoupon, clearCoupon } from '@/lib/couponStora
  */
 export function useCouponCapture() {
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const processedRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Só executar no cliente
+    if (typeof window === 'undefined') return;
+
     const params = new URLSearchParams(window.location.search);
     const cupom = params.get('cupom');
 
     if (!cupom) return;
 
+    // Evitar processar o mesmo cupom múltiplas vezes
+    if (processedRef.current === cupom) return;
+    processedRef.current = cupom;
+
     const existingCoupon = getCoupon();
 
     console.log('[useCouponCapture] Cupom detectado na URL:', cupom);
+
+    // Limpar URL imediatamente para evitar problemas de navegação
+    // Usar apenas o pathname sem query params
+    if (pathname && window.location.search) {
+      router.replace(pathname, { scroll: false });
+    }
 
     validateAndSaveCoupon(cupom)
       .then((result) => {
         if (result.valid) {
           // Determinar mensagem baseada no desconto
+          const discountPercentage = result.discount_percentage ?? 0;
           const msg =
-            result.discount_percentage >= 100
+            discountPercentage >= 100
               ? '🎁 Acesso GRATUITO aplicado!'
-              : `🎉 Cupom ${cupom.toUpperCase()} aplicado! ${Math.round(result.discount_percentage)}% OFF`;
+              : `🎉 Cupom ${cupom.toUpperCase()} aplicado! ${Math.round(discountPercentage)}% OFF`;
 
           toast({
             title: msg,
@@ -72,10 +90,7 @@ export function useCouponCapture() {
         });
         clearCoupon();
       });
-
-    // Limpar URL (remover ?cupom=)
-    window.history.replaceState({}, '', window.location.pathname);
-  }, []); // Empty deps: executa apenas uma vez no mount
+  }, [pathname, router, toast]); // Dependências corretas
 
   return null;
 }
