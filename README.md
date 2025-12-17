@@ -1,73 +1,165 @@
-# Welcome to your Lovable project
+# QualCarreira - Teste Vocacional Online
 
-## Project info
+Plataforma de teste vocacional baseada em metodologias científicas (RIASEC, Gardner e GOPC) para ajudar pessoas a descobrirem sua carreira ideal.
 
-**URL**: https://lovable.dev/projects/72062ce0-9794-444a-8599-ce2ec825235a
+## 🚀 Tecnologias
 
-## How can I edit this code?
+- **Next.js 16** - Framework React com App Router
+- **React 19** - Biblioteca UI
+- **TypeScript** - Tipagem estática
+- **Tailwind CSS** - Estilização
+- **shadcn/ui** - Componentes UI baseados em Radix UI
+- **Supabase** - Backend (banco de dados + Edge Functions)
+- **Mercado Pago** - Processamento de pagamentos via PIX
 
-There are several ways of editing your application.
+## 📋 Pré-requisitos
 
-**Use Lovable**
+- Node.js 18+ (recomendado usar [nvm](https://github.com/nvm-sh/nvm))
+- npm ou yarn
+- Conta no Supabase (para desenvolvimento local, opcional)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/72062ce0-9794-444a-8599-ce2ec825235a) and start prompting.
+## 🛠️ Instalação
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# 1. Clone o repositório
+git clone <seu-repositorio-url>
+cd qual-carreira-seguir
 
-**Use your preferred IDE**
+# 2. Instale as dependências
+npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# 3. Configure as variáveis de ambiente
+cp .env.example .env.local
+# Edite .env.local com suas credenciais do Supabase
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Variáveis de Ambiente
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Crie um arquivo `.env.local` na raiz do projeto:
 
-**Use GitHub Codespaces**
+```env
+NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_anon_key
+# Outras variáveis conforme necessário
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📜 Scripts Disponíveis
 
-## What technologies are used for this project?
+```bash
+# Desenvolvimento
+npm run dev          # Inicia servidor de desenvolvimento (localhost:3000)
 
-This project is built with:
+# Build e produção
+npm run build        # Cria build de produção
+npm run start        # Inicia servidor de produção (após build)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Qualidade de código
+npm run lint         # Executa ESLint
 
-## How can I deploy this project?
+# Deploy
+npm run deploy              # Deploy em produção via Vercel
+npm run deploy:preview     # Deploy de preview via Vercel
+```
 
-Simply open [Lovable](https://lovable.dev/projects/72062ce0-9794-444a-8599-ce2ec825235a) and click on Share -> Publish.
+## 🏗️ Estrutura do Projeto
 
-## Can I connect a custom domain to my Lovable project?
+```
+qual-carreira-seguir/
+├── src/
+│   ├── app/              # Rotas Next.js (App Router)
+│   │   ├── page.tsx      # Landing page
+│   │   ├── layout.tsx    # Layout raiz
+│   │   ├── avaliacao/    # Página de avaliação
+│   │   ├── resultado/     # Página de resultados
+│   │   └── ...
+│   ├── components/       # Componentes React
+│   │   ├── pages/        # Componentes de página
+│   │   └── ui/           # Componentes UI (shadcn)
+│   ├── lib/              # Utilitários e helpers
+│   ├── hooks/            # React hooks customizados
+│   ├── data/             # Dados estáticos (perguntas, etc)
+│   └── types/            # Definições TypeScript
+├── supabase/
+│   ├── functions/        # Edge Functions
+│   └── migrations/       # Migrações do banco
+├── public/               # Arquivos estáticos
+└── docs/                # Documentação
+    ├── specs/           # Especificações técnicas
+    └── archive/         # Documentos históricos
+```
 
-Yes, you can!
+## 🗄️ Banco de Dados (Supabase)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+O projeto usa Supabase como backend. Principais tabelas:
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- `test_results` - Resultados dos testes vocacionais
+- `test_responses` - Respostas individuais das questões
+- `payments` - Registros de pagamentos
+- `discount_coupons` - Cupons de desconto
+
+Para configurar o banco, consulte `docs/specs/SUPABASE_SETUP.md`.
+
+## 🔌 Edge Functions
+
+As Edge Functions do Supabase estão em `supabase/functions/`:
+
+- `create-result` - Cria resultado do teste
+- `get-result` - Busca resultado por ID
+- `unlock-result` - Desbloqueia resultado após pagamento
+- `create-payment` - Cria pagamento via Mercado Pago
+- `check-payment-status` - Verifica status do pagamento
+- `validate-coupon` - Valida cupons de desconto
+- E outras...
+
+## 🚢 Deploy
+
+O projeto está configurado para deploy automático via **Vercel**:
+
+1. Conecte seu repositório ao Vercel
+2. Configure as variáveis de ambiente no dashboard da Vercel
+3. Deploys automáticos a cada push na branch `main`
+
+Ou use os comandos manuais:
+
+```bash
+npm run deploy        # Deploy em produção
+npm run deploy:preview # Deploy de preview
+```
+
+## 📚 Documentação
+
+Documentação técnica está em `docs/specs/`:
+
+- `SUPABASE_SETUP.md` - Setup e deploy de Edge Functions
+- `ADMIN_CUPONS_SPEC.md` - Especificação do sistema de cupons
+- `CUPONS_TESTING_CHECKLIST.md` - Checklist de testes
+- `GTM_IMPLEMENTATION_PLAN.md` - Implementação do Google Tag Manager
+- `VALIDATION_TEST.md` - Guia de validação e perfis de teste
+
+## 🧪 Desenvolvimento
+
+### Ambiente de Desenvolvimento
+
+O projeto inclui um banner de desenvolvimento (`DevBanner`) que aparece apenas em ambiente local, oferecendo:
+
+- Perfis de teste pré-configurados para validação rápida
+- Acesso rápido a funcionalidades de debug
+
+### Testes
+
+Para testar o fluxo completo:
+
+1. Acesse a landing page (`/`)
+2. Inicie o teste (`/comeco`)
+3. Responda as 60 questões (`/avaliacao/:id`)
+4. Preencha o formulário de dados
+5. Visualize o resultado parcial (`/resultado/:id`)
+6. Desbloqueie via pagamento PIX
+
+## 📝 Licença
+
+Projeto privado - QualCarreira
+
+## 📞 Suporte
+
+Para dúvidas técnicas: suporte@qualcarreira.com
