@@ -194,6 +194,11 @@ const ResultadoPage = () => {
             email: result.email,
             name: result.name,
             reuse_only: true,
+            // Importante: usar o mesmo cupom já aplicado para que o valor (amount)
+            // bata com o pagamento pendente criado com desconto (ex.: REMARKETING990).
+            // Isso evita o erro de "Existing pending amount X differs from current Y"
+            // e permite reaproveitar pagamentos com desconto.
+            coupon_code: couponCode || undefined,
           },
         });
 
@@ -227,7 +232,7 @@ const ResultadoPage = () => {
     }, 20000);
 
     return () => window.clearInterval(interval);
-  }, [result?.id, result?.email, result?.name, result?.is_unlocked, showPaymentModal, toast]);
+  }, [result?.id, result?.email, result?.name, result?.is_unlocked, showPaymentModal, toast, couponCode]);
 
   if (loadingState === "loading") {
     return (
