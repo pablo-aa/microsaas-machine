@@ -83,9 +83,7 @@ qual-carreira-seguir/
 │   ├── functions/        # Edge Functions
 │   └── migrations/       # Migrações do banco
 ├── public/               # Arquivos estáticos
-└── docs/                # Documentação
-    ├── specs/           # Especificações técnicas
-    └── archive/         # Documentos históricos
+└── docs/                 # Documentação
 ```
 
 ## 🗄️ Banco de Dados (Supabase)
@@ -128,13 +126,13 @@ npm run deploy:preview # Deploy de preview
 
 ## 📚 Documentação
 
-Documentação técnica está em `docs/specs/`:
+Documentação técnica está em `docs/`:
 
-- `SUPABASE_SETUP.md` - Setup e deploy de Edge Functions
-- `ADMIN_CUPONS_SPEC.md` - Especificação do sistema de cupons
-- `CUPONS_TESTING_CHECKLIST.md` - Checklist de testes
-- `GTM_IMPLEMENTATION_PLAN.md` - Implementação do Google Tag Manager
-- `VALIDATION_TEST.md` - Guia de validação e perfis de teste
+- `specs/SUPABASE_SETUP.md` - Setup e deploy de Edge Functions
+- `specs/ADMIN_CUPONS_SPEC.md` - Especificação do sistema de cupons
+- `specs/CUPONS_TESTING_CHECKLIST.md` - Checklist de testes
+- `GTM_STATUS.md` - Status atual do tracking via GTM + GA4
+- `specs/VALIDATION_TEST.md` - Guia de validação e perfis de teste
 
 ## 🧪 Desenvolvimento
 
