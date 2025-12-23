@@ -182,19 +182,6 @@ const getProductItem = () => {
   };
 };
 
-export const trackViewItem = (testId: string) => {
-  const price = getMercadoPagoConfig().price;
-  pushToDataLayer({
-    event: 'view_item',
-    ecommerce: {
-      currency: 'BRL',
-      value: price,
-      items: [getProductItem()],
-    },
-    user_properties: { test_id: testId },
-  });
-};
-
 export const trackBeginCheckout = (
   testId: string, 
   coupon?: string, 
@@ -248,30 +235,33 @@ export const trackPixCodeCopied = (testId: string, paymentId: string) => {
   });
 };
 
-export const trackPurchase = (
-  testId: string,
-  paymentId: string,
-  userEmail: string,
-  coupon?: string,
-  discountedPrice?: number
-) => {
-  const price = discountedPrice || getMercadoPagoConfig().price;
-  pushToDataLayer({
-    event: 'purchase',
-    ecommerce: {
-      currency: 'BRL',
-      value: price,
-      transaction_id: paymentId,
-      payment_type: 'pix',
-      ...(coupon ? { coupon } : {}),
-      items: [getProductItem()],
-    },
-    user_properties: {
-      test_id: testId,
-      user_email: userEmail,
-    },
-  });
-};
+// NOTE: purchase event is now tracked server-side via GA4 Measurement Protocol
+// in the Supabase Edge Function `send-whatsapp-on-payment`. Keeping this helper
+// commented for potential future frontend GTM integration.
+// export const trackPurchase = (
+//   testId: string,
+//   paymentId: string,
+//   userEmail: string,
+//   coupon?: string,
+//   discountedPrice?: number
+// ) => {
+//   const price = discountedPrice || getMercadoPagoConfig().price;
+//   pushToDataLayer({
+//     event: 'purchase',
+//     ecommerce: {
+//       currency: 'BRL',
+//       value: price,
+//       transaction_id: paymentId,
+//       payment_type: 'pix',
+//       ...(coupon ? { coupon } : {}),
+//       items: [getProductItem()],
+//     },
+//     user_properties: {
+//       test_id: testId,
+//       user_email: userEmail,
+//     },
+//   });
+// };
 
 export const trackPaymentError = (errorMessage: string, testId?: string) => {
   pushToDataLayer({
@@ -283,116 +273,5 @@ export const trackPaymentError = (errorMessage: string, testId?: string) => {
   });
 };
 
-// ==================== Results Events ====================
-
-export const trackPartialResultViewed = (testId: string) => {
-  pushToDataLayer({
-    event: 'result_partial_viewed',
-    eventCategory: 'Results',
-    eventAction: 'Partial View',
-    user_properties: { test_id: testId },
-  });
-};
-
-export const trackUnlockButtonClicked = (testId: string) => {
-  pushToDataLayer({
-    event: 'unlock_button_clicked',
-    eventCategory: 'Conversion',
-    eventAction: 'Click',
-    eventLabel: 'Unlock Results',
-    user_properties: { test_id: testId },
-  });
-};
-
-export const trackFullResultViewed = (testId: string, riasecProfile?: string) => {
-  pushToDataLayer({
-    event: 'result_full_viewed',
-    eventCategory: 'Results',
-    eventAction: 'Full View',
-    user_properties: {
-      test_id: testId,
-      riasec_profile: riasecProfile,
-    },
-  });
-};
-
-export const trackResultTabChanged = (tabName: string, testId: string) => {
-  pushToDataLayer({
-    event: 'result_tab_changed',
-    eventCategory: 'Results',
-    eventAction: 'Tab Changed',
-    eventLabel: tabName,
-    user_properties: { test_id: testId },
-  });
-};
-
-export const trackResultSectionExpanded = (sectionName: string, testId: string) => {
-  pushToDataLayer({
-    event: 'result_section_expanded',
-    eventCategory: 'Results',
-    eventAction: 'Section Expanded',
-    eventLabel: sectionName,
-    user_properties: { test_id: testId },
-  });
-};
-
-// ==================== Coupon Events ====================
-
-export const trackCouponApplied = (
-  code: string, 
-  discount: number, 
-  originalPrice: number, 
-  finalPrice: number
-) => {
-  pushToDataLayer({
-    event: 'coupon_applied',
-    eventCategory: 'Coupon',
-    eventAction: 'Applied',
-    eventLabel: code,
-    coupon_properties: {
-      coupon_code: code,
-      discount_percentage: discount,
-      original_price: originalPrice,
-      final_price: finalPrice,
-      discount_amount: originalPrice - finalPrice,
-    },
-  });
-};
-
-export const trackCouponInvalid = (code: string, reason: string) => {
-  pushToDataLayer({
-    event: 'coupon_invalid',
-    eventCategory: 'Coupon',
-    eventAction: 'Invalid',
-    eventLabel: code,
-    coupon_properties: {
-      coupon_code: code,
-      rejection_reason: reason,
-    },
-  });
-};
-
-export const trackFreeUnlock = (testId: string, couponCode: string) => {
-  pushToDataLayer({
-    event: 'free_unlock',
-    eventCategory: 'Conversion',
-    eventAction: 'Free Unlock',
-    eventLabel: couponCode,
-    ecommerce: {
-      currency: 'BRL',
-      value: 0.00,
-      coupon: couponCode,
-      items: [{
-        item_id: 'qualcarreira_full_analysis',
-        item_name: 'Análise Vocacional Completa',
-        price: 0.00,
-        quantity: 1,
-        item_category: 'Digital Product',
-      }],
-    },
-    user_properties: {
-      test_id: testId,
-      coupon_code: couponCode,
-    },
-  });
-};
+// ==================== Results & Coupon Events ====================
+// NOTE: legacy events kept in Git history for reference.
