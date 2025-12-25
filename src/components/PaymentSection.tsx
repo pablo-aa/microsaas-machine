@@ -12,11 +12,23 @@ interface PaymentSectionProps {
   testId: string;
   userEmail: string;
   userName: string;
+  variant?: string;
 }
 
-const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSectionProps) => {
+const getPriceByVariant = (variant?: string): number => {
+  switch (variant) {
+    case 'B':
+      return 9.90;
+    case 'C':
+      return 14.90;
+    default:
+      return 12.90;
+  }
+};
+
+const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: PaymentSectionProps) => {
   const { toast } = useToast();
-  const basePrice = getMercadoPagoConfig().price;
+  const basePrice = getPriceByVariant(variant);
   
   const [coupon, setCoupon] = useState<ValidatedCoupon | null>(null);
   const [isLoadingCoupon, setIsLoadingCoupon] = useState(true);
@@ -28,7 +40,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
       const savedCoupon = getCoupon();
       if (savedCoupon) {
         console.log('[PaymentSection] Validando cupom salvo:', savedCoupon);
-        const validatedCoupon = await validateAndSaveCoupon(savedCoupon);
+        const validatedCoupon = await validateAndSaveCoupon(savedCoupon, variant);
         if (validatedCoupon.valid) {
           setCoupon(validatedCoupon);
         }
@@ -37,7 +49,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
     };
     
     loadCoupon();
-  }, []);
+  }, [variant]);
 
   const handleFreeUnlock = async () => {
     if (!coupon || !coupon.code) return;
@@ -51,7 +63,8 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSect
       const { data, error } = await supabase.functions.invoke('unlock-free-result', {
         body: {
           test_id: testId,
-          coupon_code: coupon.code
+          coupon_code: coupon.code,
+          payment_variant: variant || 'A'
         }
       });
       

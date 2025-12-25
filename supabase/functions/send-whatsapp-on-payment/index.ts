@@ -61,8 +61,8 @@ serve(async (req)=>{
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, serviceKey);
-    // Fetch stored payment context (email, test_id, amount, coupon info)
-    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at, ga_client_id, ga_session_id, ga_session_number, coupon_code, original_amount').eq('payment_id', paymentId).maybeSingle();
+    // Fetch stored payment context (email, test_id, amount, coupon info, payment_variant)
+    const { data: paymentRow, error: paymentRowError } = await supabase.from('payments').select('test_id, user_email, amount, status, whatsapp_notified_at, ga_client_id, ga_session_id, ga_session_number, coupon_code, original_amount, payment_variant').eq('payment_id', paymentId).maybeSingle();
     if (paymentRowError) {
       console.warn('[send-whatsapp-on-payment] Error fetching payment row:', paymentRowError);
     }
@@ -282,6 +282,8 @@ serve(async (req)=>{
           ? (parseFloat(String(originalAmount)) - parseFloat(String(mpAmount))).toFixed(2)
           : undefined;
         
+        const paymentVariant = paymentRow?.payment_variant || 'A';
+        
         const ga4Payload = {
           client_id: gaClientId,
           timestamp_micros: Date.now() * 1000,
@@ -292,6 +294,7 @@ serve(async (req)=>{
               value: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
               currency: 'BRL',
               payment_type: paymentId.startsWith('FREE_') ? 'coupon' : 'pix',
+              payment_variant: paymentVariant,
               ...(gaSessionId ? { ga_session_id: gaSessionId } : {}),
               ...(gaSessionNumber ? { ga_session_number: gaSessionNumber } : {}),
               ...(couponCode ? { coupon: couponCode } : {}),

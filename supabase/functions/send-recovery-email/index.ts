@@ -8,6 +8,15 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
+
+const getPriceByVariant = (variant: string | null): number => {
+  switch (variant) {
+    case 'B': return 9.90;
+    case 'C': return 14.90;
+    default: return 12.90;
+  }
+};
+
 // Limites diários por tipo de email
 const DAILY_EMAIL_LIMIT_TYPE1 = 30; // Pagamentos pendentes (com cupom de desconto)
 const DAILY_EMAIL_LIMIT_TYPE2 = 30; // Formulários completos sem pagamento iniciado
@@ -279,8 +288,14 @@ serve(async (req)=>{
     // Processar sequencialmente com delay de 600ms entre emails (respeita 2/segundo)
     const resultsType1 = [];
     for (const payment of (pendingPayments || [])) {
-      const emailSubject = "Você travou seu resultado… e agora tem 23% OFF";
       try {
+        // Get variant and calculate prices
+        const paymentVariant = payment.payment_variant || 'A';
+        const originalPrice = getPriceByVariant(paymentVariant);
+        const discountPercentage = 23; // REMARKETING990
+        const discountedPrice = parseFloat((originalPrice * (1 - discountPercentage / 100)).toFixed(2));
+        
+        const emailSubject = "Você travou seu resultado… e agora tem 23% OFF";
         const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
               <p style="font-size: 16px; line-height: 1.6; color: #333;">Seu teste já está feito, a parte mais trabalhosa ficou para trás.</p>
@@ -290,9 +305,9 @@ serve(async (req)=>{
               <p style="font-size: 16px; line-height: 1.6; color: #333;">Liberamos um desconto exclusivo para quem parou na última etapa:</p>
               
               <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-                <p style="font-size: 18px; margin: 0; color: #6c757d; text-decoration: line-through;">R$ 12,90</p>
-                <p style="font-size: 32px; font-weight: bold; margin: 10px 0; color: #28a745;">R$ 9,90</p>
-                <p style="font-size: 14px; margin: 0; color: #28a745; font-weight: 600;">23% de desconto</p>
+                <p style="font-size: 18px; margin: 0; color: #6c757d; text-decoration: line-through;">R$ ${originalPrice.toFixed(2)}</p>
+                <p style="font-size: 32px; font-weight: bold; margin: 10px 0; color: #28a745;">R$ ${discountedPrice.toFixed(2)}</p>
+                <p style="font-size: 14px; margin: 0; color: #28a745; font-weight: 600;">${discountPercentage}% de desconto</p>
               </div>
               
               <p style="font-size: 16px; line-height: 1.6; color: #333;">Finalize seu acesso com o desconto ativo:</p>

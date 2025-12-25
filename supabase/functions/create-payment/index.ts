@@ -9,6 +9,15 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
+
+const getPriceByVariant = (variant: string | null): number => {
+  switch (variant) {
+    case 'B': return 9.90;
+    case 'C': return 14.90;
+    default: return parseFloat(Deno.env.get('BASE_PRICE') || '12.90');
+  }
+};
+
 serve(async (req)=>{
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -25,7 +34,8 @@ serve(async (req)=>{
       coupon_code,
       ga_client_id,
       ga_session_id,
-      ga_session_number
+      ga_session_number,
+      payment_variant
     } = await req.json();
     console.log('Creating payment for:', {
       test_id,
@@ -46,8 +56,9 @@ serve(async (req)=>{
       throw new Error('Payment service not configured. Please contact support.');
     }
     console.log('Access token found:', accessToken.substring(0, 10) + '...');
-    // Get base price from environment variable
-    const BASE_PRICE = parseFloat(Deno.env.get('BASE_PRICE') || '12.90');
+    // Get base price based on variant
+    const BASE_PRICE = getPriceByVariant(payment_variant);
+    console.log('[create-payment] Base price:', BASE_PRICE, 'for variant:', payment_variant);
     let transactionAmount = BASE_PRICE;
     let validatedCoupon = null;
     let originalAmount = null;
@@ -118,7 +129,8 @@ serve(async (req)=>{
           coupon_code: coupon.code,
           ga_client_id: ga_client_id ?? null,
           ga_session_id: ga_session_id ?? null,
-          ga_session_number: ga_session_number ?? null
+          ga_session_number: ga_session_number ?? null,
+          payment_variant: payment_variant ?? 'A'
         });
         
         if (paymentError) {
@@ -173,7 +185,10 @@ serve(async (req)=>{
       // Pending payment: reuse only if amount matches current price
       if (existingPayment.status === 'pending') {
         const existingAmount = Number(existingPayment.amount);
-        if (Number.isFinite(existingAmount) && existingAmount === transactionAmount) {
+        const existingVariant = existingPayment.payment_variant;
+        
+        // Only reuse if both price AND variant match
+        if (Number.isFinite(existingAmount) && existingAmount === transactionAmount && existingVariant === payment_variant) {
           try {
             console.log('Fetching existing payment details from MP:', existingPayment.payment_id);
             const mpGetResponse = await fetch(`https://api.mercadopago.com/v1/payments/${existingPayment.payment_id}`, {
@@ -239,13 +254,16 @@ serve(async (req)=>{
             console.log('Existing payment not reusable (status:', mpStatus, 'olderThan24h:', olderThan24h, '). Creating a new one.');
           }
 
-          // If we have GA identifiers now but record is missing, update it
-          if (ga_client_id || ga_session_id || typeof ga_session_number !== 'undefined') {
+          // If we have GA identifiers or payment_variant now but record is missing, update it
+          if (ga_client_id || ga_session_id || typeof ga_session_number !== 'undefined' || payment_variant) {
             const updatePayload: Record<string, unknown> = {};
             if (ga_client_id && !existingPayment.ga_client_id) updatePayload.ga_client_id = ga_client_id;
             if (ga_session_id && !existingPayment.ga_session_id) updatePayload.ga_session_id = ga_session_id;
             if (typeof ga_session_number !== 'undefined' && existingPayment.ga_session_number == null) {
               updatePayload.ga_session_number = ga_session_number;
+            }
+            if (payment_variant && !existingPayment.payment_variant) {
+              updatePayload.payment_variant = payment_variant;
             }
             if (Object.keys(updatePayload).length > 0) {
               await supabase.from('payments').update(updatePayload).eq('id', existingPayment.id);
@@ -267,11 +285,14 @@ serve(async (req)=>{
           // continua para criar novo
           }
         } else {
-          console.log('Skipping reuse. Existing pending amount', existingAmount, 'differs from current', transactionAmount);
+          console.log('Skipping reuse. Price or variant changed:', {
+            existing: { amount: existingAmount, variant: existingVariant },
+            current: { amount: transactionAmount, variant: payment_variant }
+          });
           // If reuse_only, do not create new here; let caller handle fallback
           if (reuse_only) {
             return new Response(JSON.stringify({
-              error: 'Existing pending payment amount mismatch'
+              error: 'Price or variant changed, cannot reuse payment'
             }), {
               headers: {
                 ...corsHeaders,
@@ -355,7 +376,8 @@ serve(async (req)=>{
       payment_method: 'pix',
       ga_client_id: ga_client_id ?? null,
       ga_session_id: ga_session_id ?? null,
-      ga_session_number: ga_session_number ?? null
+      ga_session_number: ga_session_number ?? null,
+      payment_variant: payment_variant ?? 'A'
     };
     const { error: dbError } = await supabase.from('payments').insert(insertPayload);
     if (dbError) {

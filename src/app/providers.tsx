@@ -8,6 +8,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { DevBanner } from "@/components/DevBanner";
 import ScrollToTop from "@/components/ScrollToTop";
 import { initializeGTM } from "@/lib/gtm";
+import { getVisitorId } from "@/lib/identify";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,9 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Initialize Google Tag Manager
     initializeGTM();
+
+    // Bootstrap de visitorId anônimo por navegador
+    getVisitorId();
   }, []);
 
   return (

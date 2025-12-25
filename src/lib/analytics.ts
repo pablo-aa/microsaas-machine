@@ -183,13 +183,15 @@ const getProductItem = () => {
 };
 
 export const trackBeginCheckout = (
-  testId: string, 
-  coupon?: string, 
-  discountedPrice?: number
+  testId: string,
+  coupon?: string,
+  discountedPrice?: number,
+  variant?: string,
 ) => {
   const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'begin_checkout',
+    payment_variant: variant || 'A',
     ecommerce: {
       currency: 'BRL',
       value: price,
@@ -201,14 +203,16 @@ export const trackBeginCheckout = (
 };
 
 export const trackAddPaymentInfo = (
-  testId: string, 
+  testId: string,
   paymentId: string,
   coupon?: string,
-  discountedPrice?: number
+  discountedPrice?: number,
+  variant?: string,
 ) => {
   const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'add_payment_info',
+    payment_variant: variant || 'A',
     ecommerce: {
       currency: 'BRL',
       value: price,
@@ -223,11 +227,16 @@ export const trackAddPaymentInfo = (
   });
 };
 
-export const trackPixCodeCopied = (testId: string, paymentId: string) => {
+export const trackPixCodeCopied = (
+  testId: string,
+  paymentId: string,
+  variant?: string,
+) => {
   pushToDataLayer({
     event: 'pix_code_copied',
     eventCategory: 'Payment',
     eventAction: 'PIX Code Copied',
+    payment_variant: variant || 'A',
     user_properties: {
       test_id: testId,
       payment_id: paymentId,
@@ -263,12 +272,17 @@ export const trackPixCodeCopied = (testId: string, paymentId: string) => {
 //   });
 // };
 
-export const trackPaymentError = (errorMessage: string, testId?: string) => {
+export const trackPaymentError = (
+  errorMessage: string,
+  testId?: string,
+  variant?: string,
+) => {
   pushToDataLayer({
     event: 'payment_error',
     eventCategory: 'Payment',
     eventAction: 'Error',
     eventLabel: errorMessage,
+    payment_variant: variant || 'A',
     user_properties: testId ? { test_id: testId } : undefined,
   });
 };

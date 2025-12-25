@@ -36,7 +36,11 @@ interface ResultData {
 
 type LoadingState = "loading" | "success" | "error" | "expired" | "not-found";
 
-const ResultadoPage = () => {
+interface ResultadoPageProps {
+  paymentVariant?: string;
+}
+
+const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPageProps) => {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { toast } = useToast();
@@ -53,6 +57,10 @@ const ResultadoPage = () => {
   const paymentRef = useRef<HTMLDivElement>(null);
 
 
+  const paymentVariant = propPaymentVariant || "A";
+
+  console.log("[ResultadoPage] paymentVariant =", paymentVariant);
+  
   useEffect(() => {
     const checkBackendCoupon = async () => {
       if (!id) return;
@@ -199,6 +207,7 @@ const ResultadoPage = () => {
             // Isso evita o erro de "Existing pending amount X differs from current Y"
             // e permite reaproveitar pagamentos com desconto.
             coupon_code: couponCode || undefined,
+            payment_variant: paymentVariant,
           },
         });
 
@@ -232,7 +241,7 @@ const ResultadoPage = () => {
     }, 20000);
 
     return () => window.clearInterval(interval);
-  }, [result?.id, result?.email, result?.name, result?.is_unlocked, showPaymentModal, toast, couponCode]);
+  }, [result?.id, result?.email, result?.name, result?.is_unlocked, showPaymentModal, toast, couponCode, paymentVariant]);
 
   if (loadingState === "loading") {
     return (
@@ -458,6 +467,7 @@ const ResultadoPage = () => {
                 testId={id || ""}
                 userEmail={result.email}
                 userName={result.name}
+                variant={paymentVariant}
               />
             </div>
           )}
@@ -475,6 +485,7 @@ const ResultadoPage = () => {
         userEmail={result.email}
         userName={result.name}
         couponCode={couponCode}
+        variant={paymentVariant}
       />
     </div>
   );

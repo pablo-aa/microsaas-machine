@@ -27,16 +27,18 @@ interface PaymentModalProps {
   userEmail: string;
   userName: string;
   couponCode?: string | null;
+  variant?: string;
 }
 
-export const PaymentModal = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  testId, 
-  userEmail, 
+export const PaymentModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  testId,
+  userEmail,
   userName,
-  couponCode
+  couponCode,
+  variant,
 }: PaymentModalProps) => {
   const [loading, setLoading] = useState(true);
   const [qrCode, setQrCode] = useState('');
@@ -45,10 +47,19 @@ export const PaymentModal = ({
   const [paymentId, setPaymentId] = useState('');
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected' | 'error'>('pending');
   const [error, setError] = useState('');
-  const [finalPrice, setFinalPrice] = useState<number>(getMercadoPagoConfig().price);
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const { toast } = useToast();
-  const basePrice = getMercadoPagoConfig().price;
+  
+  const getPriceByVariant = (v?: string): number => {
+    switch (v) {
+      case 'B': return 9.90;
+      case 'C': return 14.90;
+      default: return 12.90;
+    }
+  };
+  
+  const basePrice = getPriceByVariant(variant);
+  const [finalPrice, setFinalPrice] = useState<number>(basePrice);
   
   // Validate coupon and calculate final price (revalidate when coupon changes)
   useEffect(() => {
@@ -82,12 +93,12 @@ export const PaymentModal = ({
     };
     
     validateCouponPrice();
-  }, [couponCode, basePrice]); // Revalidate when couponCode changes
+  }, [couponCode, basePrice, variant]); // Revalidate when couponCode or variant changes
 
   // Track begin_checkout when modal opens
   useEffect(() => {
     if (isOpen && !paymentId) {
-      trackBeginCheckout(testId, couponCode || undefined, finalPrice);
+      trackBeginCheckout(testId, couponCode || undefined, finalPrice, variant);
       // Primeiro tenta reaproveitar pagamento existente
       probeExistingPaymentOrCreate();
     }
@@ -173,6 +184,7 @@ export const PaymentModal = ({
           isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
           source: source,
           campaign: campaign,
+          payment_variant: variant || 'A',
           ...gaFields
         },
       });
@@ -231,6 +243,7 @@ export const PaymentModal = ({
           isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
           source: source,
           campaign: campaign,
+          payment_variant: variant || 'A',
           ...gaFields
         },
       });
@@ -275,14 +288,20 @@ export const PaymentModal = ({
       setLoading(false);
       
       // Track payment info added (QR Code generated)
-      trackAddPaymentInfo(testId, data.payment_id, couponCode || undefined, finalPrice);
+      trackAddPaymentInfo(
+        testId,
+        data.payment_id,
+        couponCode || undefined,
+        finalPrice,
+        variant,
+      );
     } catch (err: any) {
       console.error('Error in createPayment:', err);
       const errorMessage = err.message || 'Erro ao criar pagamento. Tente novamente.';
       setError(errorMessage);
       setStatus('error');
       setLoading(false);
-      trackPaymentError(errorMessage, testId);
+      trackPaymentError(errorMessage, testId, variant);
     }
   };
 
@@ -317,7 +336,7 @@ export const PaymentModal = ({
     } else if (data?.status === 'rejected') {
       setStatus('rejected');
       setError('Pagamento rejeitado. Tente novamente.');
-      trackPaymentError('Pagamento rejeitado', testId);
+      trackPaymentError('Pagamento rejeitado', testId, variant);
     }
     // Opcional: console.log('Detalhe do status:', data?.status_detail);
 
@@ -374,11 +393,15 @@ export const PaymentModal = ({
 
     } catch (err: any) {
       console.error('Error in unlockResult:', err);
+      const errorMessage =
+        err?.message ||
+        "Pagamento aprovado, mas houve erro ao desbloquear. Contate o suporte.";
       toast({
         title: "Erro ao desbloquear",
-        description: "Pagamento aprovado, mas houve erro ao desbloquear. Contate o suporte.",
+        description: errorMessage,
         variant: "destructive"
       });
+      trackPaymentError(errorMessage, testId, variant);
     }
   };
 

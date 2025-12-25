@@ -7,6 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
+const getPriceByVariant = (variant: string | null): number => {
+  switch (variant) {
+    case 'B': return 9.90;
+    case 'C': return 14.90;
+    default: return parseFloat(Deno.env.get('BASE_PRICE') || '12.90');
+  }
+};
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -14,9 +22,9 @@ serve(async (req) => {
   }
 
   try {
-    const { code } = await req.json();
+    const { code, payment_variant } = await req.json();
 
-    console.log('[validate-coupon] Validating coupon:', code);
+    console.log('[validate-coupon] Validating coupon:', code, 'variant:', payment_variant);
 
     if (!code || typeof code !== 'string') {
       return new Response(JSON.stringify({
@@ -28,9 +36,9 @@ serve(async (req) => {
       });
     }
 
-    // Get base price from environment variable
-    const BASE_PRICE = parseFloat(Deno.env.get('BASE_PRICE') || '12.90');
-    console.log('[validate-coupon] Base price:', BASE_PRICE);
+    // Get base price based on variant
+    const BASE_PRICE = getPriceByVariant(payment_variant);
+    console.log('[validate-coupon] Base price:', BASE_PRICE, 'for variant:', payment_variant);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -129,7 +137,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[validate-coupon] Error:', error);
-    const BASE_PRICE = parseFloat(Deno.env.get('BASE_PRICE') || '12.90');
+    const BASE_PRICE = getPriceByVariant(null);
     return new Response(JSON.stringify({
       valid: false,
       reason: 'error',
