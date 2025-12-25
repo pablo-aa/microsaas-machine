@@ -30,7 +30,6 @@ serve(async (req)=>{
       test_id,
       email,
       name,
-      reuse_only,
       coupon_code,
       ga_client_id,
       ga_session_id,
@@ -41,11 +40,11 @@ serve(async (req)=>{
       test_id,
       email,
       name,
-      reuse_only,
       coupon_code,
       ga_client_id,
       ga_session_id,
-      ga_session_number
+      ga_session_number,
+      payment_variant
     });
     if (!test_id || !email) {
       throw new Error('test_id and email are required');
@@ -200,18 +199,8 @@ serve(async (req)=>{
             console.log('MP GET status:', mpGetResponse.status);
             if (!mpGetResponse.ok) {
               console.error('Mercado Pago GET error:', JSON.stringify(mpGetData, null, 2));
-              // Fall through to creating a new payment if reuse_only is not enforced
-              if (reuse_only) {
-                return new Response(JSON.stringify({
-                  error: 'Failed to fetch existing payment details'
-                }), {
-                  headers: {
-                    ...corsHeaders,
-                    'Content-Type': 'application/json'
-                  },
-                  status: 500
-                });
-              }
+              // Fall through to creating a new payment
+              console.log('Cannot fetch existing payment from MP, will create new one');
             // continua para criar novo
             } else {
               const mpStatus = String(mpGetData.status || '').toLowerCase();
@@ -271,17 +260,7 @@ serve(async (req)=>{
           }
           } catch (e) {
             console.error('Error fetching existing payment from MP:', e);
-            if (reuse_only) {
-              return new Response(JSON.stringify({
-                error: 'Error fetching existing payment from MP'
-              }), {
-                headers: {
-                  ...corsHeaders,
-                  'Content-Type': 'application/json'
-                },
-                status: 500
-              });
-            }
+            console.log('Will create new payment due to error');
           // continua para criar novo
           }
         } else {
@@ -289,32 +268,10 @@ serve(async (req)=>{
             existing: { amount: existingAmount, variant: existingVariant },
             current: { amount: transactionAmount, variant: payment_variant }
           });
-          // If reuse_only, do not create new here; let caller handle fallback
-          if (reuse_only) {
-            return new Response(JSON.stringify({
-              error: 'Price or variant changed, cannot reuse payment'
-            }), {
-              headers: {
-                ...corsHeaders,
-                'Content-Type': 'application/json'
-              },
-              status: 404
-            });
-          }
-        // Otherwise, fall through to creation below
+          console.log('Will create new payment with updated price/variant');
+        // Fall through to creation below
         }
       }
-    } else if (reuse_only) {
-      // No existing payment and reuse_only requested: do not create a new one
-      return new Response(JSON.stringify({
-        error: 'No existing payment found'
-      }), {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        },
-        status: 404
-      });
     }
     // Criar pagamento PIX no Mercado Pago
     const paymentPayload = {

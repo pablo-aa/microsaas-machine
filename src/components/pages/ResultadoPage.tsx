@@ -196,27 +196,14 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
 
     const interval = window.setInterval(async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("create-payment", {
-          body: {
-            test_id: result.id,
-            email: result.email,
-            name: result.name,
-            reuse_only: true,
-            // Importante: usar o mesmo cupom já aplicado para que o valor (amount)
-            // bata com o pagamento pendente criado com desconto (ex.: REMARKETING990).
-            // Isso evita o erro de "Existing pending amount X differs from current Y"
-            // e permite reaproveitar pagamentos com desconto.
-            coupon_code: couponCode || undefined,
-            payment_variant: paymentVariant,
-          },
+        // Check if payment was approved (silently, never errors)
+        const { data } = await supabase.functions.invoke("check-unlock-status", {
+          body: { test_id: result.id },
         });
 
-        if (error) {
-          console.warn("[BG] Reuse check error:", error.message);
-          return;
-        }
-
-        if (data?.status === "approved" && data?.payment_id) {
+        if (data?.is_approved && data?.payment_id) {
+          console.log("[BG] Payment approved, unlocking result");
+          
           const { data: unlockData, error: unlockError } = await supabase.functions.invoke(
             "unlock-result",
             {
@@ -241,7 +228,7 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
     }, 20000);
 
     return () => window.clearInterval(interval);
-  }, [result?.id, result?.email, result?.name, result?.is_unlocked, showPaymentModal, toast, couponCode, paymentVariant]);
+  }, [result?.id, result?.is_unlocked, showPaymentModal, toast]);
 
   if (loadingState === "loading") {
     return (

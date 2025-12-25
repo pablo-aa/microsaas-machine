@@ -66,9 +66,12 @@ export const PaymentModal = ({
     const validateCouponPrice = async () => {
       if (couponCode) {
         try {
-          console.log('[PaymentModal] Validating coupon:', couponCode);
+          console.log('[PaymentModal] Validating coupon:', couponCode, 'variant:', variant);
           const { data } = await supabase.functions.invoke('validate-coupon', {
-            body: { code: couponCode }
+            body: { 
+              code: couponCode,
+              payment_variant: variant // CRÍTICO: Passar variant para calcular preço correto
+            }
           });
           
           if (data?.valid) {

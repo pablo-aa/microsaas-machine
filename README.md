@@ -106,7 +106,9 @@ As Edge Functions do Supabase estão em `supabase/functions/`:
 - `unlock-result` - Desbloqueia resultado após pagamento
 - `create-payment` - Cria pagamento via Mercado Pago
 - `check-payment-status` - Verifica status do pagamento
+- `check-unlock-status` - Polling silencioso para detectar pagamento aprovado
 - `validate-coupon` - Valida cupons de desconto
+- `unlock-free-result` - Desbloqueia com cupom 100%
 - E outras...
 
 ## 🚢 Deploy
