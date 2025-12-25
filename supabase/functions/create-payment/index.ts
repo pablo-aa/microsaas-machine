@@ -49,6 +49,54 @@ serve(async (req)=>{
     if (!test_id || !email) {
       throw new Error('test_id and email are required');
     }
+
+    // Initialize Supabase client (needed for blacklist check)
+    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+
+    // 🚨 EMERGENCY RATE LIMITING: Blacklist de emails em loop
+    const BLACKLISTED_EMAILS = [
+      'deborhasuellen@gmail.com',
+      // Adicionar outros emails problemáticos aqui se necessário
+    ];
+
+    const emailLower = email.toLowerCase().trim();
+    if (BLACKLISTED_EMAILS.includes(emailLower)) {
+      console.warn('[RATE LIMIT] ⚠️ Blacklisted email attempted payment:', emailLower, 'test_id:', test_id);
+      
+      // Retornar último payment pending/approved existente
+      const { data: lastPayment, error: lastPaymentError } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('user_email', email)
+        .in('status', ['pending', 'approved'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (lastPayment) {
+        console.log('[RATE LIMIT] ✅ Returning existing payment:', lastPayment.payment_id, 'status:', lastPayment.status);
+        return new Response(JSON.stringify({
+          payment_id: lastPayment.payment_id,
+          qr_code: lastPayment.qr_code || null,
+          qr_code_base64: lastPayment.qr_code_base64 || null,
+          ticket_url: lastPayment.ticket_url || null,
+          status: lastPayment.status
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+      
+      // Se não há payment, retornar erro
+      console.error('[RATE LIMIT] ❌ No existing payment found for blacklisted email');
+      return new Response(JSON.stringify({
+        error: 'Limite de requisições excedido. Aguarde alguns minutos e recarregue a página.'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 429 // Too Many Requests
+      });
+    }
+
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
     if (!accessToken) {
       console.error('MERCADOPAGO_ACCESS_TOKEN is not configured in environment variables');
@@ -61,8 +109,6 @@ serve(async (req)=>{
     let transactionAmount = BASE_PRICE;
     let validatedCoupon = null;
     let originalAmount = null;
-    // Initialize Supabase client (used for reuse logic and saving records)
-    const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
     
     // Validate and apply coupon if provided
     if (coupon_code) {

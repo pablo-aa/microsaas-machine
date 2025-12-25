@@ -13,12 +13,6 @@ import {
 } from '@/lib/analytics';
 import { getGaIdentifiers } from '@/lib/gaCookies';
 
-// Get Supabase URL from environment (kept for potential direct calls if needed)
-const getSupabaseUrl = () => {
-  // ⚠️ FORÇANDO PROD MESMO EM LOCALHOST PARA DEBUG
-  return 'https://iwovfvrmjaonzqlaavmi.supabase.co'; // Sempre prod
-};
-
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -98,33 +92,14 @@ export const PaymentModal = ({
     validateCouponPrice();
   }, [couponCode, basePrice, variant]); // Revalidate when couponCode or variant changes
 
-  // Track begin_checkout when modal opens
+  // Track begin_checkout when modal opens and create/reuse payment
   useEffect(() => {
     if (isOpen && !paymentId) {
       trackBeginCheckout(testId, couponCode || undefined, finalPrice, variant);
-      // Primeiro tenta reaproveitar pagamento existente
       probeExistingPaymentOrCreate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-  
-  // Reset payment when coupon changes (force new payment creation)
-  useEffect(() => {
-    if (couponCode && paymentId) {
-      console.log('[PaymentModal] Coupon changed, resetting payment');
-      setPaymentId('');
-      setQrCode('');
-      setQrCodeBase64('');
-      setStatus('pending');
-      if (isOpen) {
-        // Recreate payment with new coupon
-        setTimeout(() => {
-          probeExistingPaymentOrCreate();
-        }, 100);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [couponCode]);
+  }, [isOpen, paymentId]); // ← Depende de isOpen e paymentId (evita chamadas duplicadas)
 
   // Polling de status
   useEffect(() => {
@@ -176,15 +151,14 @@ export const PaymentModal = ({
       const { source, campaign } = getURLParams();
       const gaFields = getGaFields();
 
-      // Tenta localizar pagamento existente (pending/approved)
+      // Tenta criar/reusar pagamento (backend decide automaticamente)
       const { data: reuseData, error: reuseError } = await supabase.functions.invoke('create-payment', {
         body: {
           test_id: testId,
           email: userEmail,
           name: userName,
           coupon_code: couponCode || undefined,
-          reuse_only: true,
-          isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
+          isProd: true,
           source: source,
           campaign: campaign,
           payment_variant: variant || 'A',
@@ -193,7 +167,7 @@ export const PaymentModal = ({
       });
 
       if (!reuseError && reuseData && reuseData.payment_id) {
-        console.log('Using existing payment:', reuseData);
+        console.log('[PaymentModal] Backend returned payment:', reuseData.payment_id, 'status:', reuseData.status);
         setPaymentId(reuseData.payment_id);
         setQrCode(reuseData.qr_code || '');
         setQrCodeBase64(reuseData.qr_code_base64 || '');
@@ -203,108 +177,36 @@ export const PaymentModal = ({
 
         // Se já aprovado, desbloqueia imediatamente
         if (reuseData.status === 'approved') {
-          // Conversion event is now handled by backend webhook (send-whatsapp-on-payment)
           toast({
-            title: 'Pagamento aprovado! ',
+            title: 'Pagamento aprovado!',
             description: 'Desbloqueando seu resultado...',
           });
           await unlockResult();
           return;
         }
 
-        // Caso contrário, segue com polling normal
-        return;
+        // Track add_payment_info para pagamento criado/reusado
+        trackAddPaymentInfo(testId, reuseData.payment_id, couponCode || undefined, finalPrice, variant);
+        return; // ← IMPORTANTE: Não criar novo payment
       }
 
-      // Se não encontrou pagamento existente, cria um novo
-      await createPayment();
-    } catch (err: any) {
-      console.error('Error probing existing payment:', err);
-      // Fallback: tentar criar um novo pagamento
-      await createPayment();
-    }
-  };
-
-  const createPayment = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      console.log('Creating payment for test:', testId);
-      
-      // Obter parâmetros de rastreamento da URL
-      const { source, campaign } = getURLParams();
-      const gaFields = getGaFields();
-
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          test_id: testId,
-          email: userEmail,
-          name: userName,
-          coupon_code: couponCode || undefined,
-          // Explicit environment flag for accurate pricing on Edge Functions
-          isProd: true, // ⚠️ FORÇANDO PROD PARA DEBUG
-          source: source,
-          campaign: campaign,
-          payment_variant: variant || 'A',
-          ...gaFields
-        },
-      });
-
-      if (error) {
-        console.error('Error creating payment:', error);
-        throw new Error(error.message || 'Erro ao criar pagamento');
-      }
-
-      if (data.error) {
-        console.error('Payment creation error:', data.error);
-        throw new Error(data.error);
-      }
-
-      console.log('Payment created successfully:', data);
-
-      setPaymentId(data.payment_id);
-      
-      // Handle FREE coupon (100% discount)
-      if (data.status === 'free') {
-        console.log('[PaymentModal] FREE payment detected');
-        setStatus('approved');
+      // Se houve erro, logar mas NÃO criar novo (evitar loop)
+      if (reuseError) {
+        console.error('[PaymentModal] Error from create-payment:', reuseError);
+        setError('Erro ao criar pagamento. Tente novamente.');
         setLoading(false);
-        
-        toast({
-          title: "✅ Acesso liberado gratuitamente!",
-          description: "Desbloqueando seu resultado...",
-        });
-        
-        // Unlock and refresh
-        setTimeout(async () => {
-          await unlockResult(true); // Skip payment check for FREE
-        }, 500);
-        
-        return;
+        return; // ← IMPORTANTE: Não tentar criar de novo
       }
-      
-      setQrCode(data.qr_code);
-      setQrCodeBase64(data.qr_code_base64);
-      setTicketUrl(data.ticket_url);
-      setStatus(data.status || 'pending');
+
+      // Se chegou aqui, não há payment_id (improvável, mas possível)
+      console.warn('[PaymentModal] create-payment succeeded but no payment_id returned');
+      setError('Erro ao processar pagamento.');
       setLoading(false);
-      
-      // Track payment info added (QR Code generated)
-      trackAddPaymentInfo(
-        testId,
-        data.payment_id,
-        couponCode || undefined,
-        finalPrice,
-        variant,
-      );
     } catch (err: any) {
-      console.error('Error in createPayment:', err);
-      const errorMessage = err.message || 'Erro ao criar pagamento. Tente novamente.';
-      setError(errorMessage);
-      setStatus('error');
+      console.error('[PaymentModal] Unexpected error in probeExistingPaymentOrCreate:', err);
+      setError(err.message || 'Erro ao criar pagamento.');
       setLoading(false);
-      trackPaymentError(errorMessage, testId, variant);
+      trackPaymentError(err.message, testId, variant);
     }
   };
 
@@ -471,7 +373,7 @@ export const PaymentModal = ({
                 <X className="h-6 w-6 text-destructive" />
               </div>
               <p className="text-sm text-destructive">{error}</p>
-              <Button onClick={createPayment} variant="outline" size="sm">
+              <Button onClick={probeExistingPaymentOrCreate} variant="outline" size="sm">
                 Tentar Novamente
               </Button>
             </div>
