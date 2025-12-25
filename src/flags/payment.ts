@@ -17,22 +17,6 @@ export const identify = dedupe(async () => {
     (attributes as any).id = visitorId;
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/94ad3856-20f9-4b0b-ae9e-8cc5d17e867e',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      sessionId:'debug-session',
-      runId:'pre-fix',
-      hypothesisId:'H1',
-      location:'src/flags/payment.ts:identify',
-      message:'identify resolved attributes',
-      data:{ hasVisitorId: !!visitorId },
-      timestamp:Date.now()
-    })
-  }).catch(()=>{});
-  // #endregion agent log
-
   return attributes;
 }) satisfies Identify<Attributes>;
 

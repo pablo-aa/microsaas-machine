@@ -1,6 +1,20 @@
 import { pushToDataLayer } from './gtm';
 import { getMercadoPagoConfig } from '@/config/mercadopago';
 
+// ==================== Experiment Events ====================
+
+/**
+ * Track page view como proxy de exposure ao experimento
+ * Envia payment_variant em TODOS os eventos para permitir segmentação no GrowthBook
+ */
+export const trackPageView = (pagePath: string, variant?: string) => {
+  pushToDataLayer({
+    event: 'page_view',
+    page_path: pagePath,
+    ...(variant && { payment_variant: variant }),
+  });
+};
+
 // ==================== Landing Page Events ====================
 
 export const trackCTAClick = (location: 'hero' | 'header' | 'como_funciona', action: 'start_test' | 'learn_more') => {

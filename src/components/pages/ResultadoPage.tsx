@@ -18,6 +18,7 @@ import SupportCard from "@/components/SupportCard";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
+import { trackPageView } from "@/lib/analytics";
 
 interface ResultData {
   id: string;
@@ -58,8 +59,11 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
 
 
   const paymentVariant = propPaymentVariant || "A";
-
-  console.log("[ResultadoPage] paymentVariant =", paymentVariant);
+  
+  // Track page view com variant para análise de exposição
+  useEffect(() => {
+    trackPageView(`/resultado/${id}`, paymentVariant);
+  }, [id, paymentVariant]);
   
   useEffect(() => {
     const checkBackendCoupon = async () => {
