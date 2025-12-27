@@ -18,7 +18,7 @@ import SupportCard from "@/components/SupportCard";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
-import { trackPageView } from "@/lib/analytics";
+import { trackPageView, trackExperimentViewed } from "@/lib/analytics";
 
 interface ResultData {
   id: string;
@@ -60,8 +60,23 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
 
   const paymentVariant = propPaymentVariant || "A";
   
-  // Track page view com variant para análise de exposição
+  // Track experiment exposure (para calcular taxa de conversão real)
   useEffect(() => {
+    // Mapear variant para variation_id (A=0, B=1, C=2)
+    const variantToVariationId: Record<string, number> = {
+      'A': 0,
+      'B': 1,
+      'C': 2,
+    };
+    
+    const variationId = variantToVariationId[paymentVariant] ?? 0;
+    
+    // Enviar evento de exposição para o GrowthBook via GA4 (async)
+    trackExperimentViewed('qc-pricing-test', variationId, paymentVariant).catch((err) => {
+      console.error('[ResultadoPage] Error tracking experiment:', err);
+    });
+    
+    // Também track page view com variant
     trackPageView(`/resultado/${id}`, paymentVariant);
   }, [id, paymentVariant]);
   
@@ -198,7 +213,8 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
   useEffect(() => {
     if (!result || result.is_unlocked || showPaymentModal) return;
 
-    const interval = window.setInterval(async () => {
+    // Função para checar unlock status
+    const checkUnlockStatus = async () => {
       try {
         // Check if payment was approved (silently, never errors)
         const { data } = await supabase.functions.invoke("check-unlock-status", {
@@ -229,7 +245,13 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
       } catch (e) {
         console.warn("[BG] Unexpected error during background check:", e);
       }
-    }, 20000);
+    };
+
+    // Check immediately on mount
+    checkUnlockStatus();
+
+    // Then check every 20 seconds
+    const interval = window.setInterval(checkUnlockStatus, 20000);
 
     return () => window.clearInterval(interval);
   }, [result?.id, result?.is_unlocked, showPaymentModal, toast]);

@@ -1,7 +1,57 @@
 import { pushToDataLayer } from './gtm';
 import { getMercadoPagoConfig } from '@/config/mercadopago';
+import { getGaIdentifiers } from './gaCookies';
+
+const MEASUREMENT_ID = 'G-77JYHQR2GR';
+const MEASUREMENT_API_SECRET = process.env.NEXT_PUBLIC_GA4_API_SECRET || '';
 
 // ==================== Experiment Events ====================
+
+/**
+ * Track experiment exposure (experiment_viewed)
+ * Envia DIRETAMENTE para o GA4 via Measurement Protocol (HTTP request)
+ * Bypassa GTM completamente.
+ */
+export const trackExperimentViewed = async (experimentId: string, variationId: number | string, variant?: string) => {
+  // Envia para GTM data layer (para compatibilidade com outras ferramentas)
+  pushToDataLayer({
+    event: 'experiment_viewed',
+    experiment_id: experimentId,
+    variation_id: String(variationId),
+    ...(variant && { payment_variant: variant }),
+  });
+  
+  // Enviar DIRETO para GA4 via Measurement Protocol
+  try {
+    const { ga_client_id, ga_session_id } = getGaIdentifiers();
+    
+    if (!ga_client_id) {
+      console.warn('[trackExperimentViewed] GA client_id not available');
+      return;
+    }
+    
+    const payload = {
+      client_id: ga_client_id,
+      events: [{
+        name: 'experiment_viewed',
+        params: {
+          experiment_id: experimentId,
+          variation_id: String(variationId),
+          ...(variant && { payment_variant: variant }),
+          ...(ga_session_id && { session_id: ga_session_id }),
+        }
+      }]
+    };
+    
+    // Enviar via Measurement Protocol
+    await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${MEASUREMENT_API_SECRET}`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error('[trackExperimentViewed] Error:', error);
+  }
+};
 
 /**
  * Track page view como proxy de exposure ao experimento
