@@ -46,9 +46,10 @@ export const PaymentModal = ({
   
   const getPriceByVariant = (v?: string): number => {
     switch (v) {
-      case 'B': return 9.90;
+      case 'A': return 9.90;
+      case 'B': return 12.90;
       case 'C': return 14.90;
-      default: return 12.90;
+      default: return 9.90; // Default para A (9.90)
     }
   };
   

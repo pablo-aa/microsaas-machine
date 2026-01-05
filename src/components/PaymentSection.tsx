@@ -17,12 +17,14 @@ interface PaymentSectionProps {
 
 const getPriceByVariant = (variant?: string): number => {
   switch (variant) {
-    case 'B':
+    case 'A':
       return 9.90;
+    case 'B':
+      return 12.90;
     case 'C':
       return 14.90;
     default:
-      return 12.90;
+      return 9.90; // Default para A (9.90)
   }
 };
 
