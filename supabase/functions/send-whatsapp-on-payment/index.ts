@@ -12,19 +12,20 @@ serve(async (req)=>{
     });
   }
   try {
-    const waapiToken = Deno.env.get('WAAPI_TOKEN');
-    if (!waapiToken) {
-      console.error('[send-whatsapp-on-payment] Missing WAAPI_TOKEN env');
-      return new Response(JSON.stringify({
-        error: 'WAAPI_TOKEN not configured'
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
-    }
+    // WhatsApp notification temporarily disabled
+    // const waapiToken = Deno.env.get('WAAPI_TOKEN');
+    // if (!waapiToken) {
+    //   console.error('[send-whatsapp-on-payment] Missing WAAPI_TOKEN env');
+    //   return new Response(JSON.stringify({
+    //     error: 'WAAPI_TOKEN not configured'
+    //   }), {
+    //     status: 500,
+    //     headers: {
+    //       ...corsHeaders,
+    //       'Content-Type': 'application/json'
+    //     }
+    //   });
+    // }
     // Try to extract payment id from querystring or body
     const url = new URL(req.url);
     const queryId = url.searchParams.get('id');
@@ -109,7 +110,7 @@ serve(async (req)=>{
     }
     // Only notify on approved payments
     if (mpStatus !== 'approved') {
-      console.log('[send-whatsapp-on-payment] Skipping WhatsApp notify: status is not approved', {
+      console.log('[send-whatsapp-on-payment] Skipping notification: status is not approved', {
         status: mpStatus
       });
       return new Response(JSON.stringify({
@@ -180,7 +181,7 @@ serve(async (req)=>{
     }
     
     // This request won the race condition - continue with processing
-    console.log('[send-whatsapp-on-payment] Successfully marked as processing, continuing with WhatsApp send');
+    console.log('[send-whatsapp-on-payment] Successfully marked as processing, continuing with notification send');
     
     // Fetch user info from test_results (name, email) - only now that we know we'll send
     let userName;
@@ -340,62 +341,77 @@ serve(async (req)=>{
       }
     }
     
-    // Compose WhatsApp message (prefer DB values and requested format)
+    // WhatsApp notification temporarily disabled
+    // // Compose WhatsApp message (prefer DB values and requested format)
+    // const amountStr = typeof mpAmount === 'number' ? mpAmount.toFixed(2) : String(mpAmount ?? '');
+    // const emailToUse = dbEmail ?? paymentRow?.user_email ?? mpEmail ?? '';
+    // const couponCode = paymentRow?.coupon_code;
+    // const title = '*Novo Pagante 🤑*';
+    // const message = `${title}\n\n` + 
+    //   `ID: ${paymentId}\n` + 
+    //   'Link do teste:\n' + 
+    //   `qualcarreira.com/resultado/${paymentRow?.test_id ?? ''}\n` + 
+    //   `Nome: ${userName ?? ''}\n` + 
+    //   `Email: ${emailToUse}\n` + 
+    //   (couponCode ? `Cupom: ${couponCode}\n` : '') +
+    //   `\nValor: R$ *${amountStr}*`;
+    // // Resolve chatId: prefer env WAAPI_CHAT_ID; fallback to sample group id provided
+    // const chatId = Deno.env.get('WAAPI_CHAT_ID') || '120363421610156383@g.us';
+    // // Send message via WAAPI
+    // const waapiResp = await fetch('https://waapi.app/api/v1/instances/60123/client/action/send-message', {
+    //   method: 'POST',
+    //   headers: {
+    //     'accept': 'application/json',
+    //     'authorization': `Bearer ${waapiToken}`,
+    //     'content-type': 'application/json'
+    //   },
+    //   body: JSON.stringify({
+    //     chatId,
+    //     message
+    //   })
+    // });
+    // const waapiData = await waapiResp.text();
+    // console.log('[send-whatsapp-on-payment] WAAPI response status:', waapiResp.status);
+    // if (!waapiResp.ok) {
+    //   console.error('[send-whatsapp-on-payment] WAAPI error:', waapiData);
+    //   // Note: whatsapp_notified_at is already marked, so we won't retry on next webhook
+    //   // This prevents spam of retry attempts
+    //   return new Response(JSON.stringify({
+    //     error: 'Failed to send WhatsApp message',
+    //     status: waapiResp.status,
+    //     body: waapiData
+    //   }), {
+    //     status: 500,
+    //     headers: {
+    //       ...corsHeaders,
+    //       'Content-Type': 'application/json'
+    //     }
+    //   });
+    // }
+    // // WhatsApp sent successfully
+    // // Note: whatsapp_notified_at was already marked before sending (atomic check above)
+    
+    // Prepare amount string for Pushover notification
     const amountStr = typeof mpAmount === 'number' ? mpAmount.toFixed(2) : String(mpAmount ?? '');
     const emailToUse = dbEmail ?? paymentRow?.user_email ?? mpEmail ?? '';
     const couponCode = paymentRow?.coupon_code;
-    const title = '*Novo Pagante 🤑*';
-    const message = `${title}\n\n` + 
-      `ID: ${paymentId}\n` + 
-      'Link do teste:\n' + 
-      `qualcarreira.com/resultado/${paymentRow?.test_id ?? ''}\n` + 
-      `Nome: ${userName ?? ''}\n` + 
-      `Email: ${emailToUse}\n` + 
-      (couponCode ? `Cupom: ${couponCode}\n` : '') +
-      `\nValor: R$ *${amountStr}*`;
-    // Resolve chatId: prefer env WAAPI_CHAT_ID; fallback to sample group id provided
-    const chatId = Deno.env.get('WAAPI_CHAT_ID') || '120363421610156383@g.us';
-    // Send message via WAAPI
-    const waapiResp = await fetch('https://waapi.app/api/v1/instances/60123/client/action/send-message', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'authorization': `Bearer ${waapiToken}`,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        chatId,
-        message
-      })
-    });
-    const waapiData = await waapiResp.text();
-    console.log('[send-whatsapp-on-payment] WAAPI response status:', waapiResp.status);
-    if (!waapiResp.ok) {
-      console.error('[send-whatsapp-on-payment] WAAPI error:', waapiData);
-      // Note: whatsapp_notified_at is already marked, so we won't retry on next webhook
-      // This prevents spam of retry attempts
-      return new Response(JSON.stringify({
-        error: 'Failed to send WhatsApp message',
-        status: waapiResp.status,
-        body: waapiData
-      }), {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      });
-    }
-    // WhatsApp sent successfully
-    // Note: whatsapp_notified_at was already marked before sending (atomic check above)
     
     // Send Pushover notification
     const pushoverUserKey = Deno.env.get('PUSHOVER_USER_KEY');
     const pushoverApiToken = Deno.env.get('PUSHOVER_API_TOKEN');
+    let pushoverSent = false;
     
     if (pushoverUserKey && pushoverApiToken) {
       try {
-        const pushoverMessage = `Valor: R$ ${amountStr}`;
+        // Build a more informative message
+        const pushoverMessage = [
+          `ID: ${paymentId}`,
+          `Valor: R$ ${amountStr}`,
+          userName ? `Nome: ${userName}` : '',
+          emailToUse ? `Email: ${emailToUse}` : '',
+          couponCode ? `Cupom: ${couponCode}` : '',
+          paymentRow?.test_id ? `Link: qualcarreira.com/resultado/${paymentRow.test_id}` : ''
+        ].filter(Boolean).join('\n');
         
         const pushoverPayload = {
           token: pushoverApiToken,
@@ -416,6 +432,7 @@ serve(async (req)=>{
         
         const pushoverResult = await pushoverResponse.json();
         if (pushoverResponse.ok) {
+          pushoverSent = true;
           console.log('[send-whatsapp-on-payment] Pushover notification sent successfully');
         } else {
           console.warn('[send-whatsapp-on-payment] Pushover notification failed:', pushoverResult);
@@ -432,8 +449,7 @@ serve(async (req)=>{
     
     return new Response(JSON.stringify({
       ok: true,
-      message_sent: true,
-      chatId,
+      notification_sent: pushoverSent,
       status: mpStatus
     }), {
       status: 200,
