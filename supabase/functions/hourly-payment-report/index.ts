@@ -6,6 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
+// Helper function to determine report scenario based on current hour in GMT-3
+function determineReportScenario(nowGMT3: Date): 'madrugada' | 'dia_completo_2h' | 'ultimas_2h_anterior' {
+  const hour = nowGMT3.getUTCHours();
+  
+  if (hour === 8) return 'madrugada';
+  if (hour === 0) return 'ultimas_2h_anterior';
+  if (hour >= 10 && hour <= 22 && hour % 2 === 0) return 'dia_completo_2h';
+  
+  // If not a valid schedule time, throw error
+  throw new Error(`Horário inválido para relatório: ${hour}h GMT-3. Horários válidos: 0h, 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h`);
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -33,104 +45,354 @@ serve(async (req) => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    
+    if (!supabaseUrl || !serviceKey) {
+      console.error('[hourly-payment-report] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+      return new Response(JSON.stringify({
+        error: 'Supabase configuration missing'
+      }), {
+        status: 500,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+    
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // CORREÇÃO: Trabalhar corretamente com GMT-3
-    // GMT-3 está 3 horas ATRÁS de UTC
-    // Se são 13h31 em GMT-3, em UTC são 16h31 (13h31 + 3h = 16h31)
+    // Work with GMT-3 timezone
+    // GMT-3 is 3 hours BEHIND UTC
+    // If it's 13h31 in GMT-3, in UTC it's 16h31 (13h31 + 3h = 16h31)
     
-    const now = new Date(); // UTC atual do servidor
-    const GMT3_OFFSET_MS = 3 * 60 * 60 * 1000; // 3 horas em milissegundos
+    const now = new Date(); // Current UTC time from server
+    const GMT3_OFFSET_MS = 3 * 60 * 60 * 1000; // 3 hours in milliseconds
     
-    // Para obter a hora atual em GMT-3: subtrair 3 horas do UTC
-    // Exemplo: 16h31 UTC - 3h = 13h31 GMT-3
+    // To get current time in GMT-3: subtract 3 hours from UTC
+    // Example: 16h31 UTC - 3h = 13h31 GMT-3
     const nowGMT3 = new Date(now.getTime() - GMT3_OFFSET_MS);
-    
-    // Calcular início do dia em GMT-3 e converter para UTC
-    // Se são 13h31 GMT-3 (16h31 UTC), o início do dia em GMT-3 é 00h00 GMT-3
-    // 00h00 GMT-3 = 03h00 UTC (00h00 + 3h = 03h00)
-    const todayStartGMT3 = new Date(nowGMT3);
-    todayStartGMT3.setUTCHours(0, 0, 0, 0); // Meia-noite em GMT-3 (mas ainda representado como UTC)
-    // Agora preciso converter de volta: se é 00h00 GMT-3, em UTC é 03h00
-    const todayStartUTC = new Date(todayStartGMT3.getTime() + GMT3_OFFSET_MS);
-    
-    // Calcular última hora cheia em GMT-3
-    // Exemplo: 13h31 GMT-3 → última hora cheia = 12h00-13h00 GMT-3
-    // 12h00 GMT-3 = 15h00 UTC, 13h00 GMT-3 = 16h00 UTC
-    const currentHourGMT3 = new Date(nowGMT3);
-    currentHourGMT3.setUTCMinutes(0, 0, 0); // Arredondar para início da hora atual em GMT-3
-    
-    const lastFullHourStartGMT3 = new Date(currentHourGMT3);
-    lastFullHourStartGMT3.setUTCHours(lastFullHourStartGMT3.getUTCHours() - 1);
-    
-    const lastFullHourEndGMT3 = new Date(currentHourGMT3);
-    
-    // Converter para UTC: adicionar 3 horas
-    const lastFullHourStartUTC = new Date(lastFullHourStartGMT3.getTime() + GMT3_OFFSET_MS);
-    const lastFullHourEndUTC = new Date(lastFullHourEndGMT3.getTime() + GMT3_OFFSET_MS);
     const nowUTC = now;
-
-    console.log('[hourly-payment-report] Time ranges (GMT-3):', {
-      nowGMT3: nowGMT3.toISOString(),
-      todayStartGMT3: todayStartGMT3.toISOString(),
-      lastFullHourStartGMT3: lastFullHourStartGMT3.toISOString(),
-      lastFullHourEndGMT3: lastFullHourEndGMT3.toISOString()
-    });
-    console.log('[hourly-payment-report] Time ranges (UTC for DB):', {
-      todayStartUTC: todayStartUTC.toISOString(),
-      nowUTC: nowUTC.toISOString(),
-      lastFullHourStartUTC: lastFullHourStartUTC.toISOString(),
-      lastFullHourEndUTC: lastFullHourEndUTC.toISOString()
-    });
-
-    // 1. Fetch all approved payments from today
-    // Use created_at because if status is 'approved' and created today, it was approved today
-    const { data: todayPayments, error: todayPaymentsError } = await supabase
-      .from('payments')
-      .select('payment_id, amount, test_id, user_email, created_at')
-      .eq('status', 'approved')
-      .gte('created_at', todayStartUTC.toISOString())
-      .lte('created_at', nowUTC.toISOString())
-      .order('created_at', { ascending: false });
-
-    if (todayPaymentsError) {
-      console.error('[hourly-payment-report] Error fetching today payments:', todayPaymentsError);
-      throw new Error(`Failed to fetch today payments: ${todayPaymentsError.message}`);
+    
+    // Determine scenario based on current hour in GMT-3
+    const scenario = determineReportScenario(nowGMT3);
+    const currentHourGMT3 = nowGMT3.getUTCHours();
+    
+    console.log('[hourly-payment-report] Scenario detected:', scenario);
+    console.log('[hourly-payment-report] Current hour GMT-3:', currentHourGMT3);
+    
+    // Variables to store period ranges
+    let periodStartUTC: Date;
+    let periodEndUTC: Date;
+    let todayStartUTC: Date | null = null;
+    let yesterdayEndUTC: Date | null = null; // For ultimas_2h_anterior scenario
+    let periodLabel: string;
+    let periodSubLabel: string = '';
+    
+    // Calculate periods based on scenario
+    if (scenario === 'madrugada') {
+      // Scenario 8h: Madrugada (00h00 until 07h59 of same day)
+      const madrugadaStartGMT3 = new Date(nowGMT3);
+      madrugadaStartGMT3.setUTCHours(0, 0, 0, 0); // 00h00
+      
+      const madrugadaEndGMT3 = new Date(nowGMT3);
+      madrugadaEndGMT3.setUTCHours(7, 59, 59, 999); // 07h59:59.999
+      
+      // Convert to UTC: add 3 hours
+      periodStartUTC = new Date(madrugadaStartGMT3.getTime() + GMT3_OFFSET_MS);
+      periodEndUTC = new Date(madrugadaEndGMT3.getTime() + GMT3_OFFSET_MS);
+      
+      periodLabel = 'MADRUGADA';
+      periodSubLabel = '(00h-07h59)';
+      
+      console.log('[hourly-payment-report] Madrugada period GMT-3:', {
+        start: madrugadaStartGMT3.toISOString(),
+        end: madrugadaEndGMT3.toISOString()
+      });
+      
+    } else if (scenario === 'ultimas_2h_anterior') {
+      // Scenario 00h: Last 2 hours of previous day (22h00-23h59) + FULL DAY TOTAL (fechamento do dia)
+      // CRITICAL: Must get previous day, not current day
+      // Use setTime to subtract 24 hours to get previous day (more reliable than setUTCDate)
+      const yesterdayGMT3 = new Date(nowGMT3.getTime() - (24 * 60 * 60 * 1000));
+      
+      // Full day of previous day: 00h00-23h59
+      const yesterdayStartGMT3 = new Date(yesterdayGMT3);
+      yesterdayStartGMT3.setUTCHours(0, 0, 0, 0); // 00h00 of previous day
+      
+      const yesterdayEndGMT3 = new Date(yesterdayGMT3);
+      yesterdayEndGMT3.setUTCHours(23, 59, 59, 999); // 23h59:59.999 of previous day
+      
+      // Last 2 hours: 22h00-23h59 of previous day
+      const last2hStartGMT3 = new Date(yesterdayGMT3);
+      last2hStartGMT3.setUTCHours(22, 0, 0, 0); // 22h00 of previous day
+      
+      const last2hEndGMT3 = new Date(yesterdayGMT3);
+      last2hEndGMT3.setUTCHours(23, 59, 59, 999); // 23h59:59.999 of previous day
+      
+      // Convert to UTC: add 3 hours
+      // For period (last 2h)
+      periodStartUTC = new Date(last2hStartGMT3.getTime() + GMT3_OFFSET_MS);
+      periodEndUTC = new Date(last2hEndGMT3.getTime() + GMT3_OFFSET_MS);
+      
+      // For full day (fechamento)
+      const yesterdayStartUTC = new Date(yesterdayStartGMT3.getTime() + GMT3_OFFSET_MS);
+      yesterdayEndUTC = new Date(yesterdayEndGMT3.getTime() + GMT3_OFFSET_MS);
+      
+      // Store yesterday dates for later use
+      todayStartUTC = yesterdayStartUTC; // Reuse variable name for consistency
+      
+      periodLabel = 'FECHAMENTO DO DIA ANTERIOR';
+      periodSubLabel = '(00h-23h59) + ÚLTIMAS 2 HORAS (22h-23h59)';
+      
+      console.log('[hourly-payment-report] Previous day full period GMT-3:', {
+        dayStart: yesterdayStartGMT3.toISOString(),
+        dayEnd: yesterdayEndGMT3.toISOString(),
+        last2hStart: last2hStartGMT3.toISOString(),
+        last2hEnd: last2hEndGMT3.toISOString()
+      });
+      
+      // EXTRA VALIDATION: Ensure we're not in the future
+      // At 00h GMT-3, periodEndUTC should be before nowUTC
+      if (periodEndUTC >= nowUTC) {
+        throw new Error(`CRÍTICO: Tentativa de buscar dados futuros às 00h. periodEndUTC: ${periodEndUTC.toISOString()}, nowUTC: ${nowUTC.toISOString()}`);
+      }
+      
+    } else if (scenario === 'dia_completo_2h') {
+      // Scenario 10h-22h: Full day (since 00h) + last 2 hours
+      // Today start: 00h00 GMT-3
+      const todayStartGMT3 = new Date(nowGMT3);
+      todayStartGMT3.setUTCHours(0, 0, 0, 0);
+      todayStartUTC = new Date(todayStartGMT3.getTime() + GMT3_OFFSET_MS);
+      
+      // Last 2 hours: (current hour - 2h) until current hour
+      // Example: if now is 12h01, period is 10h00-12h00 (last full hour was 11h-12h)
+      // So we need: start = (current hour - 2)h00, end = current hour 00h00
+      const last2hStartGMT3 = new Date(nowGMT3);
+      last2hStartGMT3.setUTCHours(currentHourGMT3 - 2, 0, 0, 0);
+      
+      const last2hEndGMT3 = new Date(nowGMT3);
+      last2hEndGMT3.setUTCHours(currentHourGMT3, 0, 0, 0); // Start of current hour
+      
+      // Convert to UTC: add 3 hours
+      periodStartUTC = new Date(last2hStartGMT3.getTime() + GMT3_OFFSET_MS);
+      periodEndUTC = new Date(last2hEndGMT3.getTime() + GMT3_OFFSET_MS);
+      
+      periodLabel = 'HOJE';
+      periodSubLabel = `(até agora) + ÚLTIMAS 2 HORAS (${currentHourGMT3 - 2}h-${currentHourGMT3}h)`;
+      
+      console.log('[hourly-payment-report] Full day + last 2h GMT-3:', {
+        todayStart: todayStartGMT3.toISOString(),
+        last2hStart: last2hStartGMT3.toISOString(),
+        last2hEnd: last2hEndGMT3.toISOString()
+      });
+    } else {
+      throw new Error(`Cenário inválido: ${scenario}`);
     }
-
-    // Remove duplicates by payment_id (in case there are any)
-    const uniquePayments = Array.from(
-      new Map((todayPayments || []).map(p => [p.payment_id, p])).values()
-    );
-
-    // 2. Calculate today's totals (using unique payments)
-    const todayRevenue = uniquePayments.reduce((sum, payment) => {
-      const amount = typeof payment.amount === 'number' 
-        ? payment.amount 
-        : parseFloat(String(payment.amount || '0'));
-      return sum + amount;
-    }, 0);
-    const todayPurchases = uniquePayments.length;
-
-    // 3. Filter payments from last full hour (use created_at - when payment was created/approved)
-    const paymentsLastFullHour = uniquePayments.filter(payment => {
-      const createdAt = new Date(payment.created_at);
-      return createdAt >= lastFullHourStartUTC && createdAt < lastFullHourEndUTC;
+    
+    // CRITICAL: Validate that we're not fetching future data
+    if (periodEndUTC > nowUTC) {
+      throw new Error(`Tentativa de buscar dados futuros detectada. periodEndUTC: ${periodEndUTC.toISOString()}, nowUTC: ${nowUTC.toISOString()}`);
+    }
+    
+    console.log('[hourly-payment-report] Period UTC (for DB query):', {
+      start: periodStartUTC.toISOString(),
+      end: periodEndUTC.toISOString()
     });
-
-    const purchasesLastFullHour = paymentsLastFullHour.length;
-    const revenueLastFullHour = paymentsLastFullHour.reduce((sum, payment) => {
+    
+    // Fetch approved payments for the period
+    let periodPayments: any[] = [];
+    let todayPayments: any[] = [];
+    
+    if (scenario === 'ultimas_2h_anterior' && todayStartUTC && yesterdayEndUTC) {
+      // Fetch full day payments of previous day (fechamento)
+      // Use <= to include payments up to the last second of the day
+      const { data: yesterdayData, error: yesterdayError } = await supabase
+        .from('payments')
+        .select('payment_id, amount, test_id, user_email, created_at')
+        .eq('status', 'approved')
+        .gte('created_at', todayStartUTC.toISOString())
+        .lte('created_at', yesterdayEndUTC.toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (yesterdayError) {
+        console.error('[hourly-payment-report] Error fetching yesterday payments:', yesterdayError);
+        throw new Error(`Failed to fetch yesterday payments: ${yesterdayError.message}`);
+      }
+      
+      todayPayments = yesterdayData || [];
+      
+      // Fetch last 2 hours payments
+      // Use < for exclusive end (periodEndUTC is start of current hour, so we want < to exclude it)
+      const { data: periodData, error: periodError } = await supabase
+        .from('payments')
+        .select('payment_id, amount, test_id, user_email, created_at')
+        .eq('status', 'approved')
+        .gte('created_at', periodStartUTC.toISOString())
+        .lt('created_at', periodEndUTC.toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (periodError) {
+        console.error('[hourly-payment-report] Error fetching period payments:', periodError);
+        throw new Error(`Failed to fetch period payments: ${periodError.message}`);
+      }
+      
+      periodPayments = periodData || [];
+      
+    } else if (scenario === 'dia_completo_2h' && todayStartUTC) {
+      // Fetch full day payments
+      const { data: todayData, error: todayError } = await supabase
+        .from('payments')
+        .select('payment_id, amount, test_id, user_email, created_at')
+        .eq('status', 'approved')
+        .gte('created_at', todayStartUTC.toISOString())
+        .lte('created_at', nowUTC.toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (todayError) {
+        console.error('[hourly-payment-report] Error fetching today payments:', todayError);
+        throw new Error(`Failed to fetch today payments: ${todayError.message}`);
+      }
+      
+      todayPayments = todayData || [];
+      
+      // Fetch last 2 hours payments
+      // Use < for exclusive end (periodEndUTC is start of current hour, so we want < to exclude it)
+      // This ensures we only get payments from the last full 2-hour period
+      const { data: periodData, error: periodError } = await supabase
+        .from('payments')
+        .select('payment_id, amount, test_id, user_email, created_at')
+        .eq('status', 'approved')
+        .gte('created_at', periodStartUTC.toISOString())
+        .lt('created_at', periodEndUTC.toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (periodError) {
+        console.error('[hourly-payment-report] Error fetching period payments:', periodError);
+        throw new Error(`Failed to fetch period payments: ${periodError.message}`);
+      }
+      
+      periodPayments = periodData || [];
+    } else {
+      // Fetch period payments only (madrugada)
+      // For madrugada, periodEndUTC is 07h59:59.999, so use <= to include it
+      const { data: periodData, error: periodError } = await supabase
+        .from('payments')
+        .select('payment_id, amount, test_id, user_email, created_at')
+        .eq('status', 'approved')
+        .gte('created_at', periodStartUTC.toISOString())
+        .lte('created_at', periodEndUTC.toISOString())
+        .order('created_at', { ascending: false });
+      
+      if (periodError) {
+        console.error('[hourly-payment-report] Error fetching period payments:', periodError);
+        throw new Error(`Failed to fetch period payments: ${periodError.message}`);
+      }
+      
+      periodPayments = periodData || [];
+    }
+    
+    // Remove duplicates by payment_id
+    const uniquePeriodPayments = Array.from(
+      new Map(periodPayments.map(p => [p.payment_id, p])).values()
+    );
+    
+    const uniqueTodayPayments = (scenario === 'dia_completo_2h' || scenario === 'ultimas_2h_anterior')
+      ? Array.from(new Map(todayPayments.map(p => [p.payment_id, p])).values())
+      : [];
+    
+    // Calculate totals
+    const periodRevenue = uniquePeriodPayments.reduce((sum, payment) => {
       const amount = typeof payment.amount === 'number' 
         ? payment.amount 
         : parseFloat(String(payment.amount || '0'));
       return sum + amount;
     }, 0);
-
-    // 4. Fetch buyer details for payments from last full hour
-    const testIds = paymentsLastFullHour
+    
+    const periodPurchases = uniquePeriodPayments.length;
+    
+    const todayRevenue = (scenario === 'dia_completo_2h' || scenario === 'ultimas_2h_anterior')
+      ? uniqueTodayPayments.reduce((sum, payment) => {
+          const amount = typeof payment.amount === 'number' 
+            ? payment.amount 
+            : parseFloat(String(payment.amount || '0'));
+          return sum + amount;
+        }, 0)
+      : 0;
+    
+    const todayPurchases = (scenario === 'dia_completo_2h' || scenario === 'ultimas_2h_anterior') 
+      ? uniqueTodayPayments.length 
+      : 0;
+    
+    // Calculate average tickets
+    const avgTicketPeriod = periodPurchases > 0 
+      ? (periodRevenue / periodPurchases).toFixed(2).replace('.', ',') 
+      : '0,00';
+    
+    const avgTicketToday = todayPurchases > 0 
+      ? (todayRevenue / todayPurchases).toFixed(2).replace('.', ',') 
+      : '0,00';
+    
+    // Calculate percentage (for dia_completo_2h and ultimas_2h_anterior scenarios)
+    const periodPercentage = (scenario === 'dia_completo_2h' || scenario === 'ultimas_2h_anterior') && todayRevenue > 0
+      ? ((periodRevenue / todayRevenue) * 100).toFixed(1)
+      : '0';
+    
+    // Format numbers
+    const formatNumber = (num: number) => {
+      return num.toLocaleString('pt-BR');
+    };
+    
+    const periodRevenueStr = periodRevenue.toFixed(2).replace('.', ',');
+    const todayRevenueStr = todayRevenue.toFixed(2).replace('.', ',');
+    
+    // Compose Message 1: Summary
+    let message1 = `━━━━━━━━━━━━━━━━━\n` +
+      `   *📊 RESUMÃO DO QC*\n` +
+      `━━━━━━━━━━━━━━━━━\n\n`;
+    
+    if (scenario === 'madrugada') {
+      message1 += `🌙 *${periodLabel}* ${periodSubLabel}\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `Faturamento: *R$ ${periodRevenueStr}*\n` +
+        `Pagantes: *${formatNumber(periodPurchases)}*\n` +
+        `Ticket médio: *R$ ${avgTicketPeriod}*\n` +
+        `\n_Relatório automático_`;
+        
+    } else if (scenario === 'ultimas_2h_anterior') {
+      message1 += `📅 *${periodLabel}*\n` +
+        `   ${periodSubLabel.split(' + ')[0]}\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `Faturamento: *R$ ${todayRevenueStr}*\n` +
+        `Pagantes: *${formatNumber(todayPurchases)}*\n` +
+        `Ticket médio: *R$ ${avgTicketToday}*\n\n` +
+        `⏰ ${periodSubLabel.split(' + ')[1]}\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `Faturamento: *R$ ${periodRevenueStr}*\n` +
+        `Pagantes: *${formatNumber(periodPurchases)}*\n` +
+        `Ticket médio: *R$ ${avgTicketPeriod}*\n` +
+        (periodRevenue > 0 && todayRevenue > 0 ? `📈 ${periodPercentage}% do faturamento do dia\n` : '') +
+        `\n_Relatório automático_`;
+        
+    } else if (scenario === 'dia_completo_2h') {
+      message1 += `📅 *${periodLabel}* ${periodSubLabel.split(' + ')[0]}\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `Faturamento: *R$ ${todayRevenueStr}*\n` +
+        `Pagantes: *${formatNumber(todayPurchases)}*\n` +
+        `Ticket médio: *R$ ${avgTicketToday}*\n\n` +
+        `⏰ ${periodSubLabel.split(' + ')[1]}\n` +
+        `━━━━━━━━━━━━━━━━━\n` +
+        `Faturamento: *R$ ${periodRevenueStr}*\n` +
+        `Pagantes: *${formatNumber(periodPurchases)}*\n` +
+        `Ticket médio: *R$ ${avgTicketPeriod}*\n` +
+        (periodRevenue > 0 && todayRevenue > 0 ? `📈 ${periodPercentage}% do faturamento do dia\n` : '') +
+        `\n_Relatório automático_`;
+    }
+    
+    // Fetch buyer details for period payments
+    const testIds = uniquePeriodPayments
       .map(p => p.test_id)
       .filter(Boolean) as string[];
-
+    
     let buyersData: Array<{
       name: string | null;
       email: string | null;
@@ -138,25 +400,22 @@ serve(async (req) => {
       amount: number;
       payment_id: string;
     }> = [];
-
+    
     if (testIds.length > 0) {
-      // Fetch test_results data
       const { data: testResults, error: testResultsError } = await supabase
         .from('test_results')
         .select('id, name, email')
         .in('id', testIds);
-
+      
       if (testResultsError) {
         console.warn('[hourly-payment-report] Error fetching test_results:', testResultsError);
       } else {
-        // Combine payment and test_results data
-        buyersData = paymentsLastFullHour.map(payment => {
+        buyersData = uniquePeriodPayments.map(payment => {
           const testResult = (testResults || []).find(tr => tr.id === payment.test_id);
           const amount = typeof payment.amount === 'number' 
             ? payment.amount 
             : parseFloat(String(payment.amount || '0'));
           
-          // Prefer email from test_results, fallback to user_email from payment
           const email = testResult?.email || payment.user_email || null;
           
           return {
@@ -169,51 +428,27 @@ serve(async (req) => {
         });
       }
     }
-
-    // 5. Compose Message 1: Summary
-    const todayRevenueStr = todayRevenue.toFixed(2).replace('.', ',');
-    const revenueLastFullHourStr = revenueLastFullHour.toFixed(2).replace('.', ',');
     
-    // Format numbers with thousand separators
-    const formatNumber = (num: number) => {
-      return num.toLocaleString('pt-BR');
-    };
+    // Compose Message 2: Buyer details
+    let message2Title = '';
+    if (scenario === 'madrugada') {
+      message2Title = '*👥 Assinantes da madrugada*\n\n';
+    } else if (scenario === 'ultimas_2h_anterior') {
+      message2Title = '*👥 Assinantes das últimas 2h (dia anterior)*\n\n';
+    } else {
+      message2Title = '*👥 Assinantes das últimas 2 horas*\n\n';
+    }
     
-    // Calculate percentage of today's revenue from last hour (if applicable)
-    const hourPercentage = todayRevenue > 0 
-      ? ((revenueLastFullHour / todayRevenue) * 100).toFixed(1)
-      : '0';
+    let message2 = message2Title;
     
-    // Calculate average ticket
-    const avgTicketToday = todayPurchases > 0 ? (todayRevenue / todayPurchases).toFixed(2).replace('.', ',') : '0,00';
-    const avgTicketLastHour = purchasesLastFullHour > 0 ? (revenueLastFullHour / purchasesLastFullHour).toFixed(2).replace('.', ',') : '0,00';
-    
-    // Get current hour for context (in GMT-3)
-    const currentHour = nowGMT3.getUTCHours();
-    const lastHourStart = lastFullHourStartGMT3.getUTCHours();
-    
-    const message1 = `━━━━━━━━━━━━━━━━━\n` +
-      `   *📊 RESUMÃO DO QC*\n` +
-      `━━━━━━━━━━━━━━━━━\n\n` +
-      `📅 *HOJE* (até agora)\n` +
-      `━━━━━━━━━━━━━━━━━\n` +
-      `Faturamento: *R$ ${todayRevenueStr}*\n` +
-      `Pagantes: *${formatNumber(todayPurchases)}*\n` +
-      `Ticket médio: *R$ ${avgTicketToday}*\n\n` +
-      `⏰ *ÚLTIMA HORA*\n` +
-      `   (${lastHourStart}h às ${currentHour}h)\n` +
-      `━━━━━━━━━━━━━━━━━\n` +
-      `Faturamento: *R$ ${revenueLastFullHourStr}*\n` +
-      `Pagantes: *${formatNumber(purchasesLastFullHour)}*\n` +
-      `Ticket médio: *R$ ${avgTicketLastHour}*\n` +
-      (revenueLastFullHour > 0 && todayRevenue > 0 ? `📈 ${hourPercentage}% do faturamento do dia\n` : '') +
-      `\n_Relatório automático_`;
-
-    // 6. Compose Message 2: Buyer details
-    let message2 = `*👥 Assinantes da última hora*\n\n`;
-
     if (buyersData.length === 0) {
-      message2 += 'Nenhuma compra na última hora cheia.';
+      if (scenario === 'madrugada') {
+        message2 += 'Nenhuma compra na madrugada.';
+      } else if (scenario === 'ultimas_2h_anterior') {
+        message2 += 'Nenhuma compra nas últimas 2 horas do dia anterior.';
+      } else {
+        message2 += 'Nenhuma compra nas últimas 2 horas.';
+      }
     } else {
       buyersData.forEach((buyer, index) => {
         const baseUrl = Deno.env.get('PUBLIC_URL') || 'https://qualcarreira.com';
@@ -231,11 +466,11 @@ serve(async (req) => {
         }
       });
     }
-
-    // 7. Resolve chatId
+    
+    // Resolve chatId
     const chatId = Deno.env.get('WAAPI_CHAT_ID') || '120363421610156383@g.us';
-
-    // 8. Send Message 1
+    
+    // Send Message 1
     console.log('[hourly-payment-report] Sending message 1 (summary)...');
     const waapiResp1 = await fetch('https://waapi.app/api/v1/instances/60123/client/action/send-message', {
       method: 'POST',
@@ -249,7 +484,7 @@ serve(async (req) => {
         message: message1
       })
     });
-
+    
     let waapiData1: string;
     try {
       waapiData1 = await waapiResp1.text();
@@ -259,21 +494,9 @@ serve(async (req) => {
     
     console.log('[hourly-payment-report] WAAPI response 1 status:', waapiResp1.status);
     
-    // Try to parse as JSON to check if message was actually sent
-    let waapiResult1: any = null;
-    try {
-      waapiResult1 = JSON.parse(waapiData1);
-    } catch (e) {
-      // Not JSON, that's ok
-    }
-
-    // If status is not OK but message might have been sent (check response content)
     if (!waapiResp1.ok) {
-      // If the error message says "API not available" but we got a response, 
-      // the message might have been sent anyway - log warning but continue
       if (waapiData1.includes('API not available') || waapiData1.includes('try again later')) {
         console.warn('[hourly-payment-report] WAAPI returned error but message might have been sent:', waapiData1);
-        // Continue anyway - don't fail the function
       } else {
         console.error('[hourly-payment-report] WAAPI error on message 1:', waapiData1);
         return new Response(JSON.stringify({
@@ -289,12 +512,12 @@ serve(async (req) => {
         });
       }
     }
-
-    // 9. Wait 5 seconds before sending message 2
+    
+    // Wait 5 seconds before sending message 2
     console.log('[hourly-payment-report] Waiting 5 seconds before sending message 2...');
     await new Promise(resolve => setTimeout(resolve, 5000));
-
-    // 10. Send Message 2
+    
+    // Send Message 2
     console.log('[hourly-payment-report] Sending message 2 (buyers)...');
     const waapiResp2 = await fetch('https://waapi.app/api/v1/instances/60123/client/action/send-message', {
       method: 'POST',
@@ -308,7 +531,7 @@ serve(async (req) => {
         message: message2
       })
     });
-
+    
     let waapiData2: string;
     try {
       waapiData2 = await waapiResp2.text();
@@ -317,14 +540,10 @@ serve(async (req) => {
     }
     
     console.log('[hourly-payment-report] WAAPI response 2 status:', waapiResp2.status);
-
-    // If status is not OK but message might have been sent
+    
     if (!waapiResp2.ok) {
-      // If the error message says "API not available" but we got a response, 
-      // the message might have been sent anyway - log warning but continue
       if (waapiData2.includes('API not available') || waapiData2.includes('try again later')) {
         console.warn('[hourly-payment-report] WAAPI returned error but message 2 might have been sent:', waapiData2);
-        // Continue anyway - don't fail the function
       } else {
         console.error('[hourly-payment-report] WAAPI error on message 2:', waapiData2);
         return new Response(JSON.stringify({
@@ -341,16 +560,17 @@ serve(async (req) => {
         });
       }
     }
-
-    // 11. Return success
+    
+    // Return success
     return new Response(JSON.stringify({
       ok: true,
       messages_sent: 2,
+      scenario: scenario,
       summary: {
-        today_revenue: todayRevenue,
-        today_purchases: todayPurchases,
-        revenue_last_full_hour: revenueLastFullHour,
-        purchases_last_full_hour: purchasesLastFullHour
+        period_revenue: periodRevenue,
+        period_purchases: periodPurchases,
+        today_revenue: (scenario === 'dia_completo_2h' || scenario === 'ultimas_2h_anterior') ? todayRevenue : null,
+        today_purchases: (scenario === 'dia_completo_2h' || scenario === 'ultimas_2h_anterior') ? todayPurchases : null
       },
       buyers_count: buyersData.length
     }), {
@@ -360,7 +580,7 @@ serve(async (req) => {
         'Content-Type': 'application/json'
       }
     });
-
+    
   } catch (error) {
     console.error('[hourly-payment-report] Error:', error);
     const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -375,4 +595,3 @@ serve(async (req) => {
     });
   }
 });
-
