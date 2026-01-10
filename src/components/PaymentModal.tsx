@@ -9,7 +9,8 @@ import {
   trackBeginCheckout, 
   trackAddPaymentInfo, 
   trackPixCodeCopied, 
-  trackPaymentError 
+  trackPaymentError,
+  trackCustomPurchase
 } from '@/lib/analytics';
 import { getGaIdentifiers } from '@/lib/gaCookies';
 
@@ -178,6 +179,14 @@ export const PaymentModal = ({
 
         // Se já aprovado, desbloqueia imediatamente
         if (reuseData.status === 'approved') {
+          trackCustomPurchase(
+            testId,
+            reuseData.payment_id,
+            finalPrice,
+            couponCode || undefined,
+            variant
+          );
+          
           toast({
             title: 'Pagamento aprovado!',
             description: 'Desbloqueando seu resultado...',
@@ -231,6 +240,14 @@ export const PaymentModal = ({
 
     if (data?.status === 'approved') {
       setStatus('approved');
+      
+      trackCustomPurchase(
+        testId,
+        paymentId,
+        finalPrice,
+        couponCode || undefined,
+        variant
+      );
       
       // Conversion event is now handled by backend webhook (send-whatsapp-on-payment)
       
@@ -302,6 +319,8 @@ export const PaymentModal = ({
       const errorMessage =
         err?.message ||
         "Pagamento aprovado, mas houve erro ao desbloquear. Contate o suporte.";
+      setError(errorMessage);
+      setStatus('error');
       toast({
         title: "Erro ao desbloquear",
         description: errorMessage,
@@ -323,7 +342,11 @@ export const PaymentModal = ({
   };
 
   const handleClose = () => {
-    if (status !== 'approved') {
+    // Permitir fechar sempre - se estiver approved, atualizar página antes de fechar
+    if (status === 'approved') {
+      onSuccess();
+      onClose();
+    } else {
       onClose();
     }
   };

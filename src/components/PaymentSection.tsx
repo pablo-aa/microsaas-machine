@@ -6,6 +6,7 @@ import { getMercadoPagoConfig } from "@/config/mercadopago";
 import { getCoupon, validateAndSaveCoupon, ValidatedCoupon } from "@/lib/couponStorage";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { trackCustomPurchase } from "@/lib/analytics";
 
 interface PaymentSectionProps {
   onPurchase: () => void;
@@ -81,6 +82,17 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: Pa
       }
       
       console.log('[PaymentSection] Unlocked successfully!');
+      
+      if (data.success && data.payment_id) {
+        trackCustomPurchase(
+          testId,
+          data.payment_id,
+          0, // amount é 0 para cupom grátis
+          coupon.code,
+          variant || 'A'
+        );
+      }
+      
       toast({
         title: 'Resultado desbloqueado!',
         description: 'Recarregando...'

@@ -76,3 +76,48 @@ export const pushToDataLayer = (data: any) => {
     console.log('[GTM] Event pushed:', data);
   }
 };
+
+// ==================== GTM2 (Second Container) ====================
+
+export const getGTM2Id = (): string => {
+  return 'GTM-KL2DHVZS';
+};
+
+export const initializeGTM2 = () => {
+  // Guard: verificar ambiente e se já foi inicializado
+  if (typeof window === 'undefined' || document.getElementById('gtm2-js')) {
+    return;
+  }
+
+  try {
+    const gtmId = getGTM2Id();
+
+    // Initialize dataLayer compartilhado (ambos os GTMs usam o mesmo)
+    window.dataLayer = window.dataLayer || [];
+    
+    // Push do evento gtm.js ANTES de carregar o script (padrão GTM)
+    window.dataLayer.push({
+      'gtm.start': Date.now(),
+      event: 'gtm.js'
+    });
+
+    // Criar script usando src (mais robusto que innerHTML para CSP)
+    const script = document.createElement('script');
+    script.id = 'gtm2-js'; // ID único e descritivo
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}&l=dataLayer`;
+    
+    // Inserir no head
+    if (document.head) {
+      document.head.appendChild(script);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.head.appendChild(script);
+      });
+    }
+
+    console.log(`[GTM2] Initialized with ID: ${gtmId}`);
+  } catch (error) {
+    console.error('[GTM2] Error initializing:', error);
+  }
+};

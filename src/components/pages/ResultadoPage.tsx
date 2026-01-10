@@ -18,7 +18,7 @@ import SupportCard from "@/components/SupportCard";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
-import { trackPageView, trackExperimentViewed } from "@/lib/analytics";
+import { trackPageView, trackExperimentViewed, trackCustomPurchase } from "@/lib/analytics";
 
 interface ResultData {
   id: string;
@@ -223,6 +223,23 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
 
         if (data?.is_approved && data?.payment_id) {
           console.log("[BG] Payment approved, unlocking result");
+          
+          // Buscar dados do pagamento para tracking
+          const { data: paymentData, error: paymentQueryError } = await supabase
+            .from("payments")
+            .select("amount, coupon_code, payment_variant")
+            .eq("payment_id", data.payment_id)
+            .single();
+
+          if (!paymentQueryError && paymentData) {
+            trackCustomPurchase(
+              result.id,
+              data.payment_id,
+              paymentData.amount || 0,
+              paymentData.coupon_code || undefined,
+              paymentData.payment_variant || paymentVariant
+            );
+          }
           
           const { data: unlockData, error: unlockError } = await supabase.functions.invoke(
             "unlock-result",

@@ -353,3 +353,38 @@ export const trackPaymentError = (
 
 // ==================== Results & Coupon Events ====================
 // NOTE: legacy events kept in Git history for reference.
+
+// ==================== Custom Purchase Event ====================
+
+export const trackCustomPurchase = (
+  testId: string,
+  paymentId: string,
+  amount: number,
+  coupon?: string,
+  variant?: string,
+) => {
+  // Validação defensiva: garantir que paymentId e testId existem
+  if (!paymentId || !testId) {
+    console.warn('[trackCustomPurchase] Missing required parameters:', { paymentId, testId });
+    return;
+  }
+
+  // Se amount for 0 (cupom grátis), usar 0. Caso contrário, usar amount ou preço padrão
+  const price = amount === 0 ? 0 : (amount || getMercadoPagoConfig().price);
+  
+  pushToDataLayer({
+    event: 'custom_purchase',
+    ecommerce: {
+      currency: 'BRL',
+      value: price,
+      transaction_id: paymentId,
+      payment_type: paymentId.startsWith('FREE_') ? 'coupon' : 'pix',
+      ...(coupon ? { coupon } : {}),
+      items: [getProductItem()],
+    },
+    payment_variant: variant || 'A',
+    user_properties: {
+      test_id: testId,
+    },
+  });
+};
