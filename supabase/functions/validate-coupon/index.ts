@@ -7,13 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
-const getPriceByVariant = (variant: string | null): number => {
-  switch (variant) {
-    case 'A': return 9.90;
-    case 'B': return 12.90;
-    case 'C': return 14.90;
-    default: return 9.90; // Default para A (9.90)
-  }
+// Preço fixo: R$ 12,90 (variante B vencedora do experimento A/B)
+const getPriceByVariant = (): number => {
+  return 12.90;
 };
 
 serve(async (req) => {
@@ -25,7 +21,7 @@ serve(async (req) => {
   try {
     const { code, payment_variant } = await req.json();
 
-    console.log('[validate-coupon] Validating coupon:', code, 'variant:', payment_variant);
+    console.log('[validate-coupon] Validating coupon:', code);
 
     if (!code || typeof code !== 'string') {
       return new Response(JSON.stringify({
@@ -37,9 +33,9 @@ serve(async (req) => {
       });
     }
 
-    // Get base price based on variant
-    const BASE_PRICE = getPriceByVariant(payment_variant);
-    console.log('[validate-coupon] Base price:', BASE_PRICE, 'for variant:', payment_variant);
+    // Preço fixo: R$ 12,90
+    const BASE_PRICE = 12.90;
+    console.log('[validate-coupon] Base price:', BASE_PRICE);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -138,7 +134,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[validate-coupon] Error:', error);
-    const BASE_PRICE = getPriceByVariant(null);
+    const BASE_PRICE = 12.90;
     return new Response(JSON.stringify({
       valid: false,
       reason: 'error',

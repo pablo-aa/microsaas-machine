@@ -1,3 +1,4 @@
+// Feature flag pausada - experimento A/B de pricing concluído. Preço fixo em R$ 12,90. Mantido para futuros experimentos.
 import { growthbookAdapter } from "@flags-sdk/growthbook";
 import type { Attributes } from "@flags-sdk/growthbook";
 import type { Identify } from "flags";

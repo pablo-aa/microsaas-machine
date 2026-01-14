@@ -50,16 +50,14 @@ export function clearCoupon(): void {
  * Valida um cupom com o backend e salva se válido
  */
 export async function validateAndSaveCoupon(
-  code: string,
-  variant?: string
+  code: string
 ): Promise<ValidatedCoupon> {
   try {
-    console.log('[couponStorage] Validating coupon:', code, 'variant:', variant);
+    console.log('[couponStorage] Validating coupon:', code);
     
     const { data, error } = await supabase.functions.invoke('validate-coupon', {
       body: { 
-        code: code.trim(),
-        payment_variant: variant || 'A'
+        code: code.trim()
       }
     });
 

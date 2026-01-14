@@ -1,5 +1,18 @@
 # Guia Rápido: Configurar Experimento A/B
 
+Este guia documenta o processo completo de configuração, execução e pausa de experimentos A/B usando GrowthBook e GA4.
+
+## Sumário
+
+1. **GrowthBook: Feature Flag** - Criar e configurar feature flag
+2. **Código: Consumir Flag** - Implementar consumo da flag no código
+3. **Tracking: Exposure Event** - Configurar tracking de exposição ao experimento
+4. **BigQuery: Custom Dimension** - Criar dimensão customizada
+5. **GrowthBook: Métricas** - Configurar métricas de conversão
+6. **Validar** - Queries SQL e validações
+7. **Pausar Experimento e Fixar Variante** - Processo completo de pausa após conclusão
+8. **Problemas Comuns** - Troubleshooting (SRM, etc.)
+
 ## 1. GrowthBook: Feature Flag
 
 1. Criar feature flag (ex: `payment_experience`)
@@ -58,7 +71,9 @@ useEffect(() => {
 }, [id, paymentVariant]);
 ```
 
-**Importante**: Incluir `payment_variant` em TODOS os eventos relevantes (begin_checkout, purchase, etc.)
+**Importante**: 
+- Incluir `payment_variant` em TODOS os eventos relevantes (begin_checkout, purchase, etc.) **durante o experimento**
+- Quando o experimento for pausado (seção 7), remover `payment_variant` de todos os eventos
 
 ## 4. BigQuery: Custom Dimension
 
@@ -309,6 +324,329 @@ ORDER BY status, e.variant_esperado;
 - ✅ Receita total e ticket médio por variante
 - ⚠️ Se houver inconsistências, verificar tracking no código
 
+## 7. Pausar Experimento e Fixar Variante Vencedora
+
+Quando um experimento é concluído e uma variante vencedora é escolhida, é necessário pausar o experimento e fixar a variante escolhida no código. Este processo garante que:
+
+- O preço/comportamento fica fixo na variante vencedora
+- Parâmetros específicos do experimento são removidos dos eventos de analytics
+- Dados históricos são preservados no banco de dados
+- Estrutura reutilizável é mantida para futuros experimentos
+
+### 7.1. GrowthBook: Pausar Feature Flag
+
+1. **GrowthBook > Feature Flags > [sua flag]**
+   - Alterar status para "Paused" ou "Archived"
+   - **Não deletar** a feature flag (mantém histórico e estrutura)
+
+2. **GrowthBook > Experiments > [seu experimento]**
+   - Marcar experimento como "Concluded" ou "Stopped"
+   - Documentar qual variante foi escolhida como vencedora
+
+### 7.2. Código: Remover Uso da Feature Flag
+
+#### 7.2.1. Server Component (página que consome a flag)
+
+**Antes:**
+```typescript
+// src/app/resultado/[id]/page.tsx
+import { paymentExperienceFlag } from "@/flags/payment";
+
+export default async function Page() {
+  const variant = await paymentExperienceFlag();
+  return <ResultadoPage paymentVariant={variant || "A"} />;
+}
+```
+
+**Depois:**
+```typescript
+// src/app/resultado/[id]/page.tsx
+import ResultadoPage from "@/components/pages/ResultadoPage";
+
+export default async function Page() {
+  // Variante fixa: "B" (vencedora do experimento)
+  return <ResultadoPage />;
+}
+```
+
+#### 7.2.2. Client Component (componente que recebe a prop)
+
+**Antes:**
+```typescript
+// src/components/pages/ResultadoPage.tsx
+interface ResultadoPageProps {
+  paymentVariant?: string;
+}
+
+const ResultadoPage = ({ paymentVariant = "A" }: ResultadoPageProps) => {
+  useEffect(() => {
+    const variantToVariationId: Record<string, number> = {
+      'A': 0, 'B': 1, 'C': 2,
+    };
+    const variationId = variantToVariationId[paymentVariant] ?? 0;
+    trackExperimentViewed('qc-pricing-test', variationId, paymentVariant);
+    trackPageView(`/resultado/${id}`, paymentVariant);
+  }, [id, paymentVariant]);
+  
+  // ... resto do código
+}
+```
+
+**Depois:**
+```typescript
+// src/components/pages/ResultadoPage.tsx
+const ResultadoPage = () => {
+  useEffect(() => {
+    // Remover trackExperimentViewed (experimento concluído)
+    trackPageView(`/resultado/${id}`);
+  }, [id]);
+  
+  // ... resto do código
+}
+```
+
+#### 7.2.3. Feature Flag (manter estrutura, adicionar comentário)
+
+**Manter o arquivo, mas adicionar comentário:**
+```typescript
+// src/flags/payment.ts
+// NOTE: This feature flag is currently paused as the 'B' variant (R$ 12.90) has been chosen as the default.
+// The flag definition is kept for potential future experiments.
+
+export const paymentExperienceFlag = flag<string>({
+  key: "payment_experience",
+  adapter: growthbookAdapter.feature<string>(),
+  defaultValue: "A",
+  identify,
+});
+```
+
+### 7.3. Fixar Preço/Variante Escolhida
+
+#### 7.3.1. Funções de Preço
+
+**Antes:**
+```typescript
+const getPriceByVariant = (variant?: string): number => {
+  switch (variant) {
+    case 'A': return 9.90;
+    case 'B': return 12.90;
+    case 'C': return 14.90;
+    default: return 9.90;
+  }
+};
+```
+
+**Depois:**
+```typescript
+// Preço fixo: R$ 12,90 (variante B vencedora do experimento A/B)
+const basePrice = 12.90;
+// OU
+const getPriceByVariant = (): number => {
+  return 12.90; // Fixed price
+};
+```
+
+**Arquivos a atualizar:**
+- `src/components/PaymentSection.tsx`
+- `src/components/PaymentModal.tsx`
+- `src/config/mercadopago.ts` (dev e prod)
+- `supabase/functions/create-payment/index.ts`
+- `supabase/functions/validate-coupon/index.ts`
+- `supabase/functions/unlock-free-result/index.ts`
+- `supabase/functions/send-recovery-email/index.ts` (manter leitura histórica, mas usar preço fixo)
+
+#### 7.3.2. Remover Props de Variante
+
+**Antes:**
+```typescript
+interface PaymentSectionProps {
+  onPurchase: () => void;
+  testId: string;
+  variant?: string; // Remover
+}
+
+const PaymentSection = ({ onPurchase, testId, variant }: PaymentSectionProps) => {
+  const basePrice = getPriceByVariant(variant);
+  // ...
+}
+```
+
+**Depois:**
+```typescript
+interface PaymentSectionProps {
+  onPurchase: () => void;
+  testId: string;
+  // variant removido
+}
+
+const PaymentSection = ({ onPurchase, testId }: PaymentSectionProps) => {
+  const basePrice = 12.90; // Fixo
+  // ...
+}
+```
+
+**Arquivos a atualizar:**
+- `src/components/PaymentSection.tsx`
+- `src/components/PaymentModal.tsx`
+- Todas as chamadas desses componentes
+
+### 7.4. Analytics: Remover Parâmetros do Experimento
+
+#### 7.4.1. Remover `payment_variant` dos Eventos
+
+**Antes:**
+```typescript
+export const trackBeginCheckout = (
+  testId: string,
+  coupon?: string,
+  discountedPrice?: number,
+  variant?: string, // Remover
+) => {
+  pushToDataLayer({
+    event: 'begin_checkout',
+    payment_variant: variant || 'A', // Remover
+    ecommerce: { /* ... */ }
+  });
+};
+```
+
+**Depois:**
+```typescript
+export const trackBeginCheckout = (
+  testId: string,
+  coupon?: string,
+  discountedPrice?: number,
+  // variant removido
+) => {
+  pushToDataLayer({
+    event: 'begin_checkout',
+    // payment_variant removido
+    ecommerce: { /* ... */ }
+  });
+};
+```
+
+**Funções a atualizar em `src/lib/analytics.ts`:**
+- `trackExperimentViewed` (manter função, mas remover parâmetro variant)
+- `trackPageView` (remover parâmetro variant)
+- `trackBeginCheckout` (remover parâmetro variant)
+- `trackAddPaymentInfo` (remover parâmetro variant)
+- `trackPixCodeCopied` (remover parâmetro variant)
+- `trackPaymentError` (remover parâmetro variant)
+- `trackCustomPurchase` (remover parâmetro variant)
+
+**Edge Functions:**
+- `supabase/functions/send-whatsapp-on-payment/index.ts`: remover `payment_variant` do payload GA4
+
+#### 7.4.2. Atualizar Todas as Chamadas
+
+Buscar e atualizar todas as chamadas das funções de tracking para remover o parâmetro `variant`:
+
+```bash
+# Buscar todas as chamadas
+grep -r "trackPageView\|trackBeginCheckout\|trackCustomPurchase" src/
+```
+
+### 7.5. Banco de Dados: Remover Inserções de `payment_variant`
+
+#### 7.5.1. Edge Functions
+
+**Antes:**
+```typescript
+// supabase/functions/create-payment/index.ts
+const { payment_variant } = await req.json();
+
+const insertPayload = {
+  test_id,
+  payment_id,
+  amount: transactionAmount,
+  payment_variant: payment_variant ?? 'A', // Remover
+  // ...
+};
+```
+
+**Depois:**
+```typescript
+// supabase/functions/create-payment/index.ts
+// payment_variant removido do destructuring (mas aceito para backward compatibility)
+
+const insertPayload = {
+  test_id,
+  payment_id,
+  amount: transactionAmount,
+  // payment_variant removido (mantém histórico, não insere novos)
+  // ...
+};
+```
+
+**Arquivos a atualizar:**
+- `supabase/functions/create-payment/index.ts`: remover `payment_variant` do `insertPayload`
+- `supabase/functions/unlock-free-result/index.ts`: remover `payment_variant` do insert
+- Remover verificação de variant na lógica de reuso de pagamento
+
+#### 7.5.2. Backward Compatibility
+
+**Importante:** As Edge Functions devem **aceitar mas ignorar** `payment_variant` para manter compatibilidade com chamadas antigas:
+
+```typescript
+// Aceitar mas não usar
+const { payment_variant } = await req.json(); // OK para backward compatibility
+// Mas não usar em lógica ou inserções
+```
+
+### 7.6. Validação e Limpeza
+
+#### 7.6.1. Verificar Remoção Completa
+
+```bash
+# Buscar referências restantes a payment_variant no frontend
+grep -r "payment_variant\|paymentVariant" src/ --exclude-dir=node_modules
+
+# Buscar referências em Edge Functions (devem ser apenas para backward compatibility)
+grep -r "payment_variant" supabase/functions/
+```
+
+#### 7.6.2. Verificar Preços Fixos
+
+```bash
+# Verificar se todos os preços estão fixos em 12.90
+grep -r "12\.90\|12,90" src/ supabase/functions/
+```
+
+#### 7.6.3. Testar Fluxo Completo
+
+1. **Criar pagamento:** verificar se preço é R$ 12,90
+2. **Validar cupom:** verificar se desconto é calculado sobre 12,90
+3. **Verificar analytics:** confirmar que eventos não contêm `payment_variant`
+4. **Verificar banco:** confirmar que novos pagamentos não têm `payment_variant`
+
+### 7.7. Checklist de Pausa
+
+- [ ] Feature flag pausada no GrowthBook (não deletada)
+- [ ] Experimento marcado como concluído no GrowthBook
+- [ ] Removido uso da feature flag no server component
+- [ ] Removido `trackExperimentViewed` e `variantToVariationId` do client component
+- [ ] Preço fixado em todos os arquivos (frontend e backend)
+- [ ] Props `variant` removidas de componentes
+- [ ] Parâmetro `variant` removido de todas as funções de analytics
+- [ ] `payment_variant` removido de todos os eventos (GTM e GA4)
+- [ ] `payment_variant` removido das inserções no banco
+- [ ] Backward compatibility mantida nas Edge Functions
+- [ ] Comentário adicionado na feature flag indicando pausa
+- [ ] Estrutura reutilizável mantida (`trackExperimentViewed`, feature flag)
+- [ ] Testes realizados (criar pagamento, validar cupom, verificar analytics)
+
+### 7.8. Notas Importantes
+
+1. **Dados Históricos:** A coluna `payment_variant` no banco mantém dados históricos. Não deletar a coluna, apenas parar de inserir novos valores.
+
+2. **Estrutura Reutilizável:** Manter `trackExperimentViewed` e a definição da feature flag para facilitar futuros experimentos.
+
+3. **Backward Compatibility:** Edge Functions devem aceitar `payment_variant` mas ignorá-lo (para não quebrar chamadas antigas).
+
+4. **Analytics:** Remover completamente `payment_variant` dos eventos para não poluir dados futuros.
+
 ### Problema: Sample Ratio Mismatch (SRM) no GrowthBook
 
 **Sintoma:** GrowthBook mostra warning "Sample Ratio Mismatch" e dados agrupados incorretamente (100% para cada variante em vez de ~33%).
@@ -353,6 +691,8 @@ ORDER BY status, e.variant_esperado;
 
 ## Checklist Rápido
 
+### Setup do Experimento
+
 - [ ] Feature flag criada e publicada no GrowthBook
 - [ ] Experimento configurado com variantes e %
 - [ ] Flag consumida no código (server-side)
@@ -363,6 +703,14 @@ ORDER BY status, e.variant_esperado;
 - [ ] Métrica de conversão configurada
 - [ ] Validação em DebugView/BigQuery
 - [ ] Análise funcionando no GrowthBook
+
+### Pausar Experimento (quando concluído)
+
+- [ ] Ver seção 7 completa para checklist detalhado
+- [ ] Feature flag pausada (não deletada)
+- [ ] Variante vencedora fixada no código
+- [ ] Parâmetros do experimento removidos dos eventos
+- [ ] Estrutura reutilizável mantida para futuros experimentos
 
 ## Variáveis de Ambiente Necessárias
 

@@ -22,7 +22,6 @@ interface PaymentModalProps {
   userEmail: string;
   userName: string;
   couponCode?: string | null;
-  variant?: string;
 }
 
 export const PaymentModal = ({
@@ -33,7 +32,6 @@ export const PaymentModal = ({
   userEmail,
   userName,
   couponCode,
-  variant,
 }: PaymentModalProps) => {
   const [loading, setLoading] = useState(true);
   const [qrCode, setQrCode] = useState('');
@@ -45,16 +43,8 @@ export const PaymentModal = ({
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const { toast } = useToast();
   
-  const getPriceByVariant = (v?: string): number => {
-    switch (v) {
-      case 'A': return 9.90;
-      case 'B': return 12.90;
-      case 'C': return 14.90;
-      default: return 9.90; // Default para A (9.90)
-    }
-  };
-  
-  const basePrice = getPriceByVariant(variant);
+  // Preço fixo: R$ 12,90 (variante B vencedora do experimento A/B)
+  const basePrice = 12.90;
   const [finalPrice, setFinalPrice] = useState<number>(basePrice);
   
   // Validate coupon and calculate final price (revalidate when coupon changes)
@@ -62,11 +52,10 @@ export const PaymentModal = ({
     const validateCouponPrice = async () => {
       if (couponCode) {
         try {
-          console.log('[PaymentModal] Validating coupon:', couponCode, 'variant:', variant);
+          console.log('[PaymentModal] Validating coupon:', couponCode);
           const { data } = await supabase.functions.invoke('validate-coupon', {
             body: { 
-              code: couponCode,
-              payment_variant: variant // CRÍTICO: Passar variant para calcular preço correto
+              code: couponCode
             }
           });
           
@@ -92,12 +81,12 @@ export const PaymentModal = ({
     };
     
     validateCouponPrice();
-  }, [couponCode, basePrice, variant]); // Revalidate when couponCode or variant changes
+  }, [couponCode, basePrice]); // Revalidate when couponCode changes
 
   // Track begin_checkout when modal opens and create/reuse payment
   useEffect(() => {
     if (isOpen && !paymentId) {
-      trackBeginCheckout(testId, couponCode || undefined, finalPrice, variant);
+      trackBeginCheckout(testId, couponCode || undefined, finalPrice);
       probeExistingPaymentOrCreate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +152,6 @@ export const PaymentModal = ({
           isProd: true,
           source: source,
           campaign: campaign,
-          payment_variant: variant || 'A',
           ...gaFields
         },
       });
@@ -183,8 +171,7 @@ export const PaymentModal = ({
             testId,
             reuseData.payment_id,
             finalPrice,
-            couponCode || undefined,
-            variant
+            couponCode || undefined
           );
           
           toast({
@@ -196,7 +183,7 @@ export const PaymentModal = ({
         }
 
         // Track add_payment_info para pagamento criado/reusado
-        trackAddPaymentInfo(testId, reuseData.payment_id, couponCode || undefined, finalPrice, variant);
+        trackAddPaymentInfo(testId, reuseData.payment_id, couponCode || undefined, finalPrice);
         return; // ← IMPORTANTE: Não criar novo payment
       }
 
@@ -216,7 +203,7 @@ export const PaymentModal = ({
       console.error('[PaymentModal] Unexpected error in probeExistingPaymentOrCreate:', err);
       setError(err.message || 'Erro ao criar pagamento.');
       setLoading(false);
-      trackPaymentError(err.message, testId, variant);
+      trackPaymentError(err.message, testId);
     }
   };
 
@@ -245,8 +232,7 @@ export const PaymentModal = ({
         testId,
         paymentId,
         finalPrice,
-        couponCode || undefined,
-        variant
+        couponCode || undefined
       );
       
       // Conversion event is now handled by backend webhook (send-whatsapp-on-payment)
@@ -259,7 +245,7 @@ export const PaymentModal = ({
     } else if (data?.status === 'rejected') {
       setStatus('rejected');
       setError('Pagamento rejeitado. Tente novamente.');
-      trackPaymentError('Pagamento rejeitado', testId, variant);
+      trackPaymentError('Pagamento rejeitado', testId);
     }
     // Opcional: console.log('Detalhe do status:', data?.status_detail);
 
@@ -326,7 +312,7 @@ export const PaymentModal = ({
         description: errorMessage,
         variant: "destructive"
       });
-      trackPaymentError(errorMessage, testId, variant);
+      trackPaymentError(errorMessage, testId);
     }
   };
 

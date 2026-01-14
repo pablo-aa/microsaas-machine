@@ -18,7 +18,7 @@ import SupportCard from "@/components/SupportCard";
 import ResultsFooter from "@/components/ResultsFooter";
 import { PaymentModal } from "@/components/PaymentModal";
 import logoQualCarreira from "@/assets/logo-qualcarreira.png";
-import { trackPageView, trackExperimentViewed, trackCustomPurchase } from "@/lib/analytics";
+import { trackPageView, trackCustomPurchase } from "@/lib/analytics";
 
 interface ResultData {
   id: string;
@@ -37,11 +37,7 @@ interface ResultData {
 
 type LoadingState = "loading" | "success" | "error" | "expired" | "not-found";
 
-interface ResultadoPageProps {
-  paymentVariant?: string;
-}
-
-const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPageProps) => {
+const ResultadoPage = () => {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const { toast } = useToast();
@@ -57,28 +53,10 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
   const resultsRef = useRef<HTMLDivElement>(null);
   const paymentRef = useRef<HTMLDivElement>(null);
 
-
-  const paymentVariant = propPaymentVariant || "A";
-  
-  // Track experiment exposure (para calcular taxa de conversão real)
+  // Track page view
   useEffect(() => {
-    // Mapear variant para variation_id (A=0, B=1, C=2)
-    const variantToVariationId: Record<string, number> = {
-      'A': 0,
-      'B': 1,
-      'C': 2,
-    };
-    
-    const variationId = variantToVariationId[paymentVariant] ?? 0;
-    
-    // Enviar evento de exposição para o GrowthBook via GA4 (async)
-    trackExperimentViewed('qc-pricing-test', variationId, paymentVariant).catch((err) => {
-      console.error('[ResultadoPage] Error tracking experiment:', err);
-    });
-    
-    // Também track page view com variant
-    trackPageView(`/resultado/${id}`, paymentVariant);
-  }, [id, paymentVariant]);
+    trackPageView(`/resultado/${id}`);
+  }, [id]);
   
   useEffect(() => {
     const checkBackendCoupon = async () => {
@@ -227,7 +205,7 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
           // Buscar dados do pagamento para tracking
           const { data: paymentData, error: paymentQueryError } = await supabase
             .from("payments")
-            .select("amount, coupon_code, payment_variant")
+            .select("amount, coupon_code")
             .eq("payment_id", data.payment_id)
             .single();
 
@@ -236,8 +214,7 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
               result.id,
               data.payment_id,
               paymentData.amount || 0,
-              paymentData.coupon_code || undefined,
-              paymentData.payment_variant || paymentVariant
+              paymentData.coupon_code || undefined
             );
           }
           
@@ -497,7 +474,6 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
                 testId={id || ""}
                 userEmail={result.email}
                 userName={result.name}
-                variant={paymentVariant}
               />
             </div>
           )}
@@ -515,7 +491,6 @@ const ResultadoPage = ({ paymentVariant: propPaymentVariant = "A" }: ResultadoPa
         userEmail={result.email}
         userName={result.name}
         couponCode={couponCode}
-        variant={paymentVariant}
       />
     </div>
   );

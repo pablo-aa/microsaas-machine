@@ -7,13 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
 };
 
-const getPriceByVariant = (variant: string | null): number => {
-  switch (variant) {
-    case 'A': return 9.90;
-    case 'B': return 12.90;
-    case 'C': return 14.90;
-    default: return 9.90; // Default para A (9.90)
-  }
+// Preço fixo: R$ 12,90 (variante B vencedora do experimento A/B)
+const getPriceByVariant = (): number => {
+  return 12.90;
 };
 
 serve(async (req) => {
@@ -41,8 +37,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const BASE_PRICE = getPriceByVariant(payment_variant);
-    console.log('[unlock-free-result] Base price:', BASE_PRICE, 'for variant:', payment_variant);
+    // Preço fixo: R$ 12,90
+    const BASE_PRICE = 12.90;
+    console.log('[unlock-free-result] Base price:', BASE_PRICE);
 
     // 1. Check if test result exists
     const { data: testResult, error: testError } = await supabase
@@ -215,8 +212,7 @@ serve(async (req) => {
         original_amount: BASE_PRICE,
         status: 'approved',
         payment_method: 'coupon',
-        coupon_code: coupon.code,
-        payment_variant: payment_variant || 'A'
+        coupon_code: coupon.code
       });
 
     if (paymentInsertError) {

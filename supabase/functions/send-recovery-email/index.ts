@@ -9,12 +9,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
 };
 
+// Função para calcular preço baseado em variant histórico
+// Novos pagamentos não têm mais payment_variant, então default é 12.90 (preço fixo atual)
 const getPriceByVariant = (variant: string | null): number => {
   switch (variant) {
-    case 'A': return 9.90;
-    case 'B': return 12.90;
-    case 'C': return 14.90;
-    default: return 9.90; // Default para A (9.90)
+    case 'A': return 9.90; // Histórico
+    case 'B': return 12.90; // Histórico e preço atual fixo
+    case 'C': return 14.90; // Histórico
+    default: return 12.90; // Default para novos pagamentos (preço fixo)
   }
 };
 

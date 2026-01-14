@@ -13,25 +13,11 @@ interface PaymentSectionProps {
   testId: string;
   userEmail: string;
   userName: string;
-  variant?: string;
 }
 
-const getPriceByVariant = (variant?: string): number => {
-  switch (variant) {
-    case 'A':
-      return 9.90;
-    case 'B':
-      return 12.90;
-    case 'C':
-      return 14.90;
-    default:
-      return 9.90; // Default para A (9.90)
-  }
-};
-
-const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: PaymentSectionProps) => {
+const PaymentSection = ({ onPurchase, testId, userEmail, userName }: PaymentSectionProps) => {
   const { toast } = useToast();
-  const basePrice = getPriceByVariant(variant);
+  const basePrice = 12.90;
   
   const [coupon, setCoupon] = useState<ValidatedCoupon | null>(null);
   const [isLoadingCoupon, setIsLoadingCoupon] = useState(true);
@@ -43,7 +29,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: Pa
       const savedCoupon = getCoupon();
       if (savedCoupon) {
         console.log('[PaymentSection] Validando cupom salvo:', savedCoupon);
-        const validatedCoupon = await validateAndSaveCoupon(savedCoupon, variant);
+        const validatedCoupon = await validateAndSaveCoupon(savedCoupon);
         if (validatedCoupon.valid) {
           setCoupon(validatedCoupon);
         }
@@ -52,7 +38,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: Pa
     };
     
     loadCoupon();
-  }, [variant]);
+  }, []);
 
   const handleFreeUnlock = async () => {
     if (!coupon || !coupon.code) return;
@@ -66,8 +52,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: Pa
       const { data, error } = await supabase.functions.invoke('unlock-free-result', {
         body: {
           test_id: testId,
-          coupon_code: coupon.code,
-          payment_variant: variant || 'A'
+          coupon_code: coupon.code
         }
       });
       
@@ -88,8 +73,7 @@ const PaymentSection = ({ onPurchase, testId, userEmail, userName, variant }: Pa
           testId,
           data.payment_id,
           0, // amount é 0 para cupom grátis
-          coupon.code,
-          variant || 'A'
+          coupon.code
         );
       }
       

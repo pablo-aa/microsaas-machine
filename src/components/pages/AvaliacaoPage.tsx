@@ -38,8 +38,6 @@ interface Answer {
   score: number;
 }
 
-const isBrowser = typeof window !== "undefined";
-
 const AvaliacaoPage = () => {
   const params = useParams<{ id?: string }>();
   const router = useRouter();
@@ -49,6 +47,7 @@ const AvaliacaoPage = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<number | undefined>();
   const [stage, setStage] = useState<AssessmentStage>("questions");
   const [testId, setTestId] = useState<string>("");
+  const [showTestProfiles, setShowTestProfiles] = useState(false);
 
   usePageView();
   useTestAbandonment(
@@ -89,6 +88,13 @@ const AvaliacaoPage = () => {
       });
     }
   }, [params.id, router, toast]);
+
+  // Verificar se deve mostrar perfis de teste apenas no cliente (evita erro de hidratação)
+  useEffect(() => {
+    const isBrowser = typeof window !== "undefined";
+    const isNotProduction = isBrowser && !window.location.hostname.includes("qualcarreira.com");
+    setShowTestProfiles(isNotProduction);
+  }, []);
 
   const totalQuestions = TOTAL_QUESTIONS;
   const progress =
@@ -301,7 +307,7 @@ const AvaliacaoPage = () => {
               {currentQuestion + 1} de {totalQuestions}
             </span>
 
-            {isBrowser && !window.location.hostname.includes("qualcarreira.com") && (
+            {showTestProfiles && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

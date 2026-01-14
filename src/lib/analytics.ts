@@ -12,13 +12,12 @@ const MEASUREMENT_API_SECRET = process.env.NEXT_PUBLIC_GA4_API_SECRET || '';
  * Envia DIRETAMENTE para o GA4 via Measurement Protocol (HTTP request)
  * Bypassa GTM completamente.
  */
-export const trackExperimentViewed = async (experimentId: string, variationId: number | string, variant?: string) => {
+export const trackExperimentViewed = async (experimentId: string, variationId: number | string) => {
   // Envia para GTM data layer (para compatibilidade com outras ferramentas)
   pushToDataLayer({
     event: 'experiment_viewed',
     experiment_id: experimentId,
     variation_id: String(variationId),
-    ...(variant && { payment_variant: variant }),
   });
   
   // Enviar DIRETO para GA4 via Measurement Protocol
@@ -37,7 +36,6 @@ export const trackExperimentViewed = async (experimentId: string, variationId: n
         params: {
           experiment_id: experimentId,
           variation_id: String(variationId),
-          ...(variant && { payment_variant: variant }),
           ...(ga_session_id && { session_id: ga_session_id }),
         }
       }]
@@ -54,14 +52,12 @@ export const trackExperimentViewed = async (experimentId: string, variationId: n
 };
 
 /**
- * Track page view como proxy de exposure ao experimento
- * Envia payment_variant em TODOS os eventos para permitir segmentação no GrowthBook
+ * Track page view
  */
-export const trackPageView = (pagePath: string, variant?: string) => {
+export const trackPageView = (pagePath: string) => {
   pushToDataLayer({
     event: 'page_view',
     page_path: pagePath,
-    ...(variant && { payment_variant: variant }),
   });
 };
 
@@ -250,12 +246,10 @@ export const trackBeginCheckout = (
   testId: string,
   coupon?: string,
   discountedPrice?: number,
-  variant?: string,
 ) => {
   const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'begin_checkout',
-    payment_variant: variant || 'A',
     ecommerce: {
       currency: 'BRL',
       value: price,
@@ -271,12 +265,10 @@ export const trackAddPaymentInfo = (
   paymentId: string,
   coupon?: string,
   discountedPrice?: number,
-  variant?: string,
 ) => {
   const price = discountedPrice || getMercadoPagoConfig().price;
   pushToDataLayer({
     event: 'add_payment_info',
-    payment_variant: variant || 'A',
     ecommerce: {
       currency: 'BRL',
       value: price,
@@ -294,13 +286,11 @@ export const trackAddPaymentInfo = (
 export const trackPixCodeCopied = (
   testId: string,
   paymentId: string,
-  variant?: string,
 ) => {
   pushToDataLayer({
     event: 'pix_code_copied',
     eventCategory: 'Payment',
     eventAction: 'PIX Code Copied',
-    payment_variant: variant || 'A',
     user_properties: {
       test_id: testId,
       payment_id: paymentId,
@@ -339,14 +329,12 @@ export const trackPixCodeCopied = (
 export const trackPaymentError = (
   errorMessage: string,
   testId?: string,
-  variant?: string,
 ) => {
   pushToDataLayer({
     event: 'payment_error',
     eventCategory: 'Payment',
     eventAction: 'Error',
     eventLabel: errorMessage,
-    payment_variant: variant || 'A',
     user_properties: testId ? { test_id: testId } : undefined,
   });
 };
@@ -361,7 +349,6 @@ export const trackCustomPurchase = (
   paymentId: string,
   amount: number,
   coupon?: string,
-  variant?: string,
 ) => {
   // Validação defensiva: garantir que paymentId e testId existem
   if (!paymentId || !testId) {
@@ -382,7 +369,6 @@ export const trackCustomPurchase = (
       ...(coupon ? { coupon } : {}),
       items: [getProductItem()],
     },
-    payment_variant: variant || 'A',
     user_properties: {
       test_id: testId,
     },
