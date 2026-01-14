@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Ticket } from "lucide-react";
+import { BarChart3, Ticket, Users } from "lucide-react";
 
 interface NavigationProps {
   onLogout?: () => void;
@@ -48,6 +48,17 @@ export const Navigation = ({ onLogout }: NavigationProps) => {
                   Cupons
                 </Button>
               </Link>
+
+              <Link to="/subscribers">
+                <Button
+                  variant={isActive("/subscribers") ? "default" : "ghost"}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  Assinantes
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -67,4 +78,5 @@ export const Navigation = ({ onLogout }: NavigationProps) => {
     </nav>
   );
 };
+
 

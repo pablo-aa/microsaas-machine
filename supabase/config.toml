@@ -36,3 +36,5 @@ verify_jwt = false
 [functions.apply-retroactive-discount]
 verify_jwt = false
 
+[functions.get-subscribers]
+verify_jwt = false

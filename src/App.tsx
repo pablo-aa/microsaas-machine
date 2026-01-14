@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Coupons from "./pages/Coupons";
+import Subscribers from "./pages/Subscribers";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -92,6 +93,17 @@ const App = () => {
               element={
                 isAuthenticated ? (
                   <Coupons onLogout={handleLogout} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            <Route
+              path="/subscribers"
+              element={
+                isAuthenticated ? (
+                  <Subscribers onLogout={handleLogout} />
                 ) : (
                   <Navigate to="/login" replace />
                 )
