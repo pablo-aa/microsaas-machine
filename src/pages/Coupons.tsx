@@ -79,12 +79,17 @@ const Coupons = ({ onLogout }: CouponsProps) => {
 
   const [formData, setFormData] = useState({
     code: "",
-    discount_percentage: 0,
+    discount_percentage: "",
     description: "",
     is_active: true,
     expires_at: "",
     max_uses: "",
   });
+
+  // Calculation mode and base price
+  const BASE_PRICE = 12.90;
+  const [calculationMode, setCalculationMode] = useState<"percentage" | "finalPrice">("percentage");
+  const [finalPriceInput, setFinalPriceInput] = useState("");
 
   // Fetch coupons from Edge Function
   const fetchCoupons = async () => {
@@ -133,8 +138,15 @@ const Coupons = ({ onLogout }: CouponsProps) => {
       return "Código deve conter apenas letras e números";
     }
 
-    if (formData.discount_percentage < 0 || formData.discount_percentage > 100) {
+    const discountValue = parseFloat(formData.discount_percentage);
+    if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
       return "Desconto deve estar entre 0% e 100%";
+    }
+
+    // Validate max 2 decimal places
+    const decimalParts = formData.discount_percentage.split('.');
+    if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+      return "Desconto deve ter no máximo 2 casas decimais";
     }
 
     if (formData.max_uses && parseInt(formData.max_uses) < 1) {
@@ -156,6 +168,8 @@ const Coupons = ({ onLogout }: CouponsProps) => {
       setSubmitting(true);
       setError(null);
 
+      const discountPercentage = parseFloat(formData.discount_percentage);
+      
       const response = await fetch(`${SUPABASE_URL}/functions/v1/manage-coupons`, {
         method: "POST",
         headers: {
@@ -164,7 +178,7 @@ const Coupons = ({ onLogout }: CouponsProps) => {
         },
         body: JSON.stringify({
           code: formData.code.trim().toUpperCase(),
-          discount_percentage: formData.discount_percentage,
+          discount_percentage: discountPercentage,
           description: formData.description || null,
           is_active: formData.is_active,
           expires_at: formData.expires_at || null,
@@ -202,6 +216,8 @@ const Coupons = ({ onLogout }: CouponsProps) => {
       setSubmitting(true);
       setError(null);
 
+      const discountPercentage = parseFloat(formData.discount_percentage);
+      
       const response = await fetch(
         `${SUPABASE_URL}/functions/v1/manage-coupons?id=${editingCoupon.id}`,
         {
@@ -211,7 +227,7 @@ const Coupons = ({ onLogout }: CouponsProps) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            discount_percentage: formData.discount_percentage,
+            discount_percentage: discountPercentage,
             description: formData.description || null,
             is_active: formData.is_active,
             expires_at: formData.expires_at || null,
@@ -310,12 +326,15 @@ const Coupons = ({ onLogout }: CouponsProps) => {
     setEditingCoupon(coupon);
     setFormData({
       code: coupon.code,
-      discount_percentage: coupon.discount_percentage,
+      discount_percentage: coupon.discount_percentage.toString(),
       description: coupon.description || "",
       is_active: coupon.is_active,
       expires_at: coupon.expires_at ? coupon.expires_at.split("T")[0] : "",
       max_uses: coupon.max_uses?.toString() || "",
     });
+    setCalculationMode("percentage");
+    const finalPrice = BASE_PRICE * (1 - coupon.discount_percentage / 100);
+    setFinalPriceInput(finalPrice.toFixed(2));
     setError(null);
     setDialogOpen(true);
   };
@@ -338,12 +357,14 @@ const Coupons = ({ onLogout }: CouponsProps) => {
   const resetForm = () => {
     setFormData({
       code: "",
-      discount_percentage: 0,
+      discount_percentage: "",
       description: "",
       is_active: true,
       expires_at: "",
       max_uses: "",
     });
+    setCalculationMode("percentage");
+    setFinalPriceInput("");
     setError(null);
   };
 
@@ -553,7 +574,11 @@ const Coupons = ({ onLogout }: CouponsProps) => {
                   filteredCoupons.map((coupon) => (
                     <TableRow key={coupon.id}>
                       <TableCell className="font-mono font-semibold">{coupon.code}</TableCell>
-                      <TableCell>{coupon.discount_percentage}%</TableCell>
+                      <TableCell>
+                        {typeof coupon.discount_percentage === 'number' 
+                          ? coupon.discount_percentage.toFixed(2) 
+                          : parseFloat(coupon.discount_percentage).toFixed(2)}%
+                      </TableCell>
                       <TableCell>{getStatusBadge(coupon.status)}</TableCell>
                       <TableCell>
                         {coupon.current_uses}/{coupon.max_uses || "∞"}
@@ -629,23 +654,102 @@ const Coupons = ({ onLogout }: CouponsProps) => {
                 </p>
               </div>
 
-              {/* Discount */}
+              {/* Discount Mode Selector */}
               <div className="space-y-2">
-                <Label htmlFor="discount">Desconto (%) *</Label>
-                <Input
-                  id="discount"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.discount_percentage}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      discount_percentage: parseInt(e.target.value) || 0,
-                    })
-                  }
-                />
+                <Label>Tipo de Desconto *</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={calculationMode === "percentage" ? "default" : "outline"}
+                    onClick={() => setCalculationMode("percentage")}
+                    className="flex-1"
+                  >
+                    % Desconto
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={calculationMode === "finalPrice" ? "default" : "outline"}
+                    onClick={() => setCalculationMode("finalPrice")}
+                    className="flex-1"
+                  >
+                    Valor Final
+                  </Button>
+                </div>
               </div>
+
+              {/* Discount Percentage */}
+              {calculationMode === "percentage" && (
+                <div className="space-y-2">
+                  <Label htmlFor="discount">Desconto (%) *</Label>
+                  <Input
+                    id="discount"
+                    type="text"
+                    inputMode="decimal"
+                    value={formData.discount_percentage}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow only numbers and one decimal point
+                      if (/^\d*\.?\d{0,2}$/.test(value) || value === "") {
+                        setFormData({
+                          ...formData,
+                          discount_percentage: value,
+                        });
+                        
+                        // Calculate final price
+                        const percent = parseFloat(value) || 0;
+                        if (percent >= 0 && percent <= 100) {
+                          const finalPrice = BASE_PRICE * (1 - percent / 100);
+                          setFinalPriceInput(finalPrice.toFixed(2));
+                        }
+                      }
+                    }}
+                    placeholder="Ex: 23.50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Valor final: R$ {finalPriceInput || "0.00"}
+                  </p>
+                </div>
+              )}
+
+              {/* Final Price */}
+              {calculationMode === "finalPrice" && (
+                <div className="space-y-2">
+                  <Label htmlFor="finalPrice">Valor Final (R$) *</Label>
+                  <Input
+                    id="finalPrice"
+                    type="text"
+                    inputMode="decimal"
+                    value={finalPriceInput}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow only numbers and one decimal point
+                      if (/^\d*\.?\d{0,2}$/.test(value) || value === "") {
+                        setFinalPriceInput(value);
+                        
+                        // Calculate percentage
+                        const finalPrice = parseFloat(value) || 0;
+                        if (finalPrice >= 0 && finalPrice <= BASE_PRICE) {
+                          const percent = ((BASE_PRICE - finalPrice) / BASE_PRICE) * 100;
+                          setFormData({
+                            ...formData,
+                            discount_percentage: percent.toFixed(2),
+                          });
+                        } else if (finalPrice > BASE_PRICE) {
+                          // If final price > base price, discount would be negative (invalid)
+                          setFormData({
+                            ...formData,
+                            discount_percentage: "",
+                          });
+                        }
+                      }
+                    }}
+                    placeholder={`Ex: ${(BASE_PRICE * 0.5).toFixed(2)}`}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Desconto: {formData.discount_percentage || "0"}% (Preço base: R$ {BASE_PRICE.toFixed(2)})
+                  </p>
+                </div>
+              )}
 
               {/* Description */}
               <div className="space-y-2">

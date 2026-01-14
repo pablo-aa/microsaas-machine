@@ -27,3 +27,5 @@ echo ""
 echo "🧪 Teste com:"
 echo "   curl https://iwovfvrmjaonzqlaavmi.supabase.co/functions/v1/manage-coupons"
 
+
+

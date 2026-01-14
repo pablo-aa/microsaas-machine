@@ -89,11 +89,21 @@ serve(async (req) => {
         );
       }
 
-      // Validate discount percentage
-      const discount = parseInt(body.discount_percentage);
+      // Validate discount percentage (accepts decimals up to 2 places)
+      const discount = parseFloat(body.discount_percentage);
       if (isNaN(discount) || discount < 0 || discount > 100) {
         return new Response(
           JSON.stringify({ error: "Desconto deve estar entre 0% e 100%" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Validate max 2 decimal places
+      const discountStr = body.discount_percentage.toString();
+      const decimalParts = discountStr.split('.');
+      if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+        return new Response(
+          JSON.stringify({ error: "Desconto deve ter no máximo 2 casas decimais" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -170,13 +180,24 @@ serve(async (req) => {
       const updateData: any = {};
 
       if (body.discount_percentage !== undefined) {
-        const discount = parseInt(body.discount_percentage);
+        const discount = parseFloat(body.discount_percentage);
         if (isNaN(discount) || discount < 0 || discount > 100) {
           return new Response(
             JSON.stringify({ error: "Desconto deve estar entre 0% e 100%" }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
+
+        // Validate max 2 decimal places
+        const discountStr = body.discount_percentage.toString();
+        const decimalParts = discountStr.split('.');
+        if (decimalParts.length > 1 && decimalParts[1].length > 2) {
+          return new Response(
+            JSON.stringify({ error: "Desconto deve ter no máximo 2 casas decimais" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         updateData.discount_percentage = discount;
       }
 
