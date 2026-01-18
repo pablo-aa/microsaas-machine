@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.get-subscribers]
 verify_jwt = false
+
+[functions.get-all-users]
+verify_jwt = false

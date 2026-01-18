@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Coupons from "./pages/Coupons";
 import Subscribers from "./pages/Subscribers";
+import Export from "./pages/Export";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -104,6 +105,17 @@ const App = () => {
               element={
                 isAuthenticated ? (
                   <Subscribers onLogout={handleLogout} />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+
+            <Route
+              path="/export"
+              element={
+                isAuthenticated ? (
+                  <Export onLogout={handleLogout} />
                 ) : (
                   <Navigate to="/login" replace />
                 )

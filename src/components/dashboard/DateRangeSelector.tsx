@@ -24,7 +24,7 @@ export const DateRangeSelector = ({
     { value: "7", label: "Últimos 7 dias" },
     { value: "14", label: "Últimos 14 dias" },
     { value: "30", label: "Últimos 30 dias" },
-    { value: "all", label: "Histórico" },
+    { value: "all", label: "Período completo" },
   ];
 
   // Interpreta data do input como data local (GMT-3 via runtime do browser),
