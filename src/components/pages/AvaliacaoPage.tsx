@@ -9,6 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, CheckCircle, Loader2, ChevronDown } from "lucide-react";
 import LikertScale from "@/components/LikertScale";
 import FormularioDadosPage from "@/components/pages/FormularioDadosPage";
+import ContextualQuestionnairePage from "@/components/pages/ContextualQuestionnairePage";
+import type { ContextualAnswers } from "@/data/contextualQuestions";
 import { v4 as uuidv4 } from "uuid";
 import { questions, TOTAL_QUESTIONS } from "@/data/questions";
 import { assessmentStorage } from "@/lib/assessmentStorage";
@@ -29,16 +31,21 @@ import {
   trackTestNavigationBack,
   trackTestResumed,
   trackTestCompleted,
+  trackExperimentViewed,
 } from "@/lib/analytics";
 
-type AssessmentStage = "questions" | "processing" | "form";
+type AssessmentStage = "questions" | "processing" | "contextual_questionnaire" | "form";
 
 interface Answer {
   question_id: number;
   score: number;
 }
 
-const AvaliacaoPage = () => {
+interface AvaliacaoPageProps {
+  contextualQuestionnaireVariant?: string;
+}
+
+const AvaliacaoPage = ({ contextualQuestionnaireVariant = "disabled" }: AvaliacaoPageProps) => {
   const params = useParams<{ id?: string }>();
   const router = useRouter();
   const { toast } = useToast();
@@ -48,6 +55,8 @@ const AvaliacaoPage = () => {
   const [stage, setStage] = useState<AssessmentStage>("questions");
   const [testId, setTestId] = useState<string>("");
   const [showTestProfiles, setShowTestProfiles] = useState(false);
+  const [contextualAnswers, setContextualAnswers] = useState<ContextualAnswers | null>(null);
+  const [experimentVariant, setExperimentVariant] = useState<string | null>(null);
 
   usePageView();
   useTestAbandonment(
@@ -69,25 +78,58 @@ const AvaliacaoPage = () => {
 
     setTestId(id);
 
-    const savedProgress = assessmentStorage.loadProgress(id);
-    if (savedProgress) {
-      setAnswers(savedProgress.answers);
-      setCurrentQuestion(savedProgress.currentQuestion);
-
-      const currentQuestionData = questions[savedProgress.currentQuestion];
-      const currentAnswer = savedProgress.answers.find(
+    // Carregar estado completo (com migração automática)
+    const flowState = assessmentStorage.loadFlowState(id);
+    
+    if (flowState) {
+      // Restaurar TUDO de forma síncrona
+      setAnswers(flowState.answers);
+      setCurrentQuestion(flowState.currentQuestion);
+      
+      // Restaurar selectedAnswer
+      const currentQuestionData = questions[flowState.currentQuestion];
+      const currentAnswer = flowState.answers.find(
         (a) => a.question_id === currentQuestionData?.id,
       );
       setSelectedAnswer(currentAnswer?.score);
-
-      trackTestResumed(id, savedProgress.currentQuestion + 1, savedProgress.answers.length);
-
-      toast({
-        title: "Progresso recuperado",
-        description: `Continuando da questão ${savedProgress.currentQuestion + 1}/${TOTAL_QUESTIONS}`,
-      });
+      
+      // Restaurar contextualAnswers
+      if (flowState.contextualAnswers) {
+        setContextualAnswers(flowState.contextualAnswers);
+      }
+      
+      // Restaurar variante salva (prioridade sobre prop)
+      if (flowState.experimentVariant) {
+        setExperimentVariant(flowState.experimentVariant);
+      } else {
+        // Se não tem variante salva, usar da prop mas NÃO salvar ainda
+        // A variante será salva quando completar 60 questões (junto com o tracking)
+        // Isso garante que o evento experiment_viewed seja disparado corretamente
+        setExperimentVariant(contextualQuestionnaireVariant);
+      }
+      
+      // Determinar e restaurar stage (determinístico)
+      const restoredStage = assessmentStorage.determineStage(flowState);
+      setStage(restoredStage);
+      
+      // Toast apenas se realmente recuperou progresso significativo
+      if (flowState.answers.length > 0 || flowState.contextualAnswers || flowState.formData) {
+        trackTestResumed(id, flowState.currentQuestion + 1, flowState.answers.length);
+        toast({
+          title: "Progresso recuperado",
+          description: restoredStage === 'form' 
+            ? "Continuando do formulário de dados"
+            : restoredStage === 'contextual_questionnaire'
+            ? "Continuando do questionário contextual"
+            : `Continuando da questão ${flowState.currentQuestion + 1}/${TOTAL_QUESTIONS}`,
+        });
+      }
+    } else {
+      // Novo usuário: apenas setar no state (não salvar ainda - será salvo quando completar 60 questões)
+      // Isso evita salvar variante para usuários que podem abandonar antes de completar
+      setExperimentVariant(contextualQuestionnaireVariant);
     }
-  }, [params.id, router, toast]);
+  }, [params.id, router, toast, contextualQuestionnaireVariant]);
 
   // Verificar se deve mostrar perfis de teste apenas no cliente (evita erro de hidratação)
   useEffect(() => {
@@ -95,6 +137,28 @@ const AvaliacaoPage = () => {
     const isNotProduction = isBrowser && !window.location.hostname.includes("qualcarreira.com");
     setShowTestProfiles(isNotProduction);
   }, []);
+
+  // Salvar stage quando mudar (atômico)
+  useEffect(() => {
+    if (!testId) return;
+    
+    // Não salvar stage "processing" (temporário)
+    if (stage === "processing") return;
+    
+    assessmentStorage.updateFlowState(testId, {
+      currentStage: stage,
+    });
+  }, [stage, testId]);
+
+  // Salvar answers quando mudarem (atômico)
+  useEffect(() => {
+    if (!testId || answers.length === 0) return;
+    
+    assessmentStorage.updateFlowState(testId, {
+      answers,
+      currentQuestion,
+    });
+  }, [answers, currentQuestion, testId]);
 
   const totalQuestions = TOTAL_QUESTIONS;
   const progress =
@@ -130,7 +194,8 @@ const AvaliacaoPage = () => {
       const nextQuestionIndex = currentQuestion + 1;
       setCurrentQuestion(nextQuestionIndex);
 
-      assessmentStorage.saveProgress(testId, newAnswers, nextQuestionIndex);
+      // Não precisa salvar aqui - o useEffect (linha 134-141) já salva via updateFlowState
+      // Removido saveProgress() para evitar duplicação e race conditions
 
       const nextQuestionData = questions[nextQuestionIndex];
       const nextAnswer = newAnswers.find(
@@ -139,10 +204,45 @@ const AvaliacaoPage = () => {
       setSelectedAnswer(nextAnswer?.score);
     } else {
       trackTestCompleted(testId, TOTAL_QUESTIONS);
-      assessmentStorage.clearProgress(testId);
+      
+      // Usar variante salva (ou da prop se ainda não foi salva)
+      const variant = experimentVariant || contextualQuestionnaireVariant;
+      const showContextualQuestionnaire = variant === "enabled";
+      
+      // Rastrear exposição ao experimento (apenas uma vez, quando completa 60 questões)
+      // Verificar se variante já está salva no estado persistente para evitar duplicação
+      const flowState = assessmentStorage.loadFlowState(testId);
+      const shouldTrackExposure = !flowState?.experimentVariant;
+      
+      if (shouldTrackExposure) {
+        const variationId = showContextualQuestionnaire ? 1 : 0;
+        console.log('[Experiment] Tracking exposure:', { experimentId: 'qc-contextual-questionnaire-test', variationId, variant });
+        trackExperimentViewed('qc-contextual-questionnaire-test', variationId);
+      } else {
+        console.log('[Experiment] Exposure already tracked, skipping. Variant:', flowState?.experimentVariant);
+      }
+      
+      // Salvar variante no estado (garantir consistência após refresh)
+      // IMPORTANTE: Sempre salvar aqui, mesmo que já esteja salva (garante atomicidade)
+      setExperimentVariant(variant);
+      assessmentStorage.updateFlowState(testId, {
+        experimentVariant: variant,
+      });
+      
       setStage("processing");
       setTimeout(() => {
-        setStage("form");
+        if (showContextualQuestionnaire) {
+          setStage("contextual_questionnaire");
+          assessmentStorage.updateFlowState(testId, {
+            currentStage: 'contextual_questionnaire',
+          });
+        } else {
+          // Fluxo original: pular questionário contextual
+          setStage("form");
+          assessmentStorage.updateFlowState(testId, {
+            currentStage: 'form',
+          });
+        }
       }, 2000);
     }
   };
@@ -161,11 +261,14 @@ const AvaliacaoPage = () => {
   };
 
   const handleRestart = () => {
-    assessmentStorage.clearProgress(testId);
+    assessmentStorage.clearFlowState(testId); // Limpa tudo
     setCurrentQuestion(0);
     setAnswers([]);
     setSelectedAnswer(undefined);
     setStage("questions");
+    setContextualAnswers(null);
+    // Resetar variante para a prop (será salva novamente quando necessário)
+    setExperimentVariant(contextualQuestionnaireVariant);
   };
 
   const handleAutoFill = () => {
@@ -179,7 +282,28 @@ const AvaliacaoPage = () => {
     setCurrentQuestion(lastQuestionIndex);
     setSelectedAnswer(randomAnswers[lastQuestionIndex].score);
 
-    assessmentStorage.saveProgress(testId, randomAnswers, lastQuestionIndex);
+    // Determinar stage baseado na variante (consistência com handleNext)
+    const variant = experimentVariant || contextualQuestionnaireVariant;
+    const showContextualQuestionnaire = variant === "enabled";
+    const nextStage = showContextualQuestionnaire ? 'contextual_questionnaire' : 'form';
+
+    // Rastrear exposição ao experimento (apenas uma vez, se ainda não foi rastreado)
+    const flowState = assessmentStorage.loadFlowState(testId);
+    const shouldTrackExposure = !flowState?.experimentVariant;
+    
+    if (shouldTrackExposure) {
+      const variationId = showContextualQuestionnaire ? 1 : 0;
+      console.log('[Experiment] Tracking exposure (autoFill):', { experimentId: 'qc-contextual-questionnaire-test', variationId, variant });
+      trackExperimentViewed('qc-contextual-questionnaire-test', variationId);
+    }
+
+    // Usar updateFlowState para consistência com o resto do sistema
+    assessmentStorage.updateFlowState(testId, {
+      answers: randomAnswers,
+      currentQuestion: lastQuestionIndex,
+      currentStage: nextStage,
+      experimentVariant: variant, // Garantir que variante está salva
+    });
 
     toast({
       title: "Respostas preenchidas",
@@ -199,7 +323,28 @@ const AvaliacaoPage = () => {
     setCurrentQuestion(lastQuestionIndex);
     setSelectedAnswer(profileAnswersArray[lastQuestionIndex].score);
 
-    assessmentStorage.saveProgress(testId, profileAnswersArray, lastQuestionIndex);
+    // Determinar stage baseado na variante (consistência com handleNext)
+    const variant = experimentVariant || contextualQuestionnaireVariant;
+    const showContextualQuestionnaire = variant === "enabled";
+    const nextStage = showContextualQuestionnaire ? 'contextual_questionnaire' : 'form';
+
+    // Rastrear exposição ao experimento (apenas uma vez, se ainda não foi rastreado)
+    const flowState = assessmentStorage.loadFlowState(testId);
+    const shouldTrackExposure = !flowState?.experimentVariant;
+    
+    if (shouldTrackExposure) {
+      const variationId = showContextualQuestionnaire ? 1 : 0;
+      console.log('[Experiment] Tracking exposure (profileTest):', { experimentId: 'qc-contextual-questionnaire-test', variationId, variant });
+      trackExperimentViewed('qc-contextual-questionnaire-test', variationId);
+    }
+
+    // Usar updateFlowState para consistência com o resto do sistema
+    assessmentStorage.updateFlowState(testId, {
+      answers: profileAnswersArray,
+      currentQuestion: lastQuestionIndex,
+      currentStage: nextStage,
+      experimentVariant: variant, // Garantir que variante está salva
+    });
 
     const profile = profiles[profileType];
     toast({
@@ -225,8 +370,37 @@ const AvaliacaoPage = () => {
     );
   }
 
+  if (stage === "contextual_questionnaire") {
+    const variant = experimentVariant || contextualQuestionnaireVariant;
+    return (
+      <ContextualQuestionnairePage
+        testId={testId}
+        contextualQuestionnaireVariant={variant}
+        onComplete={(answers) => {
+          setContextualAnswers(answers);
+          setStage("form");
+          
+          // Salvar atômicamente
+          assessmentStorage.updateFlowState(testId, {
+            contextualAnswers: answers,
+            contextualQuestionnaireCompleted: true,
+            currentStage: 'form',
+          });
+        }}
+      />
+    );
+  }
+
   if (stage === "form") {
-    return <FormularioDadosPage answers={answers} testId={testId} />;
+    const variant = experimentVariant || contextualQuestionnaireVariant;
+    return (
+      <FormularioDadosPage
+        answers={answers}
+        testId={testId}
+        contextualAnswers={contextualAnswers || undefined}
+        contextualQuestionnaireVariant={variant}
+      />
+    );
   }
 
   return (

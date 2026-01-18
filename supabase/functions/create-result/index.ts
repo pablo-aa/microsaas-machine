@@ -427,6 +427,104 @@ const questions = [
     gopc: "PC"
   }
 ];
+// Validate contextual questionnaire structure
+function validateContextualQuestionnaire(data: any): any {
+  if (!data || typeof data !== 'object') {
+    throw new Error('contextual_questionnaire must be an object');
+  }
+
+  // Whitelist of valid values for each question
+  const validValues = {
+    q1: ['first_career', 'career_change', 'career_growth', 'unemployed', 'self_employed'],
+    q2: ['0_30_days', '1_3_months', '3_6_months', '6_plus_months', 'just_exploring'],
+    q3: ['more_satisfaction', 'more_money', 'more_stability', 'more_flexibility', 'fast_growth', 'more_autonomy'],
+    q4: ['dont_know_skills', 'fear_wrong_choice', 'lack_clarity', 'lack_time', 'money_insecurity', 'lack_support', 'tried_before'],
+    q5: ['many_ideas', 'know_what_want', 'unsatisfied_afraid', 'want_strategic', 'just_confirm'],
+    q6: ['0_2_hours', '3_5_hours', '6_10_hours', '10_plus_hours'],
+    q7: ['completely_different', 'similar_to_current', 'dont_know_yet'],
+    q8: ['start_from_zero', 'salary_reduction', 'cant_find_job', 'waste_time', 'lack_family_support'],
+    q9: ['quick_direction', 'high_employability', 'find_love', 'understand_skills']
+  };
+
+  // Validate required fields (q1-q6)
+  const requiredFields = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'];
+  for (const field of requiredFields) {
+    if (!(field in data)) {
+      throw new Error(`Missing required field: ${field}`);
+    }
+  }
+
+  // Validate q1
+  if (!validValues.q1.includes(data.q1)) {
+    throw new Error(`Invalid value for q1: ${data.q1}`);
+  }
+
+  // Validate q2
+  if (!validValues.q2.includes(data.q2)) {
+    throw new Error(`Invalid value for q2: ${data.q2}`);
+  }
+
+  // Validate q3
+  if (!validValues.q3.includes(data.q3)) {
+    throw new Error(`Invalid value for q3: ${data.q3}`);
+  }
+
+  // Validate q4 (must be array with max 2 items)
+  if (!Array.isArray(data.q4)) {
+    throw new Error('q4 must be an array');
+  }
+  if (data.q4.length === 0 || data.q4.length > 2) {
+    throw new Error('q4 must have between 1 and 2 items');
+  }
+  for (const value of data.q4) {
+    if (!validValues.q4.includes(value)) {
+      throw new Error(`Invalid value in q4: ${value}`);
+    }
+  }
+
+  // Validate q5
+  if (!validValues.q5.includes(data.q5)) {
+    throw new Error(`Invalid value for q5: ${data.q5}`);
+  }
+
+  // Validate q6
+  if (!validValues.q6.includes(data.q6)) {
+    throw new Error(`Invalid value for q6: ${data.q6}`);
+  }
+
+  // Validate conditional questions based on q1
+  if (data.q1 === 'career_change') {
+    // q7 and q8 are required if q1 is career_change
+    if (!data.q7 || !validValues.q7.includes(data.q7)) {
+      throw new Error('q7 is required and must be valid when q1 is career_change');
+    }
+    if (!data.q8 || !validValues.q8.includes(data.q8)) {
+      throw new Error('q8 is required and must be valid when q1 is career_change');
+    }
+  } else if (data.q1 === 'unemployed') {
+    // q9 is required if q1 is unemployed
+    if (!data.q9 || !validValues.q9.includes(data.q9)) {
+      throw new Error('q9 is required and must be valid when q1 is unemployed');
+    }
+  }
+
+  // Return validated and cleaned data
+  const validated: any = {
+    q1: data.q1,
+    q2: data.q2,
+    q3: data.q3,
+    q4: data.q4,
+    q5: data.q5,
+    q6: data.q6
+  };
+
+  if (data.q7) validated.q7 = data.q7;
+  if (data.q8) validated.q8 = data.q8;
+  if (data.q9) validated.q9 = data.q9;
+
+  return validated;
+}
+
 // Calculate scores from answers
 function calculateScores(answers) {
   const riasec_scores = {
@@ -481,12 +579,13 @@ serve(async (req)=>{
       }
     });
     const body = await req.json();
-    const { name, email, age, answers } = body;
+    const { name, email, age, answers, contextual_questionnaire } = body;
     console.log('Creating result for:', {
       name,
       email,
       age,
-      answerCount: answers.length
+      answerCount: answers.length,
+      hasContextualQuestionnaire: !!contextual_questionnaire
     });
     // Validate input
     if (!name || !email || !age || !answers || answers.length === 0) {
@@ -518,13 +617,29 @@ serve(async (req)=>{
       gardner_scores,
       gopc_scores
     });
+
+    // Validate and process contextual_questionnaire (optional)
+    let validatedContextualQuestionnaire = null;
+    if (contextual_questionnaire) {
+      try {
+        validatedContextualQuestionnaire = validateContextualQuestionnaire(contextual_questionnaire);
+        console.log('Contextual questionnaire validated successfully');
+      } catch (validationError) {
+        // Graceful degradation: log error but don't fail the request
+        console.error('Error validating contextual_questionnaire:', validationError);
+        console.warn('Continuing without contextual_questionnaire due to validation error');
+        validatedContextualQuestionnaire = null;
+      }
+    } else {
+      console.log('No contextual_questionnaire provided (this is OK for backward compatibility)');
+    }
     // Generate session ID
     const sessionId = crypto.randomUUID();
     // Calculate expiration date (30 days from now)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
-    // Insert test result
-    const { data: result, error: resultError } = await supabaseClient.from('test_results').insert({
+    // Prepare insert payload
+    const insertPayload: any = {
       session_id: sessionId,
       name,
       email,
@@ -534,7 +649,15 @@ serve(async (req)=>{
       gopc_scores,
       is_unlocked: false,
       expires_at: expiresAt.toISOString()
-    }).select('id, session_id, expires_at').single();
+    };
+
+    // Add contextual_questionnaire only if validated
+    if (validatedContextualQuestionnaire) {
+      insertPayload.contextual_questionnaire = validatedContextualQuestionnaire;
+    }
+
+    // Insert test result
+    const { data: result, error: resultError } = await supabaseClient.from('test_results').insert(insertPayload).select('id, session_id, expires_at').single();
     if (resultError) {
       console.error('Error inserting test result:', resultError);
       return new Response(JSON.stringify({

@@ -13,11 +13,14 @@ const MEASUREMENT_API_SECRET = process.env.NEXT_PUBLIC_GA4_API_SECRET || '';
  * Bypassa GTM completamente.
  */
 export const trackExperimentViewed = async (experimentId: string, variationId: number | string) => {
+  // Converter para número (consistente com experimento anterior)
+  const variationIdNum = typeof variationId === 'string' ? parseInt(variationId, 10) : variationId;
+  
   // Envia para GTM data layer (para compatibilidade com outras ferramentas)
   pushToDataLayer({
     event: 'experiment_viewed',
     experiment_id: experimentId,
-    variation_id: String(variationId),
+    variation_id: variationIdNum, // Enviar como número
   });
   
   // Enviar DIRETO para GA4 via Measurement Protocol
@@ -35,7 +38,7 @@ export const trackExperimentViewed = async (experimentId: string, variationId: n
         name: 'experiment_viewed',
         params: {
           experiment_id: experimentId,
-          variation_id: String(variationId),
+          variation_id: variationIdNum, // Enviar como número (int) para consistência com experimento anterior
           ...(ga_session_id && { session_id: ga_session_id }),
         }
       }]
@@ -188,6 +191,25 @@ export const trackTestAbandoned = (
   });
 };
 
+// ==================== Contextual Questionnaire Events ====================
+
+export const trackContextualQuestionnaireCompleted = (
+  testId: string,
+  answers: Record<string, string | string[]>,
+  variant?: string // Adicionar parâmetro opcional
+) => {
+  pushToDataLayer({
+    event: 'contextual_questionnaire_completed',
+    eventCategory: 'Questionnaire',
+    eventAction: 'Complete',
+    contextual_questionnaire_variant: variant || 'enabled', // Adicionar
+    test_properties: {
+      ...answers,
+    },
+    user_properties: { test_id: testId },
+  });
+};
+
 // ==================== Form Events ====================
 
 export const trackFormViewed = (testId: string) => {
@@ -208,11 +230,16 @@ export const trackFormFieldInteraction = (fieldName: string) => {
   });
 };
 
-export const trackFormSubmitted = (testId: string, age: string) => {
+export const trackFormSubmitted = (
+  testId: string,
+  age: string,
+  variant?: string // Adicionar parâmetro opcional
+) => {
   pushToDataLayer({
     event: 'form_submitted',
     eventCategory: 'Form',
     eventAction: 'Submit',
+    contextual_questionnaire_variant: variant || 'disabled', // Adicionar (default "disabled" para backward compatibility)
     user_properties: {
       test_id: testId,
       user_age: age,

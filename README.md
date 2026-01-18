@@ -95,7 +95,7 @@ O projeto usa Supabase como backend. Principais tabelas:
 - `payments` - Registros de pagamentos
 - `discount_coupons` - Cupons de desconto
 
-Para configurar o banco, consulte `docs/specs/SUPABASE_SETUP.md`.
+Para configurar o banco e fazer deploy, consulte `docs/DEPLOY.md`.
 
 ## 🔌 Edge Functions
 
@@ -130,11 +130,11 @@ npm run deploy:preview # Deploy de preview
 
 Documentação técnica está em `docs/`:
 
-- `specs/SUPABASE_SETUP.md` - Setup e deploy de Edge Functions
-- `specs/ADMIN_CUPONS_SPEC.md` - Especificação do sistema de cupons
-- `specs/CUPONS_TESTING_CHECKLIST.md` - Checklist de testes
+- `DEPLOY.md` - Guia completo de deploy (migrações, edge functions, frontend)
+- `EXPERIMENT_SETUP_GUIDE.md` - Guia de configuração de experimentos A/B (GrowthBook + GA4)
 - `GTM_STATUS.md` - Status atual do tracking via GTM + GA4
-- `specs/VALIDATION_TEST.md` - Guia de validação e perfis de teste
+- `WHATSAPP_WAAPI_IMPLEMENTATION.md` - Implementação do WhatsApp via WAAPI
+- `CARREIRAS_E_INDICES.md` - Dados de carreiras e índices
 
 ## 🧪 Desenvolvimento
 

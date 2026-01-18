@@ -17,6 +17,7 @@ import {
   trackFormSubmitted,
   trackFormError,
 } from "@/lib/analytics";
+import type { ContextualAnswers } from "@/data/contextualQuestions";
 
 const formSchema = z.object({
   name: z
@@ -49,9 +50,11 @@ interface Answer {
 interface FormularioDadosProps {
   answers: Answer[];
   testId: string;
+  contextualAnswers?: ContextualAnswers;
+  contextualQuestionnaireVariant?: string; // NOVO
 }
 
-const FormularioDadosPage = ({ answers, testId }: FormularioDadosProps) => {
+const FormularioDadosPage = ({ answers, testId, contextualAnswers, contextualQuestionnaireVariant }: FormularioDadosProps) => {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +69,27 @@ const FormularioDadosPage = ({ answers, testId }: FormularioDadosProps) => {
     trackFormViewed(testId);
   }, [testId]);
 
+  // Carregar dados salvos
+  useEffect(() => {
+    const flowState = assessmentStorage.loadFlowState(testId);
+    if (flowState?.formData) {
+      setFormData(flowState.formData);
+    }
+  }, [testId]);
+
+  // Salvar dados quando mudarem (debounced, atômico)
+  useEffect(() => {
+    if (!formData.name && !formData.email && !formData.age) return; // Não salvar vazio
+    
+    const timeoutId = setTimeout(() => {
+      assessmentStorage.updateFlowState(testId, {
+        formData: formData,
+      });
+    }, 500); // Debounce de 500ms
+    
+    return () => clearTimeout(timeoutId);
+  }, [formData, testId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -74,15 +98,22 @@ const FormularioDadosPage = ({ answers, testId }: FormularioDadosProps) => {
       const validatedData = formSchema.parse(formData);
       setIsLoading(true);
 
-      trackFormSubmitted(testId, validatedData.age);
+      trackFormSubmitted(testId, validatedData.age, contextualQuestionnaireVariant || "disabled");
+
+      const requestBody: any = {
+        name: validatedData.name,
+        email: validatedData.email,
+        age: parseInt(validatedData.age),
+        answers: answers,
+      };
+
+      // Adicionar contextual_questionnaire apenas se presente (compatibilidade)
+      if (contextualAnswers) {
+        requestBody.contextual_questionnaire = contextualAnswers;
+      }
 
       const { data, error } = await supabase.functions.invoke("create-result", {
-        body: {
-          name: validatedData.name,
-          email: validatedData.email,
-          age: parseInt(validatedData.age),
-          answers: answers,
-        },
+        body: requestBody,
       });
 
       if (error) {
@@ -95,7 +126,8 @@ const FormularioDadosPage = ({ answers, testId }: FormularioDadosProps) => {
         throw new Error("Resposta inválida do servidor");
       }
 
-      assessmentStorage.clearProgress(testId);
+      // Limpar TODO o estado após sucesso
+      assessmentStorage.clearFlowState(testId);
       router.push(`/resultado/${data.result_id}`);
     } catch (error) {
       console.error("Form submission error:", error);

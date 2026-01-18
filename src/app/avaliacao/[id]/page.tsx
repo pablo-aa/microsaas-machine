@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { contextualQuestionnaireFlag } from "@/flags/contextualQuestionnaire";
 import AvaliacaoPage from "@/components/pages/AvaliacaoPage";
 
 // Forçar renderização dinâmica para evitar 404 no reload
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
-  return <AvaliacaoPage />;
+export default async function Page() {
+  const variant = await contextualQuestionnaireFlag();
+  return <AvaliacaoPage contextualQuestionnaireVariant={variant || "disabled"} />;
 }
