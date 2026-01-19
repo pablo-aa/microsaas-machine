@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,8 +21,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Search, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, ExternalLink, ChevronLeft, ChevronRight, BarChart3, RefreshCw } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
+import { QuestionnaireChart } from "@/components/subscribers/QuestionnaireChart";
+import { getQuestionTitle } from "@/utils/questionnaireLabels";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -58,6 +67,22 @@ const Subscribers = ({ onLogout }: SubscribersProps) => {
     total: 0,
     totalPages: 0,
   });
+  const [selectedQuestion, setSelectedQuestion] = useState<string>("q1");
+  const [questionnaireStats, setQuestionnaireStats] = useState<{
+    question: string;
+    totalResponses: number;
+    stats: Array<{
+      option: string;
+      count: number;
+      percentage: number;
+    }>;
+  } | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [refreshingStats, setRefreshingStats] = useState(false);
+
+  // Chave para localStorage
+  const CACHE_KEY = "questionnaire_stats_cache";
+  const CACHE_TIMESTAMP_KEY = "questionnaire_stats_cache_timestamp";
 
   // Fetch subscribers from Edge Function
   const fetchSubscribers = async (page: number = 1, search: string = "") => {
@@ -109,6 +134,99 @@ const Subscribers = ({ onLogout }: SubscribersProps) => {
       fetchSubscribers(newPage, searchTerm);
     }
   };
+
+  // Carregar dados do cache
+  const loadFromCache = (question: string) => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const allStats = JSON.parse(cached);
+        if (allStats[question]) {
+          return allStats[question];
+        }
+      }
+    } catch (error) {
+      console.error("Error loading from cache:", error);
+    }
+    return null;
+  };
+
+  // Salvar dados no cache
+  const saveToCache = (allStats: Record<string, any>) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(allStats));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, new Date().toISOString());
+    } catch (error) {
+      console.error("Error saving to cache:", error);
+    }
+  };
+
+  // Buscar todas as estatísticas de uma vez
+  const fetchAllQuestionnaireStats = async (forceRefresh: boolean = false) => {
+    try {
+      if (forceRefresh) {
+        setRefreshingStats(true);
+      } else {
+        setLoadingStats(true);
+      }
+      setError(null);
+
+      const response = await fetch(
+        `${SUPABASE_URL}/functions/v1/get-questionnaire-stats?getAll=true`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Erro ao carregar estatísticas");
+      }
+
+      const data = await response.json();
+      if (data.all && data.data) {
+        saveToCache(data.data);
+        // Atualizar estatísticas da pergunta selecionada
+        if (data.data[selectedQuestion]) {
+          setQuestionnaireStats(data.data[selectedQuestion]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching questionnaire stats:", err);
+      setError(err instanceof Error ? err.message : "Erro ao carregar estatísticas");
+    } finally {
+      setLoadingStats(false);
+      setRefreshingStats(false);
+    }
+  };
+
+  // Carregar estatísticas da pergunta selecionada (do cache ou buscar todas)
+  const loadQuestionStats = (question: string) => {
+    const cached = loadFromCache(question);
+    if (cached) {
+      setQuestionnaireStats(cached);
+    } else {
+      // Se não tem cache, buscar todas as questões
+      fetchAllQuestionnaireStats(false);
+    }
+  };
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadQuestionStats(selectedQuestion);
+  }, []);
+
+  // Quando mudar a pergunta, usar cache
+  useEffect(() => {
+    const cached = loadFromCache(selectedQuestion);
+    if (cached) {
+      setQuestionnaireStats(cached);
+    }
+  }, [selectedQuestion]);
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -162,6 +280,69 @@ const Subscribers = ({ onLogout }: SubscribersProps) => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+
+        {/* Questionnaire Statistics Section */}
+        <div className="mb-8">
+          <Card className="p-6">
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-bold text-foreground">
+                    Estatísticas do Questionário Contextual
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchAllQuestionnaireStats(true)}
+                    disabled={refreshingStats}
+                  >
+                    {refreshingStats ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Atualizando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Atualizar
+                      </>
+                    )}
+                  </Button>
+                  <Select value={selectedQuestion} onValueChange={setSelectedQuestion}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="q1">Q1: Momento de Carreira</SelectItem>
+                    <SelectItem value="q2">Q2: Urgência</SelectItem>
+                    <SelectItem value="q3">Q3: Objetivo Principal</SelectItem>
+                    <SelectItem value="q4">Q4: Fatores Bloqueadores</SelectItem>
+                    <SelectItem value="q5">Q5: Situação Atual</SelectItem>
+                    <SelectItem value="q6">Q6: Tempo Semanal Disponível</SelectItem>
+                    <SelectItem value="q7">Q7: Direção da Transição</SelectItem>
+                    <SelectItem value="q8">Q8: Maior Medo na Transição</SelectItem>
+                    <SelectItem value="q9">Q9: Prioridade para Desempregado</SelectItem>
+                  </SelectContent>
+                </Select>
+                </div>
+              </div>
+
+              {loadingStats ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="ml-3 text-muted-foreground">
+                    Carregando estatísticas...
+                  </span>
+                </div>
+              ) : (
+                <QuestionnaireChart data={questionnaireStats} />
+              )}
+            </div>
+          </Card>
+        </div>
 
         {/* Loading State */}
         {loading && (
