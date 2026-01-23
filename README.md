@@ -132,6 +132,7 @@ Documentação técnica está em `docs/`:
 
 - `DEPLOY.md` - Guia completo de deploy (migrações, edge functions, frontend)
 - `EXPERIMENT_SETUP_GUIDE.md` - Guia de configuração de experimentos A/B (GrowthBook + GA4)
+- `CONTEXTUAL_QUESTIONNAIRE_STRUCTURE.md` - Estrutura completa do questionário contextual (tipos, perguntas, validação, fluxo)
 - `GTM_STATUS.md` - Status atual do tracking via GTM + GA4
 - `WHATSAPP_WAAPI_IMPLEMENTATION.md` - Implementação do WhatsApp via WAAPI
 - `CARREIRAS_E_INDICES.md` - Dados de carreiras e índices
