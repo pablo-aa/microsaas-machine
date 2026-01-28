@@ -186,14 +186,24 @@ serve(async (req)=>{
     // Fetch user info from test_results (name, email) - only now that we know we'll send
     let userName;
     let dbEmail;
+    // Derivar variant do experimento do questionário contextual no backend
+    // Importante: neste fluxo, payments.test_id referencia test_results.id
+    let contextualQuestionnaireVariant: 'enabled' | 'disabled' = 'disabled';
     if (paymentRow?.test_id) {
-      const { data: resultRow, error: resultRowError } = await supabase.from('test_results').select('name, email').eq('id', paymentRow.test_id).maybeSingle();
+      const { data: resultRow, error: resultRowError } = await supabase
+        .from('test_results')
+        .select('name, email, contextual_questionnaire')
+        .eq('id', paymentRow.test_id)
+        .maybeSingle();
       if (resultRowError) {
         console.warn('[send-whatsapp-on-payment] Error fetching test_results row:', resultRowError);
+        // Fallback seguro: manter "disabled" se não conseguirmos ler do banco
+        contextualQuestionnaireVariant = 'disabled';
       }
       if (resultRow) {
         userName = resultRow.name;
         dbEmail = resultRow.email;
+        contextualQuestionnaireVariant = resultRow.contextual_questionnaire ? 'enabled' : 'disabled';
       }
     }
     
@@ -293,6 +303,7 @@ serve(async (req)=>{
               value: typeof mpAmount === 'number' ? mpAmount : parseFloat(String(mpAmount || '0')),
               currency: 'BRL',
               payment_type: paymentId.startsWith('FREE_') ? 'coupon' : 'pix',
+              contextual_questionnaire_variant: contextualQuestionnaireVariant,
               ...(gaSessionId ? { ga_session_id: gaSessionId } : {}),
               ...(gaSessionNumber ? { ga_session_number: gaSessionNumber } : {}),
               ...(couponCode ? { coupon: couponCode } : {}),

@@ -75,6 +75,11 @@ useEffect(() => {
 - Incluir `payment_variant` em TODOS os eventos relevantes (begin_checkout, purchase, etc.) **durante o experimento**
 - Quando o experimento for pausado (seção 7), remover `payment_variant` de todos os eventos
 
+**Experimento: Questionário Contextual (qc-contextual-questionnaire-test)**:
+- **Parâmetro padrão do experimento nos eventos**: `contextual_questionnaire_variant` (`enabled` | `disabled`)
+- **Purchase (server-side)**: o evento `purchase` enviado via Measurement Protocol pela Edge Function `supabase/functions/send-whatsapp-on-payment` inclui `contextual_questionnaire_variant`.
+- **Regra (backend)**: como `payments.test_id` referencia `test_results.id`, o backend deriva a variante consultando `test_results.contextual_questionnaire` (se não nulo → `enabled`, senão → `disabled`; em erro, fallback `disabled`).
+
 ## 4. BigQuery: Custom Dimension
 
 **GrowthBook > Data Sources > Dimensions > Create**
