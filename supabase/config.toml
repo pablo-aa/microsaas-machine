@@ -31,13 +31,14 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.manage-coupons]
-verify_jwt = false
-
-[functions.apply-retroactive-discount]
+verify_jwt = false[functions.apply-retroactive-discount]
 verify_jwt = false
 
 [functions.get-subscribers]
 verify_jwt = false
 
 [functions.get-all-users]
+verify_jwt = false
+
+[functions.get-questionnaire-stats]
 verify_jwt = false
