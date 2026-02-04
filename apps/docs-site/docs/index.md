@@ -11,11 +11,11 @@ Bem-vindo à documentação do monorepo MicroSaaS Machine. Esta documentação c
 ### Aplicações
 
 #### QualCarreira
-- [**README**](../../qual-carreira-seguir/README.md) - Documentação principal do projeto
-- [**Documentação Completa**](../../qual-carreira-seguir/docs/) - Arquitetura, integrações, deploy e guias específicos
+- [**README**](https://github.com/pablo-aa/microsaas-machine/tree/main/apps/qual-carreira-seguir#readme) - Documentação principal do projeto
+- [**Documentação Completa**](https://github.com/pablo-aa/microsaas-machine/tree/main/apps/qual-carreira-seguir/docs) - Arquitetura, integrações, deploy e guias específicos
 
 #### Dashboard
-- [**README**](../../dashboard/README.md) - Documentação completa do dashboard de métricas
+- [**README**](https://github.com/pablo-aa/microsaas-machine/tree/main/apps/dashboard#readme) - Documentação completa do dashboard de métricas
 
 ## 🏗️ Estrutura do Monorepo
 
