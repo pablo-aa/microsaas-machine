@@ -29,18 +29,20 @@ cd qual-carreira-seguir
 npm install
 
 # 3. Configure as variáveis de ambiente
-cp .env.example .env.local
-# Edite .env.local com suas credenciais do Supabase
+# Crie um arquivo .env.local na raiz do projeto
+# Edite .env.local com suas credenciais (ver seção Variáveis de Ambiente abaixo)
 ```
 
 ## 🔧 Variáveis de Ambiente
 
-Crie um arquivo `.env.local` na raiz do projeto:
+Crie um arquivo `.env.local` na raiz do projeto. Para lista completa, consulte [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md).
 
+**Essenciais:**
 ```env
 NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_anon_key
-# Outras variáveis conforme necessário
+GROWTHBOOK_CLIENT_KEY=sdk-xxx
+NEXT_PUBLIC_GA4_API_SECRET=xxx
 ```
 
 ## 📜 Scripts Disponíveis
@@ -56,86 +58,91 @@ npm run start        # Inicia servidor de produção (após build)
 # Qualidade de código
 npm run lint         # Executa ESLint
 
-# Deploy
+# Deploy (Vercel - fallback)
 npm run deploy              # Deploy em produção via Vercel
 npm run deploy:preview     # Deploy de preview via Vercel
 ```
+
+**Nota**: Deploy principal é automático via VPS (GitHub App). Vercel é usado apenas como fallback.
 
 ## 🏗️ Estrutura do Projeto
 
 ```
 qual-carreira-seguir/
 ├── src/
-│   ├── app/              # Rotas Next.js (App Router)
-│   │   ├── page.tsx      # Landing page
-│   │   ├── layout.tsx    # Layout raiz
-│   │   ├── avaliacao/    # Página de avaliação
-│   │   ├── resultado/     # Página de resultados
+│   ├── app/                    # Rotas Next.js (App Router)
+│   │   ├── page.tsx           # Landing page
+│   │   ├── layout.tsx          # Layout raiz
+│   │   ├── avaliacao/[id]/     # Página de avaliação (60 questões)
+│   │   ├── resultado/[id]/    # Página de resultados
+│   │   ├── comeco/             # Início do teste
 │   │   └── ...
-│   ├── components/       # Componentes React
-│   │   ├── pages/        # Componentes de página
-│   │   └── ui/           # Componentes UI (shadcn)
-│   ├── lib/              # Utilitários e helpers
-│   ├── hooks/            # React hooks customizados
-│   ├── data/             # Dados estáticos (perguntas, etc)
-│   └── types/            # Definições TypeScript
+│   ├── components/             # Componentes React
+│   │   ├── pages/              # Componentes de página
+│   │   ├── ui/                 # Componentes UI (shadcn)
+│   │   └── ...                 # Outros componentes
+│   ├── lib/                    # Utilitários e helpers
+│   │   ├── analytics.ts        # Tracking GA4/GTM
+│   │   ├── supabase.ts         # Cliente Supabase
+│   │   ├── assessmentStorage.ts # Persistência local
+│   │   └── ...
+│   ├── hooks/                  # React hooks customizados
+│   ├── data/                   # Dados estáticos
+│   │   ├── questions.ts        # Perguntas do teste
+│   │   ├── contextualQuestions.ts # Questionário contextual
+│   │   └── ...
+│   ├── flags/                  # Feature flags (GrowthBook)
+│   ├── config/                  # Configurações
+│   │   └── mercadopago.ts      # Config Mercado Pago
+│   └── assets/                  # Assets estáticos
 ├── supabase/
-│   ├── functions/        # Edge Functions
-│   └── migrations/       # Migrações do banco
-├── public/               # Arquivos estáticos
-└── docs/                 # Documentação
+│   ├── functions/              # Edge Functions (13 functions)
+│   └── migrations/              # Migrações do banco
+├── public/                      # Arquivos estáticos
+├── docs/                        # Documentação completa
+├── nixpacks.toml                # Config build (VPS)
+├── vercel.json                  # Config Vercel (fallback)
+└── package.json
 ```
 
-## 🗄️ Banco de Dados (Supabase)
+## 🗄️ Banco de Dados e Edge Functions
 
-O projeto usa Supabase como backend. Principais tabelas:
+**Supabase**: PostgreSQL com RLS habilitado  
+**Edge Functions**: 13 functions serverless
 
-- `test_results` - Resultados dos testes vocacionais
-- `test_responses` - Respostas individuais das questões
-- `payments` - Registros de pagamentos
-- `discount_coupons` - Cupons de desconto
+**Principais tabelas**: `test_results`, `test_responses`, `payments`, `discount_coupons`  
+**Principais functions**: `create-result`, `create-payment`, `send-whatsapp-on-payment`, `unlock-result`
 
-Para configurar o banco e fazer deploy, consulte `docs/DEPLOY.md`.
-
-## 🔌 Edge Functions
-
-As Edge Functions do Supabase estão em `supabase/functions/`:
-
-- `create-result` - Cria resultado do teste
-- `get-result` - Busca resultado por ID
-- `unlock-result` - Desbloqueia resultado após pagamento
-- `create-payment` - Cria pagamento via Mercado Pago
-- `check-payment-status` - Verifica status do pagamento
-- `check-unlock-status` - Polling silencioso para detectar pagamento aprovado
-- `validate-coupon` - Valida cupons de desconto
-- `unlock-free-result` - Desbloqueia com cupom 100%
-- E outras...
+Para detalhes completos, consulte [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## 🚢 Deploy
 
-O projeto está configurado para deploy automático via **Vercel**:
+O projeto está configurado para deploy automático via **VPS** (GitHub App) com **Vercel como fallback**.
 
-1. Conecte seu repositório ao Vercel
-2. Configure as variáveis de ambiente no dashboard da Vercel
-3. Deploys automáticos a cada push na branch `main`
+**VPS (Principal):**
+- Deploy automático a cada push na branch `main`
+- Configurado via GitHub App
+- Build via `nixpacks.toml`
 
-Ou use os comandos manuais:
+**Vercel (Fallback):**
+- Mantido como backup
+- Apontar DNS em caso de emergência
 
-```bash
-npm run deploy        # Deploy em produção
-npm run deploy:preview # Deploy de preview
-```
+Para guia completo de deploy, consulte [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## 📚 Documentação
 
-Documentação técnica está em `docs/`:
+### Principais
+- [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) - Banco de dados, Edge Functions e fluxos do sistema
+- [`INTEGRATIONS.md`](docs/INTEGRATIONS.md) - Integrações, configurações e variáveis de ambiente
+- [`DEPLOY.md`](docs/DEPLOY.md) - Guia de deploy (VPS, Vercel, Edge Functions)
 
-- `DEPLOY.md` - Guia completo de deploy (migrações, edge functions, frontend)
-- `EXPERIMENT_SETUP_GUIDE.md` - Guia de configuração de experimentos A/B (GrowthBook + GA4)
-- `CONTEXTUAL_QUESTIONNAIRE_STRUCTURE.md` - Estrutura completa do questionário contextual (tipos, perguntas, validação, fluxo)
-- `GTM_STATUS.md` - Status atual do tracking via GTM + GA4
-- `WHATSAPP_WAAPI_IMPLEMENTATION.md` - Implementação do WhatsApp via WAAPI
-- `CARREIRAS_E_INDICES.md` - Dados de carreiras e índices
+### Específicos
+- [`EXPERIMENT_SETUP_GUIDE.md`](docs/EXPERIMENT_SETUP_GUIDE.md) - Configuração de experimentos A/B
+- [`CONTEXTUAL_QUESTIONNAIRE_STRUCTURE.md`](docs/CONTEXTUAL_QUESTIONNAIRE_STRUCTURE.md) - Estrutura do questionário contextual
+- [`GTM_STATUS.md`](docs/GTM_STATUS.md) - Status do tracking via GTM + GA4
+- [`WHATSAPP_WAAPI_IMPLEMENTATION.md`](docs/WHATSAPP_WAAPI_IMPLEMENTATION.md) - Implementação do WhatsApp
+- [`CARREIRAS_E_INDICES.md`](docs/CARREIRAS_E_INDICES.md) - Dados de carreiras e índices
 
 ## 🧪 Desenvolvimento
 
