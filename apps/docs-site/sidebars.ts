@@ -19,9 +19,33 @@ const sidebars: SidebarsConfig = {
       label: 'Início',
     },
     {
+      type: 'doc',
+      id: 'readme',
+      label: 'Sobre o Projeto',
+    },
+    {
       type: 'category',
       label: 'Infraestrutura',
       items: ['vps'],
+    },
+    {
+      type: 'category',
+      label: 'QualCarreira',
+      items: [
+        'qual-carreira-seguir/architecture',
+        'qual-carreira-seguir/integrations',
+        'qual-carreira-seguir/deploy',
+        'qual-carreira-seguir/contextual-questionnaire-structure',
+        'qual-carreira-seguir/experiment-setup-guide',
+        'qual-carreira-seguir/gtm-status',
+        'qual-carreira-seguir/whatsapp-waapi-implementation',
+        'qual-carreira-seguir/carreiras-e-indices',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Dashboard',
+      items: ['dashboard/readme'],
     },
   ],
 };
