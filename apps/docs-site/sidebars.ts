@@ -45,7 +45,14 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Dashboard',
-      items: ['dashboard/readme'],
+      items: [
+        'dashboard/readme',
+        'dashboard/architecture',
+        'dashboard/setup-and-deploy',
+        'dashboard/edge-functions',
+        'dashboard/features',
+        'dashboard/troubleshooting',
+      ],
     },
   ],
 };

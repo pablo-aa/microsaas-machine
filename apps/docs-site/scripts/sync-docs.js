@@ -42,6 +42,7 @@ const paths = {
   readme: path.resolve(projectRoot, 'README.md'),
   qualCarreiraDocs: path.resolve(docsSiteDir, '..', 'qual-carreira-seguir', 'docs'),
   dashboardReadme: path.resolve(docsSiteDir, '..', 'dashboard', 'README.md'),
+  dashboardDocs: path.resolve(docsSiteDir, '..', 'dashboard', 'docs'),
 };
 
 /**
@@ -158,18 +159,33 @@ function copyQualCarreiraDocs() {
 }
 
 /**
- * Copia README do Dashboard
+ * Copia README e documentos do Dashboard
  */
-function copyDashboardReadme() {
-  log('📊 Copiando README do Dashboard...', 'blue');
+function copyDashboardDocs() {
+  log('📊 Copiando documentação do Dashboard...', 'blue');
   
   const dashboardTargetDir = path.resolve(docsTargetDir, 'dashboard');
   if (!fs.existsSync(dashboardTargetDir)) {
     fs.mkdirSync(dashboardTargetDir, { recursive: true });
   }
 
-  const dest = path.resolve(dashboardTargetDir, 'readme.md');
-  copyFile(paths.dashboardReadme, dest, 'Dashboard README');
+  copyFile(paths.dashboardReadme, path.resolve(dashboardTargetDir, 'readme.md'), 'Dashboard README');
+
+  if (!fs.existsSync(paths.dashboardDocs)) {
+    log(`⚠️  Diretório Dashboard docs não encontrado: ${paths.dashboardDocs}`, 'yellow');
+    return;
+  }
+
+  const files = fs.readdirSync(paths.dashboardDocs);
+  let copiedCount = 0;
+  for (const file of files) {
+    if (!file.endsWith('.md')) continue;
+    const source = path.resolve(paths.dashboardDocs, file);
+    const normalizedName = normalizeFileName(file);
+    const dest = path.resolve(dashboardTargetDir, normalizedName);
+    if (copyFile(source, dest, `Dashboard: ${file}`)) copiedCount++;
+  }
+  log(`✅ ${copiedCount} arquivo(s) do Dashboard copiado(s)`, 'green');
 }
 
 /**
@@ -191,8 +207,8 @@ function main() {
     // 4. Copiar documentos do QualCarreira
     copyQualCarreiraDocs();
 
-    // 5. Copiar README do Dashboard
-    copyDashboardReadme();
+    // 5. Copiar README e docs do Dashboard
+    copyDashboardDocs();
 
     log('\n✅ Sincronização concluída com sucesso!', 'green');
     process.exit(0);

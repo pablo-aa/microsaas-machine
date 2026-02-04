@@ -44,7 +44,7 @@ microsaas-machine/
 └── README.md                      # Este arquivo
 ```
 
-## 🚀 Setup Rápido
+## 🚀 Setup rápido
 
 Cada aplicação possui seu próprio README com instruções de setup. Consulte:
 
