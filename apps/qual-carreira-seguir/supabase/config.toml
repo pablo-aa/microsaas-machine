@@ -1,0 +1,25 @@
+# Supabase Edge Functions Configuration
+
+[functions.create-payment]
+verify_jwt = false
+
+[functions.check-payment-status]
+verify_jwt = false
+
+[functions.create-result]
+verify_jwt = false
+
+[functions.get-result]
+verify_jwt = false
+
+[functions.unlock-result]
+verify_jwt = false
+
+[functions.get-analytics]
+verify_jwt = false
+
+[functions.send-whatsapp-on-payment]
+verify_jwt = false
+
+[functions.test-pushover]
+verify_jwt = false

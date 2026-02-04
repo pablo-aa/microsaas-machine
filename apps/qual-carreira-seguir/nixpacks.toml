@@ -1,0 +1,12 @@
+providers = ["node"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[variables]
+PORT = "3000"
+HOSTNAME = "0.0.0.0"
+NODE_ENV = "production"
