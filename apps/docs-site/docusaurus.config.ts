@@ -56,7 +56,7 @@ const config: Config = {
       title: 'MicroSaaS Machine',
       logo: {
         alt: 'MicroSaaS Machine Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         {

@@ -26,3 +26,7 @@ yarn-error.log*
 *.swp
 *.swo
 *~
+
+# Generated docs (synced by pre-build script)
+docs/*
+!docs/.gitkeep
