@@ -33,8 +33,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Lê os arquivos markdown do diretório docs/ no top level
-          path: '../docs',
+          // Lê os arquivos markdown do diretório docs/ dentro de docs-site
+          path: './docs',
           routeBasePath: '/',
           editUrl: undefined,
         },

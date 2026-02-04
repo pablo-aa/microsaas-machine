@@ -39,14 +39,13 @@ npm run serve
 
 ```
 apps/docs-site/
+├── docs/                   # Arquivos markdown da documentação
+│   ├── index.md
+│   └── vps.md
 ├── src/                    # Código fonte (CSS, componentes React)
 ├── static/                 # Arquivos estáticos (imagens, favicons)
 ├── docusaurus.config.ts    # Configuração principal
 └── sidebars.ts             # Configuração da sidebar
-
-../docs/                    # Arquivos markdown da documentação
-├── index.md
-└── vps.md
 ```
 
 ## 🚢 Deploy
@@ -59,6 +58,6 @@ A documentação é deployada automaticamente no **Cloudflare Pages** a cada pus
 
 ## 📝 Adicionar Nova Página
 
-1. Crie um arquivo `.md` no diretório `docs/` (top level do projeto)
+1. Crie um arquivo `.md` no diretório `apps/docs-site/docs/`
 2. Adicione a referência no arquivo `sidebars.ts`
 3. Faça commit e push - o deploy será automático

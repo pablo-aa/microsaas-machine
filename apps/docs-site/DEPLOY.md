@@ -35,6 +35,7 @@ Preencha os seguintes campos:
   ```
   apps/docs-site/build
   ```
+- **Nota**: Os arquivos markdown estão em `apps/docs-site/docs/` (dentro do projeto Docusaurus)
 - **Root directory**: Deixe vazio (ou `/` se necessário)
 - **Environment variables**: Não é necessário para Docusaurus básico
 
