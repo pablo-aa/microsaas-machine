@@ -1,8 +1,3 @@
----
-layout: default
-title: VPS - Infraestrutura
----
-
 # Documentação da VPS
 
 Documentação enxuta da infraestrutura do servidor.

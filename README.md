@@ -21,13 +21,14 @@ Dashboard web para visualização de métricas de performance (faturamento, cust
 
 A documentação completa está disponível em:
 
-- **GitHub Pages**: [Acessar Documentação](https://pablo-aa.github.io/microsaas-machine/)
-- **Protegida por Cloudflare Access** - Apenas usuários autorizados podem acessar
+- **Documentação**: [docs.octoper.com](https://docs.octoper.com)
 
 A documentação inclui:
 - Informações sobre a infraestrutura (VPS)
 - Links para documentação de cada aplicação
 - Guias de setup e deploy
+
+**Nota**: O domínio octoper.com é gerenciado via Cloudflare, incluindo os subdomínios desta documentação (docs.octoper.com), Coolify e Grafana.
 
 ## 🏗️ Estrutura
 
@@ -35,11 +36,11 @@ A documentação inclui:
 microsaas-machine/
 ├── apps/
 │   ├── qual-carreira-seguir/    # Teste vocacional
-│   └── dashboard/                # Dashboard de métricas
-├── docs/                         # Documentação (GitHub Pages)
+│   ├── dashboard/                # Dashboard de métricas
+│   └── docs-site/                # Site Docusaurus (documentação)
+├── docs/                         # Arquivos markdown da documentação
 │   ├── index.md
-│   ├── vps.md
-│   └── _config.yml
+│   └── vps.md
 └── README.md                      # Este arquivo
 ```
 
@@ -50,14 +51,6 @@ Cada aplicação possui seu próprio README com instruções de setup. Consulte:
 - [`apps/qual-carreira-seguir/README.md`](apps/qual-carreira-seguir/README.md)
 - [`apps/dashboard/README.md`](apps/dashboard/README.md)
 
-## 🔐 Acesso à Documentação
-
-A documentação hospedada no GitHub Pages é protegida por **Cloudflare Access**. 
-
-Para acessar, você precisa:
-1. Ter um email autorizado na política do Cloudflare Access
-2. Acessar o subdomínio configurado
-3. Fazer login via Cloudflare Zero Trust
 
 ## 📝 Contribuindo
 

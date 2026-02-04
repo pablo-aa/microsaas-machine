@@ -1,8 +1,3 @@
----
-layout: default
-title: Documentação - MicroSaaS Machine
----
-
 # Documentação MicroSaaS Machine
 
 Bem-vindo à documentação do monorepo MicroSaaS Machine. Esta documentação centraliza informações sobre os projetos, infraestrutura e processos.
@@ -28,13 +23,8 @@ Bem-vindo à documentação do monorepo MicroSaaS Machine. Esta documentação c
 microsaas-machine/
 ├── apps/
 │   ├── qual-carreira-seguir/    # Plataforma de teste vocacional
-│   └── dashboard/                # Dashboard de métricas
-├── docs/                         # Esta documentação
+│   ├── dashboard/                # Dashboard de métricas
+│   └── docs-site/                # Site Docusaurus (esta documentação)
+├── docs/                         # Arquivos markdown da documentação
 └── README.md                     # README principal
 ```
-
-## 🔐 Acesso
-
-Esta documentação é protegida por **Cloudflare Access**. Apenas usuários autorizados podem acessar.
-
-- [**Configuração Cloudflare Access**](./cloudflare-access.md) - Guia completo de configuração e gerenciamento de usuários
